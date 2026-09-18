@@ -2,7 +2,9 @@
 // node tests/pi-check.mjs <pi-coding-agent-package-directory> <typescript-package-directory>
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -34,20 +36,38 @@ if (diagnostics.length) {
   }));
   process.exitCode = 1;
 } else {
-  const { loadExtensions } = await import(pathToFileURL(resolve(piRoot, 'dist/core/extensions/loader.js')).href);
-  const loaded = await loadExtensions([resolve(root, 'index.ts')], root);
-  assert.equal(loaded.errors.length, 0, JSON.stringify(loaded.errors));
-  assert.equal(loaded.extensions.length, 1);
-  const extension = loaded.extensions[0];
-  assert.deepEqual([...extension.tools.keys()], ['jev_rerank']);
-  const tool = extension.tools.get('jev_rerank').definition;
-  assert.equal(tool.parameters.properties.candidates.maxItems, 10);
-  // Print/JSON contexts cannot approve: this must not start any process or API call.
-  const result = await tool.execute('offline-test', {
-    question: 'Which passage answers the question?', criteria: 'Direct evidence.',
-    candidates: [{ id: 'a', url: 'https://example.com', title: 'Synthetic', excerpt: 'A public example.' }],
-  }, undefined, undefined, { hasUI: false });
-  assert.equal(result.details.code, 'confirmation_unavailable');
-  const version = JSON.parse(readFileSync(resolve(piRoot, 'package.json'), 'utf8')).version;
-  console.log(`Typecheck and offline Pi ${version} extension-load smoke passed.`);
+  // Match the package checker: Pi 0.85.0's unbundled SDK imports an
+  // undeclared pi-server dependency. Prefer the shipped bundle, not a shim.
+  const bundle = resolve(piRoot, 'dist/bundle/index.js');
+  const { DefaultResourceLoader, SettingsManager } = await import(pathToFileURL(
+    existsSync(bundle) ? bundle : resolve(piRoot, 'dist/index.js'),
+  ).href);
+  const temporary = await mkdtemp(resolve(tmpdir(), 'pi-jev-check-'));
+  try {
+    const loader = new DefaultResourceLoader({
+      cwd: temporary, agentDir: resolve(temporary, 'agent'),
+      settingsManager: SettingsManager.inMemory(),
+      additionalExtensionPaths: [resolve(root, 'index.ts')],
+      noExtensions: true, noSkills: true, noPromptTemplates: true,
+      noThemes: true, noContextFiles: true,
+    });
+    await loader.reload();
+    const loaded = loader.getExtensions();
+    assert.equal(loaded.errors.length, 0, JSON.stringify(loaded.errors));
+    assert.equal(loaded.extensions.length, 1);
+    const extension = loaded.extensions[0];
+    assert.deepEqual([...extension.tools.keys()], ['jev_rerank']);
+    const tool = extension.tools.get('jev_rerank').definition;
+    assert.equal(tool.parameters.properties.candidates.maxItems, 10);
+    // Print/JSON contexts cannot approve: this must not start any process or API call.
+    const result = await tool.execute('offline-test', {
+      question: 'Which passage answers the question?', criteria: 'Direct evidence.',
+      candidates: [{ id: 'a', url: 'https://example.com', title: 'Synthetic', excerpt: 'A public example.' }],
+    }, undefined, undefined, { hasUI: false });
+    assert.equal(result.details.code, 'confirmation_unavailable');
+    const version = JSON.parse(readFileSync(resolve(piRoot, 'package.json'), 'utf8')).version;
+    console.log(`Typecheck and offline Pi ${version} extension-load smoke passed.`);
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
 }
