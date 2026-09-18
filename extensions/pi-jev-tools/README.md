@@ -2,7 +2,15 @@
 
 An optional `jev_rerank` tool for the **parent Pi agent**. It ranks already collected public web passages with TypeSafe Jev, after user review and confirmation. It does not search, write answers, replace a model, or modify another extension.
 
-**Status:** source implementation with offline tests. No live-provider, Korean-quality, interactive-UI, latency, or cost improvement claim. Start small; keep the extension only if comparison against the existing workflow shows a net benefit.
+**Status:** experimental source implementation with offline tests and a live interactive demonstration using three public English passages. This does not establish Korean-language quality, general provider compatibility, or improvements in accuracy, latency, or cost. Start small; keep the extension only if comparison against the existing workflow shows a net benefit.
+
+## In action
+
+A real Pi run asks whether `example.com` can be registered or transferred. It reviews the complete payload, obtains separate approval, sends one TypeSafe request, and uses the returned order to give a sourced answer. The candidates are excerpts from IANA's public [Root Zone Management](https://www.iana.org/domains/root), [Time Zones](https://www.iana.org/time-zones), and [Example Domains](https://www.iana.org/help/example-domains) pages, collected before the recording.
+
+![Jev's English payload-review and approval dialogs, followed by a real reranking result and sourced answer](assets/pi-jev-tools-demo.gif)
+
+The GIF replays actual terminal output with typing and waits accelerated; model responses and API results are not scripted. The demonstrated request returned `jev-1.13.0` for the `jev-latest` alias. This is a consent-flow demonstration, not a ranking-quality or latency benchmark. No private documents or personal sessions are used.
 
 ## Flow
 
@@ -15,12 +23,12 @@ An optional `jev_rerank` tool for the **parent Pi agent**. It ranks already coll
 
 There is no automatic hook into web results, no reading of saved response IDs, no session/history collection, and no child-agent integration. `jev_check_evidence` is not implemented.
 
-## Requirements and eventual use
+## Requirements and use
 
 - Node.js 22.22+ and Pi with the current extension API. Offline loading/typechecking was checked with Pi 0.85.1.
 - An **existing** Python 3.10+ interpreter with `typesafe-sdk` installed. The SDK contract was checked offline with 0.6.0.
 - `TYPESAFE_API_KEY` inherited by Pi from its execution environment. The extension never loads `.env`, searches for keys, or asks the model to read a credential file.
-- An interactive Pi UI, or an RPC host implementing both editor and confirmation dialogs. Print/JSON mode fails closed with `confirmation_unavailable`. RPC and interactive rendering need separate operator validation.
+- An interactive Pi UI, or an RPC host implementing both editor and confirmation dialogs. Print/JSON mode fails closed with `confirmation_unavailable`. The demo exercises the interactive Pi UI; RPC rendering remains unverified.
 
 The source does not install itself or add dependencies. After separately authorizing runtime use, load just this extension and point it at the existing interpreter:
 
