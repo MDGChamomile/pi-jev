@@ -173,12 +173,12 @@ export function createRunner({ python, adapter, env = process.env, run = runAdap
       try {
         // An editor provides a scrollable full-payload review. Edits never become the request.
         const preview = JSON.stringify(prepared.request, null, 2);
-        const reviewed = await ctx.ui.editor('Jev 전송 내용 검토 — 공개 자료만 허용. 수정하지 않고 제출하면 다음 단계로 이동합니다.', preview);
+        const reviewed = await ctx.ui.editor('Review Jev payload — public sources only. Submit unchanged to continue.', preview);
         if (combinedSignal.aborted) return fallback('cancelled');
         if (reviewed === undefined) return fallback('declined');
         if (reviewed !== preview) return fallback('preview_changed');
-        const ok = await ctx.ui.confirm('TypeSafe Jev에 전송할까요?',
-          `검토한 질문·기준·후보 ${prepared.originalOrder.length}개를 https://api.typesafe.ai 에 전송합니다.\n모델: ${MODEL} (최신 안정 버전)\n유료 API 요청 최대 1회, 자동 재시도 없음, 실행 제한 30초.\n공개 웹 자료만 허용합니다. 세션·내부 자료·인증 페이지·비밀정보가 포함되면 거절하세요.\n취소해도 이미 전송된 요청과 비용은 되돌릴 수 없습니다.`,
+        const ok = await ctx.ui.confirm('Send to TypeSafe Jev?',
+          `Send the reviewed question, criteria, and ${prepared.originalOrder.length} candidates to https://api.typesafe.ai.\nModel: ${MODEL} (latest stable version)\nAt most one paid API request; no automatic retries; 30-second timeout.\nPublic web sources only. Decline if the payload includes sessions, internal data, authenticated pages, or secrets.\nCancelling cannot undo a request or charges already incurred.`,
           { signal: combinedSignal });
         if (combinedSignal.aborted) return fallback('cancelled');
         if (!ok) return fallback('declined');

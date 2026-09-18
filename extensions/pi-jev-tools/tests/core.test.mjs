@@ -94,6 +94,34 @@ test('approval binds the reviewed request and triggers exactly one invocation', 
   assert.deepEqual(r.rankedIds, ['b','a']);
 });
 
+test('English review and approval UI retain disclosure and safety boundaries', async () => {
+  const context = ctx();
+  const prompts = [];
+  context.ui.editor = async (title, preview) => {
+    assert.equal(title, 'Review Jev payload — public sources only. Submit unchanged to continue.');
+    prompts.push('review');
+    return preview;
+  };
+  context.ui.confirm = async (title, message) => {
+    assert.equal(title, 'Send to TypeSafe Jev?');
+    for (const disclosure of [
+      'reviewed question, criteria, and 2 candidates', 'https://api.typesafe.ai',
+      'jev-latest (latest stable version)', 'one paid API request',
+      'no automatic retries', '30-second timeout', 'Public web sources only',
+      'sessions, internal data, authenticated pages, or secrets',
+      'Cancelling cannot undo a request or charges already incurred',
+    ]) assert.ok(message.includes(disclosure), disclosure);
+    assert.doesNotMatch(title + message, /[가-힣]/);
+    prompts.push('approval');
+    return true;
+  };
+  const runner = createRunner(options(async () => {
+    assert.deepEqual(prompts, ['review', 'approval']);
+    return JSON.stringify(response());
+  }));
+  assert.equal((await runner.execute(input(), undefined, context)).status, 'ok');
+});
+
 test('decline, edited preview, no UI, missing key, pre-abort: no invocation', async () => {
   let calls = 0;
   const runner = createRunner(options(async () => { calls++; throw Error('must not run'); }));
