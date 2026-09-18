@@ -63,26 +63,40 @@ def number(value, low, high):
     return value
 
 
+class ResponseValidationError(ValueError):
+    """Only locally defined diagnostic codes may cross the process boundary."""
+    def __init__(self, diagnostic):
+        self.diagnostic = diagnostic
+
+
+def require_response(condition, diagnostic):
+    if not condition:
+        raise ResponseValidationError(diagnostic)
+
+
+def response_number(value, low, high, diagnostic):
+    try:
+        return number(value, low, high)
+    except ValueError:
+        raise ResponseValidationError(diagnostic) from None
+
+
 def normalize(response, question_ids):
-    if not isinstance(response.model, str) or not re.fullmatch(r"jev-[a-zA-Z0-9._-]{1,80}", response.model):
-        raise ValueError()
-    if set(response.answers) != set(question_ids) or set(response.scores) != set(question_ids):
-        raise ValueError()
+    require_response(isinstance(response.model, str) and re.fullmatch(r"jev-[a-zA-Z0-9._-]{1,80}", response.model), 'model_format')
+    require_response(set(response.answers) == set(question_ids) and set(response.scores) == set(question_ids), 'answer_ids')
     answers = {}
     for qid in question_ids:
         answer = response.scores[qid]
-        if set(answer.probabilities) != {0, 1, 2, 3}:
-            raise ValueError()
-        probabilities = {str(i): number(answer.probabilities[i], 0, 1) for i in range(4)}
-        score = number(answer.score, 0, 3)
-        if abs(sum(probabilities.values()) - 1) > .001 or abs(sum(i * probabilities[str(i)] for i in range(4)) - score) > .01:
-            raise ValueError()
-        answers[qid] = {"type": "score", "score": score, "confidence": number(answer.confidence, 0, 1), "probabilities": probabilities}
+        require_response(set(answer.probabilities) == {0, 1, 2, 3}, 'probability_levels')
+        probabilities = {str(i): response_number(answer.probabilities[i], 0, 1, 'probability_range') for i in range(4)}
+        score = response_number(answer.score, 0, 3, 'score_range')
+        require_response(abs(sum(probabilities.values()) - 1) <= .001, 'probability_sum')
+        require_response(abs(sum(i * probabilities[str(i)] for i in range(4)) - score) <= .01, 'score_consistency')
+        answers[qid] = {"type": "score", "score": score, "confidence": response_number(answer.confidence, 0, 1, 'confidence_range'), "probabilities": probabilities}
     usage = {}
     for field in ("input_tokens", "output_tokens"):
         value = getattr(response.usage, field)
-        if value is not None and (type(value) is not int or not 0 <= value <= 9007199254740991):
-            raise ValueError()
+        require_response(value is None or (type(value) is int and 0 <= value <= 9007199254740991), 'usage_range')
         usage[field] = value
     return {"status": "ok", "model": response.model, "answers": answers, "usage": usage}
 
@@ -111,8 +125,10 @@ def evaluate(request, sdk, api_key):
         return error("provider_error")
     try:
         return normalize(response, request["questions"])
+    except ResponseValidationError as exc:
+        return {**error("invalid_response"), "diagnostic": exc.diagnostic}
     except Exception:
-        return error("invalid_response")
+        return {**error("invalid_response"), "diagnostic": "response_shape"}
 
 
 def main():

@@ -71,6 +71,8 @@ Jev receives the English question, criteria, candidate IDs, URLs, titles, excerp
 
 Success returns `status: "ok"`, `requestedModel`, `model`, `originalOrder`, `rankedIds`, per-ID `score` (0–3), `confidence`, level `probabilities`, and token `usage`. Confidence describes distribution concentration, not factual correctness. Token usage is returned as tool metadata, not converted into an assumed price or Pi footer cost.
 
+The internal Python adapter additionally reports a fixed `diagnostic` for rejected responses (model format, answer IDs, probability levels/range/sum, score range/consistency, confidence range, usage range, or unexpected response shape). It never includes raw values or exception text. This diagnostic is for direct adapter troubleshooting; the Pi tool still exposes only the existing failure code.
+
 Failure/decline returns `status: "not_ranked"`, a fixed `code`, and the unchanged IDs. Examples: `declined`, `preview_changed`, `missing_key`, `python_not_configured`, `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `invalid_response`. Continue with the existing investigation; do not automatically retry. Invalid input throws a sanitized validation error before any dialog or process.
 
 ## Boundaries and limitations

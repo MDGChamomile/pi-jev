@@ -70,6 +70,27 @@ class AdapterTests(unittest.TestCase):
         r = response(); r.answers = {}
         self.assertEqual(adapter.evaluate(request(), self.fake_sdk(result=r), 'fake')['code'], 'invalid_response')
 
+    def test_response_diagnostics_are_fixed_and_fail_closed(self):
+        cases = [
+            ('model_format', lambda r: setattr(r, 'model', 'FAKE_SECRET')),
+            ('answer_ids', lambda r: setattr(r, 'answers', {})),
+            ('probability_levels', lambda r: setattr(r.scores['candidate_0'], 'probabilities', {3: 1})),
+            ('probability_range', lambda r: setattr(r.scores['candidate_0'], 'probabilities', {0: -1, 1: 0, 2: 0, 3: 2})),
+            ('score_range', lambda r: setattr(r.scores['candidate_0'], 'score', float('nan'))),
+            ('probability_sum', lambda r: setattr(r.scores['candidate_0'], 'probabilities', {0: 0, 1: 0, 2: 0, 3: .9})),
+            ('score_consistency', lambda r: setattr(r.scores['candidate_0'], 'score', 2)),
+            ('confidence_range', lambda r: setattr(r.scores['candidate_0'], 'confidence', -1)),
+            ('usage_range', lambda r: setattr(r.usage, 'input_tokens', True)),
+            ('response_shape', lambda r: delattr(r, 'usage')),
+        ]
+        for diagnostic, mutate in cases:
+            with self.subTest(diagnostic=diagnostic):
+                r = response(); mutate(r)
+                result = adapter.evaluate(request(), self.fake_sdk(result=r), 'FAKE_SECRET')
+                self.assertEqual(result, {'status': 'error', 'code': 'invalid_response', 'diagnostic': diagnostic})
+                self.assertNotIn('FAKE_SECRET', json.dumps(result))
+                self.assertEqual(len(self.calls), 1)
+
     def test_process_missing_key_no_sdk_needed(self):
         result = subprocess.run([sys.executable, '-I', '-B', str(Path(adapter.__file__))],
             input=json.dumps(request()), text=True, capture_output=True, env={}, check=True)
