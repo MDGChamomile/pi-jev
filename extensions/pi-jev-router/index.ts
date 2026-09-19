@@ -1,6 +1,5 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { Type } from '@earendil-works/pi-ai';
-import { fileURLToPath } from 'node:url';
 import { createRunner, isJevWorkflowSkill, JevRouterError, LIMITS, TOOL_NAME } from './core.mjs';
 
 function runtimeCatalog(pi: ExtensionAPI) {
@@ -15,12 +14,6 @@ function runtimeCatalog(pi: ExtensionAPI) {
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.registerFlag('jev-router-python', {
-    description: 'Absolute path to an existing Python interpreter with typesafe-sdk installed. No automatic installation or .env loading.',
-    type: 'string',
-    default: '',
-  });
-
   let runner: ReturnType<typeof createRunner> | undefined;
   pi.on('session_shutdown', () => runner?.shutdown());
 
@@ -42,8 +35,7 @@ export default function (pi: ExtensionAPI) {
     }, { additionalProperties: false }),
     async execute(_id, params, signal, _onUpdate, ctx) {
       runner ??= createRunner({
-        python: String(pi.getFlag('jev-router-python') ?? ''),
-        adapter: fileURLToPath(new URL('./adapter.py', import.meta.url)),
+        resolveApiKey: async () => (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
       });
       try {
         // Resource-loader smoke tests and noninteractive modes have no live session catalog.

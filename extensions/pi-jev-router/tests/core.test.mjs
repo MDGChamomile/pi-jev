@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fileURLToPath } from 'node:url';
-import { buildRequest, createRunner, isJevWorkflowSkill, parseResponse, runAdapter, LIMITS } from '../core.mjs';
+import { buildRequest, createRunner, ENDPOINT, isJevWorkflowSkill, parseResponse, runDecision, LIMITS } from '../core.mjs';
 
 const input = () => ({ task: 'Determine whether this request requires both web and local investigation.', constraints: 'Read-only investigation; do not modify files.' });
 const catalog = () => ({
@@ -19,7 +18,7 @@ const choice = (selected, options, confidence = 1) => ({
   probabilities: Object.fromEntries(options.map(option => [option, Number(option === selected)])),
 });
 const response = () => ({
-  status: 'ok', model: 'jev-1.13.0',
+  model: 'typesafe/jev-1.13-20260917',
   answers: {
     route: choice('web_subagent', ['direct', 'local_subagent', 'web_subagent', 'browser_interaction', 'specialist_skill', 'clarify_with_user', 'no_match']),
     subagent_preset: choice('analysis_standard', ['lookup_standard', 'analysis_standard', 'review_standard', 'not_applicable']),
@@ -30,7 +29,7 @@ const response = () => ({
   usage: { input_tokens: 120, output_tokens: 30 },
 });
 const ctx = (confirm = true) => ({ hasUI: true, ui: { editor: async (_title, value) => value, confirm: async () => confirm } });
-const options = run => ({ python: '/existing/python', adapter: '/adapter.py', env: { TYPESAFE_API_KEY: 'FAKE_TEST_KEY' }, run });
+const options = run => ({ resolveApiKey: async () => 'FAKE_TEST_KEY', run });
 
 test('shared and legacy Jev workflow skills are excluded from routing candidates', () => {
   for (const name of ['pi-jev', 'pi-jev:2', 'pi-jev-router', 'pi-jev-router:2']) {
@@ -44,7 +43,8 @@ test('shared and legacy Jev workflow skills are excluded from routing candidates
 test('request preserves the English task and builds fixed plus runtime-bounded questions', () => {
   const built = buildRequest(input(), catalog());
   assert.equal(built.request.state.task, input().task);
-  assert.equal(built.request.model, 'jev-latest');
+  assert.equal(built.request.model, 'typesafe/jev-1.13');
+  assert.deepEqual(built.request.provider, { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } });
   assert.equal(built.request.questions.route.type, 'choice');
   assert.deepEqual(Object.keys(built.request.questions.primary_tool.criteria), ['none', 'tool_0', 'tool_1']);
   assert.equal(built.request.questions.primary_tool.criteria.tool_1.name, 'web_search');
@@ -98,6 +98,7 @@ test('malformed, inconsistent, partial, or extra responses fail closed', () => {
     r => { r.answers.parallel_investigation.noul = NaN; },
     r => { r.usage.input_tokens = -1; },
     r => { r.model = 'RAW_OR_SECRET'; },
+    r => { r.model = 'typesafe/jev-2.0'; },
   ];
   for (const change of changes) {
     const value = response(); change(value);
@@ -128,10 +129,10 @@ test('approval UI discloses payload categories, provider, cost boundary, and lim
     return preview;
   };
   context.ui.confirm = async (title, message) => {
-    assert.equal(title, 'Send task routing data to TypeSafe Jev?');
+    assert.equal(title, 'Send task routing data to TypeSafe Jev through OpenRouter?');
     for (const disclosure of [
-      'reviewed task, constraints', '2 tool / 2 skill metadata entries', 'https://api.typesafe.ai',
-      'jev-latest (latest stable version)', 'one paid API request', 'no automatic retries', '30-second timeout',
+      'reviewed task, constraints', '2 tool / 2 skill metadata entries', ENDPOINT,
+      'OpenRouter / typesafe/jev-1.13', 'one paid request', 'US$0.001344', 'no automatic retries', '30-second timeout',
       'secrets, credentials, session history, private file contents, authenticated-page content',
       'cannot authorize actions', 'cannot undo a request or charges already incurred',
     ]) assert.ok(message.includes(disclosure), disclosure);
@@ -155,8 +156,10 @@ test('decline, edited preview, no UI, missing key, and pre-abort never invoke pr
   assert.equal((await runner.execute(input(), catalog(), undefined, cancelled)).code, 'declined');
   assert.equal((await runner.execute(input(), catalog(), undefined, { hasUI: false })).code, 'confirmation_unavailable');
   assert.equal((await runner.execute(input(), catalog(), AbortSignal.abort(), ctx())).code, 'cancelled');
-  const noKey = createRunner({ ...options(() => { calls++; }), env: {} });
+  const noKey = createRunner({ ...options(() => { calls++; }), resolveApiKey: async () => undefined });
   assert.equal((await noKey.execute(input(), catalog(), undefined, ctx())).code, 'missing_key');
+  const authFailure = createRunner({ ...options(() => { calls++; }), resolveApiKey: async () => { throw new Error('PRIVATE'); } });
+  assert.equal((await authFailure.execute(input(), catalog(), undefined, ctx())).code, 'authentication_failed');
   assert.equal(calls, 0);
 });
 
@@ -187,6 +190,22 @@ test('mutating inputs after review cannot change the approved request', async ()
   assert.equal((await runner.execute(task, candidates, undefined, context)).status, 'ok');
 });
 
+test('review escapes invisible format controls while preserving the exact approved text', async () => {
+  const task = input();
+  task.task = 'route\u202ethis';
+  const context = ctx();
+  context.ui.editor = async (_title, preview) => {
+    assert.ok(preview.includes('route\\u202ethis'));
+    assert.equal(JSON.parse(preview).state.task, task.task);
+    return preview;
+  };
+  const runner = createRunner(options(async ({ serialized }) => {
+    assert.equal(JSON.parse(serialized).state.task, task.task);
+    return JSON.stringify(response());
+  }));
+  assert.equal((await runner.execute(task, catalog(), undefined, context)).status, 'ok');
+});
+
 test('provider failure is sanitized, not retried, and does not produce a route', async () => {
   let calls = 0;
   const runner = createRunner(options(async () => { calls++; throw new Error('PRIVATE'); }));
@@ -196,28 +215,37 @@ test('provider failure is sanitized, not retried, and does not produce a route',
   assert.doesNotMatch(JSON.stringify(result), /PRIVATE/);
 });
 
-const fixture = fileURLToPath(new URL('./fixture.py', import.meta.url));
-const python = process.env.JEV_TEST_PYTHON || '/usr/bin/python3';
-const invoke = (mode, extra = {}) => runAdapter({
-  python, adapter: fixture, serialized: JSON.stringify({ mode }),
-  env: { TYPESAFE_API_KEY: 'FAKE_TEST_KEY', UNRELATED_SECRET: 'must_not_inherit' }, ...extra,
+const fetchResponse = (body, status = 200) => async (url, init) => {
+  assert.equal(url, ENDPOINT);
+  assert.equal(init.method, 'POST');
+  assert.equal(init.headers.Authorization, 'Bearer FAKE_TEST_KEY');
+  assert.equal(init.headers['Content-Type'], 'application/json');
+  assert.equal(init.redirect, 'error');
+  return new Response(body, { status });
+};
+
+test('OpenRouter transport sends one bounded authenticated request', async () => {
+  let calls = 0;
+  const raw = await runDecision({
+    apiKey: 'FAKE_TEST_KEY', serialized: buildRequest(input(), catalog()).serialized,
+    fetchImpl: async (...args) => { calls++; return fetchResponse(JSON.stringify(response()))(...args); },
+  });
+  assert.equal(calls, 1);
+  assert.equal(JSON.parse(raw).model, response().model);
+  await assert.rejects(runDecision({
+    apiKey: 'FAKE_TEST_KEY', serialized: '{}', fetchImpl: fetchResponse('x'.repeat(LIMITS.outputBytes + 1)),
+  }), /output_too_large/);
 });
 
-test('stdin transport isolates the child environment', async () => {
-  const result = JSON.parse(await invoke('inspect'));
-  assert.equal(result.stdin_mode, 'inspect');
-  assert.equal(result.has_unrelated_secret, false);
-  assert.equal(result.has_key, true);
-  assert.equal(result.args_contain_key, false);
-});
-
-test('timeout, cancellation, output limits, and process failures are sanitized', async () => {
-  await assert.rejects(invoke('sleep', { timeoutMs: 100 }), /timeout/);
+test('OpenRouter transport maps status, timeout, cancellation, and network failures', async () => {
+  for (const [status, code] of [[401, 'authentication_failed'], [429, 'rate_limited'], [400, 'invalid_request'], [500, 'provider_error']]) {
+    await assert.rejects(runDecision({ apiKey: 'FAKE_TEST_KEY', serialized: '{}', fetchImpl: fetchResponse('PRIVATE', status) }), new RegExp(code));
+  }
+  const hanging = async (_url, { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('PRIVATE')), { once: true }));
+  await assert.rejects(runDecision({ apiKey: 'FAKE_TEST_KEY', serialized: '{}', timeoutMs: 10, fetchImpl: hanging }), /timeout/);
   const controller = new AbortController();
-  const pending = invoke('sleep', { signal: controller.signal });
-  setTimeout(() => controller.abort(), 100);
+  const pending = runDecision({ apiKey: 'FAKE_TEST_KEY', serialized: '{}', signal: controller.signal, fetchImpl: hanging });
+  controller.abort();
   await assert.rejects(pending, /cancelled/);
-  await assert.rejects(invoke('overflow'), /output_too_large/);
-  await assert.rejects(invoke('exit'), /adapter_failed/);
-  await assert.rejects(invoke('inspect', { python: '/does/not/exist' }), /adapter_failed/);
+  await assert.rejects(runDecision({ apiKey: 'FAKE_TEST_KEY', serialized: '{}', fetchImpl: async () => { throw new Error('PRIVATE'); } }), /provider_error/);
 });

@@ -1,8 +1,7 @@
-import { spawn } from 'node:child_process';
-import { isAbsolute } from 'node:path';
-
 export const TOOL_NAME = 'jev_route_task';
-export const MODEL = 'jev-latest';
+export const MODEL = 'typesafe/jev-1.13';
+export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
+export const MAX_SPEND_USD = 0.001344;
 export const isJevWorkflowSkill = name => /^pi-jev(?:-router)?(?::\d+)?$/.test(name);
 export const LIMITS = Object.freeze({
   taskChars: 8000,
@@ -149,6 +148,7 @@ export function buildRequest(input, runtimeCatalog) {
   };
   const request = {
     model: MODEL,
+    provider: { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } },
     state: {
       task,
       constraints,
@@ -201,13 +201,8 @@ function mappedChoice(answer, candidates, prefix) {
 export function parseResponse(raw, prepared) {
   let response;
   try { response = JSON.parse(raw); } catch { fail('invalid_response'); }
-  if (!plain(response)) fail('invalid_response');
-  if (response.status === 'error') {
-    const allowed = ['missing_key', 'sdk_unavailable', 'rate_limited', 'authentication_failed', 'provider_timeout', 'provider_error', 'invalid_response', 'invalid_request'];
-    fail(allowed.includes(response.code) ? response.code : 'provider_error');
-  }
   const expectedIds = ['route', 'subagent_preset', 'primary_tool', 'specialist_skill', 'parallel_investigation'];
-  if (response.status !== 'ok' || typeof response.model !== 'string' || !/^jev-[a-zA-Z0-9._-]{1,80}$/.test(response.model) ||
+  if (!plain(response) || typeof response.model !== 'string' || !/^typesafe\/jev-1\.13(?:-[a-zA-Z0-9._-]{1,64})?$/.test(response.model) ||
       !plain(response.answers) || Object.keys(response.answers).sort().join('|') !== expectedIds.sort().join('|') || !plain(response.usage)) fail('invalid_response');
 
   const route = parseChoice(response.answers.route, prepared.optionMaps.route);
@@ -243,55 +238,58 @@ export function parseResponse(raw, prepared) {
   };
 }
 
-export function runAdapter({ python, adapter, serialized, signal, env = process.env, timeoutMs = LIMITS.timeoutMs }) {
-  if (!isAbsolute(python)) return Promise.reject(new JevRouterError('python_not_configured'));
-  if (!env.TYPESAFE_API_KEY?.trim()) return Promise.reject(new JevRouterError('missing_key'));
-  if (signal?.aborted) return Promise.reject(new JevRouterError('cancelled'));
-  return new Promise((resolve, reject) => {
-    let child;
-    try {
-      child = spawn(python, ['-I', '-B', adapter], {
-        shell: false,
-        env: { TYPESAFE_API_KEY: env.TYPESAFE_API_KEY, LANG: 'C.UTF-8' },
-        stdio: ['pipe', 'pipe', 'ignore'],
-      });
-    } catch { reject(new JevRouterError('adapter_failed')); return; }
-    let output = [], bytes = 0, stopped, settled = false;
-    const stop = (code) => {
-      if (settled || stopped) return;
-      stopped = code;
-      child.kill('SIGKILL');
-    };
-    const abort = () => stop('cancelled');
-    const timer = setTimeout(() => stop('timeout'), timeoutMs);
-    const finish = (error, result) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      signal?.removeEventListener('abort', abort);
-      if (error) reject(new JevRouterError(error)); else resolve(result);
-    };
-    signal?.addEventListener('abort', abort, { once: true });
-    if (signal?.aborted) abort();
-    child.on('error', () => finish(stopped ?? 'adapter_failed'));
-    child.stdin.on('error', () => stop('adapter_failed'));
-    child.stdout.on('data', chunk => {
-      bytes += chunk.length;
-      if (bytes > LIMITS.outputBytes) { output = []; stop('output_too_large'); }
-      else if (!stopped) output.push(chunk);
+async function boundedText(response) {
+  if (!response.body) fail('invalid_response');
+  const reader = response.body.getReader();
+  const chunks = [];
+  let bytes = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    bytes += value.byteLength;
+    if (bytes > LIMITS.outputBytes) {
+      await reader.cancel();
+      fail('output_too_large');
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks.map(chunk => Buffer.from(chunk))).toString('utf8');
+}
+
+export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMITS.timeoutMs, fetchImpl = fetch }) {
+  if (typeof apiKey !== 'string' || !apiKey.trim()) fail('missing_key');
+  if (signal?.aborted) fail('cancelled');
+  const deadline = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; deadline.abort(); }, timeoutMs);
+  const combinedSignal = AbortSignal.any(signal ? [signal, deadline.signal] : [deadline.signal]);
+  try {
+    const response = await fetchImpl(ENDPOINT, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: serialized,
+      redirect: 'error',
+      signal: combinedSignal,
     });
-    child.on('close', code => {
-      if (stopped) finish(stopped);
-      else if (code !== 0) finish('adapter_failed');
-      else finish(null, Buffer.concat(output).toString('utf8'));
-    });
-    if (!stopped) child.stdin.end(serialized);
-    else child.stdin.destroy();
-  });
+    if (!response.ok) {
+      try { await response.body?.cancel(); } catch {}
+      if (response.status === 401 || response.status === 403) fail('authentication_failed');
+      if (response.status === 429) fail('rate_limited');
+      if (response.status === 408 || response.status === 504) fail('timeout');
+      if (response.status === 400 || response.status === 422) fail('invalid_request');
+      fail('provider_error');
+    }
+    return await boundedText(response);
+  } catch (error) {
+    if (error instanceof JevRouterError) throw error;
+    fail(signal?.aborted ? 'cancelled' : timedOut ? 'timeout' : 'provider_error');
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** Consent is bound to one immutable serialized request; no session history is collected. */
-export function createRunner({ python, adapter, env = process.env, run = runAdapter }) {
+export function createRunner({ resolveApiKey, run = runDecision }) {
   let active;
   return {
     shutdown() { active?.abort(); },
@@ -304,23 +302,26 @@ export function createRunner({ python, adapter, env = process.env, run = runAdap
       if (active !== undefined) return fallback('busy');
       if (signal?.aborted) return fallback('cancelled');
       if (!ctx.hasUI) return fallback('confirmation_unavailable');
-      if (!isAbsolute(python)) return fallback('python_not_configured');
-      if (!(env ?? process.env).TYPESAFE_API_KEY?.trim()) return fallback('missing_key');
       const controller = new AbortController();
       active = controller;
       const combinedSignal = AbortSignal.any(signal ? [signal, controller.signal] : [controller.signal]);
       try {
-        const preview = JSON.stringify(prepared.request, null, 2);
+        // Escape invisible Unicode format controls for an unambiguous review; JSON parsing preserves the exact payload text.
+        const preview = JSON.stringify(prepared.request, null, 2).replace(/\p{Cf}/gu, character =>
+          `\\u${character.codePointAt(0).toString(16).padStart(4, '0')}`);
         const reviewed = await ctx.ui.editor('Review Jev routing payload. Submit unchanged to continue.', preview);
         if (combinedSignal.aborted) return fallback('cancelled');
         if (reviewed === undefined) return fallback('declined');
         if (reviewed !== preview) return fallback('preview_changed');
-        const ok = await ctx.ui.confirm('Send task routing data to TypeSafe Jev?',
-          `Send the reviewed task, constraints, and ${prepared.catalog.tools.length} tool / ${prepared.catalog.skills.length} skill metadata entries to https://api.typesafe.ai.\nModel: ${MODEL} (latest stable version)\nAt most one paid API request; no automatic retries; 30-second timeout.\nDo not approve secrets, credentials, session history, private file contents, authenticated-page content, or data you are not authorized to disclose.\nJev returns advice only and cannot authorize actions. Cancelling cannot undo a request or charges already incurred.`,
+        const ok = await ctx.ui.confirm('Send task routing data to TypeSafe Jev through OpenRouter?',
+          `Send the reviewed task, constraints, and ${prepared.catalog.tools.length} tool / ${prepared.catalog.skills.length} skill metadata entries to ${ENDPOINT}.\nProvider/model: OpenRouter / ${MODEL} (TypeSafe upstream)\nMaximum batch: one paid request, at most US$${MAX_SPEND_USD.toFixed(6)} at the enforced $0.042/M input and $0/M output price caps; no automatic retries; 30-second timeout.\nDo not approve secrets, credentials, session history, private file contents, authenticated-page content, or data you are not authorized to disclose.\nJev returns advice only and cannot authorize actions. Cancelling cannot undo a request or charges already incurred.`,
           { signal: combinedSignal });
         if (combinedSignal.aborted) return fallback('cancelled');
         if (!ok) return fallback('declined');
-        const raw = await run({ python, adapter, serialized: prepared.serialized, signal: combinedSignal, env });
+        let apiKey;
+        try { apiKey = await resolveApiKey(); } catch { return fallback('authentication_failed'); }
+        if (typeof apiKey !== 'string' || !apiKey.trim()) return fallback('missing_key');
+        const raw = await run({ apiKey, serialized: prepared.serialized, signal: combinedSignal });
         if (combinedSignal.aborted) return fallback('cancelled');
         return parseResponse(raw, prepared);
       } catch (error) {

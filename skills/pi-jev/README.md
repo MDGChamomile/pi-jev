@@ -1,13 +1,13 @@
 # Pi Jev Skill
 
-A shared workflow that lets the parent Pi agent select among available consent-gated TypeSafe Jev tools without requiring the user to request Jev explicitly.
+A shared workflow that lets the parent Pi agent select among available consent-gated TypeSafe Jev tools, called through OpenRouter, without requiring the user to request Jev explicitly.
 
 The skill currently covers:
 
 - [`jev_route_task`](../../extensions/pi-jev-router/README.md) for genuinely ambiguous task, tool, skill, browser, and pi-subagent routing; and
 - [`jev_rerank`](../../extensions/pi-jev-tools/README.md) for relevance ranking of already-collected public web passages.
 
-The skill does not contact TypeSafe. Each extension validates its own input, displays the complete payload, requires separate approval, performs at most one paid request per invocation, and returns advisory output.
+The skill does not contact a provider. Each extension validates its own input, displays the complete payload, requires separate approval, resolves Pi's existing OpenRouter authentication, performs at most one paid request per invocation, and returns advisory output.
 
 ## Requirements and installation
 
@@ -20,13 +20,17 @@ cp -R live/extensions/pi-jev-router ~/.pi/agent/extensions/   # optional
 cp -R live/extensions/pi-jev-tools ~/.pi/agent/extensions/    # optional
 ```
 
-At least one extension is required. Each extension needs an existing Python 3.10+ interpreter with `typesafe-sdk` installed, `TYPESAFE_API_KEY` inherited by Pi, and its documented interpreter flag. Neither extension installs dependencies or reads `.env` files.
+At least one extension is required. Each extension needs a configured Pi `openrouter` provider and a compatible approval UI. No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. The extensions do not install dependencies or read credential files themselves.
 
 This shared skill replaces the former `pi-jev-router` skill. When upgrading a copied installation, review and remove the old directory so both workflows are not discovered:
 
 ```bash
 rm -R ~/.pi/agent/skills/pi-jev-router
 ```
+
+### Migrating from the direct TypeSafe setup
+
+Replace copied extension directories cleanly rather than overlaying them, so removed Python adapters and tests do not linger. Remove the obsolete `--jev-python` and `--jev-router-python` arguments from Pi launchers; the new extensions register neither flag. If no other software uses them, the separate `TYPESAFE_API_KEY`, `typesafe-sdk` environment, and Jev-only virtual environment can also be retired. Do not remove shared credentials or environments without checking their other consumers.
 
 Restart Pi or use `/reload`. The model may load this skill automatically when an available Jev tool would materially help, or it can be invoked explicitly:
 

@@ -1,21 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fileURLToPath } from 'node:url';
-import { buildRequest, createRunner, parseResponse, runAdapter, LIMITS } from '../core.mjs';
+import { buildRequest, createRunner, ENDPOINT, parseResponse, runDecision, LIMITS } from '../core.mjs';
 
 const input = () => ({ question: 'Was the cancellation completed?', criteria: 'Distinguish approval from completed execution.', candidates: [
   { id: 'a', url: 'https://example.com/a', title: 'Plan', excerpt: '다음 달 소각하기로 결의했다.' },
   { id: 'b', url: 'https://example.org/b', title: 'Execution', excerpt: '소각을 완료했다.' },
 ] });
 const answer = (level) => ({ type: 'score', score: level, confidence: 1, probabilities: Object.fromEntries([0,1,2,3].map(i => [String(i), Number(i === level)])) });
-const response = () => ({ status: 'ok', model: 'jev-1.13.0', answers: { candidate_0: answer(1), candidate_1: answer(3) }, usage: { input_tokens: 100, output_tokens: 20 } });
+const response = () => ({ model: 'typesafe/jev-1.13-20260917', answers: { candidate_0: answer(1), candidate_1: answer(3) }, usage: { input_tokens: 100, output_tokens: 20, cost: 0.0000042 } });
 const ctx = (confirm = true) => ({ hasUI: true, ui: { editor: async (_, value) => value, confirm: async () => confirm } });
-const options = (run) => ({ python: '/existing/python', adapter: '/adapter.py', env: { TYPESAFE_API_KEY: 'FAKE_TEST_KEY' }, run });
+const options = (run) => ({ resolveApiKey: async () => 'FAKE_TEST_KEY', run });
 
 test('request preserves Korean text; uses shared concrete English levels and explicit candidate paths', () => {
   const built = buildRequest(input());
   assert.equal(built.request.state.candidates[0].excerpt, input().candidates[0].excerpt);
-  assert.equal(built.request.model, 'jev-latest');
+  assert.equal(built.request.model, 'typesafe/jev-1.13');
+  assert.deepEqual(built.request.provider, { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } });
   assert.match(built.request.questions.candidate_1.instructions, /candidates\[1\]/);
   assert.deepEqual(built.request.questions.candidate_0.criteria, built.request.questions.candidate_1.criteria);
   assert.deepEqual(JSON.parse(built.serialized), built.request);
@@ -74,6 +74,7 @@ test('malformed or partial responses fail closed', () => {
     r => r.answers.candidate_0.score = 2,
     r => r.usage.input_tokens = -1,
     r => r.model = 'SECRET_OR_RAW_RESPONSE',
+    r => r.model = 'typesafe/jev-2.0',
   ]) {
     const r = response(); change(r);
     assert.throws(() => parseResponse(JSON.stringify(r), ['a','b']), /invalid_response/);
@@ -103,10 +104,10 @@ test('English review and approval UI retain disclosure and safety boundaries', a
     return preview;
   };
   context.ui.confirm = async (title, message) => {
-    assert.equal(title, 'Send to TypeSafe Jev?');
+    assert.equal(title, 'Send to TypeSafe Jev through OpenRouter?');
     for (const disclosure of [
-      'reviewed question, criteria, and 2 candidates', 'https://api.typesafe.ai',
-      'jev-latest (latest stable version)', 'one paid API request',
+      'reviewed question, criteria, and 2 candidates', ENDPOINT,
+      'OpenRouter / typesafe/jev-1.13', 'one paid request', 'US$0.001344',
       'no automatic retries', '30-second timeout', 'Public web sources only',
       'sessions, internal data, authenticated pages, or secrets',
       'Cancelling cannot undo a request or charges already incurred',
@@ -132,8 +133,10 @@ test('decline, edited preview, no UI, missing key, pre-abort: no invocation', as
   assert.equal((await runner.execute(input(), undefined, cancelledPreview)).code, 'declined');
   assert.equal((await runner.execute(input(), undefined, { hasUI: false })).code, 'confirmation_unavailable');
   assert.equal((await runner.execute(input(), AbortSignal.abort(), ctx())).code, 'cancelled');
-  const noKey = createRunner({ ...options(() => { calls++; }), env: {} });
+  const noKey = createRunner({ ...options(() => { calls++; }), resolveApiKey: async () => undefined });
   assert.equal((await noKey.execute(input(), undefined, ctx())).code, 'missing_key');
+  const authFailure = createRunner({ ...options(() => { calls++; }), resolveApiKey: async () => { throw new Error('PRIVATE'); } });
+  assert.equal((await authFailure.execute(input(), undefined, ctx())).code, 'authentication_failed');
   assert.equal(calls, 0);
 });
 
@@ -163,6 +166,22 @@ test('input mutation after preview cannot change the approved request', async ()
   assert.equal((await runner.execute(x, undefined, context)).status, 'ok');
 });
 
+test('review escapes invisible format controls while preserving the exact approved text', async () => {
+  const x = input();
+  x.candidates[0].excerpt = 'public\u202etext';
+  const context = ctx();
+  context.ui.editor = async (_title, preview) => {
+    assert.ok(preview.includes('public\\u202etext'));
+    assert.equal(JSON.parse(preview).state.candidates[0].excerpt, x.candidates[0].excerpt);
+    return preview;
+  };
+  const runner = createRunner(options(async ({ serialized }) => {
+    assert.equal(JSON.parse(serialized).state.candidates[0].excerpt, x.candidates[0].excerpt);
+    return JSON.stringify(response());
+  }));
+  assert.equal((await runner.execute(x, undefined, context)).status, 'ok');
+});
+
 test('abort during an approved call discards the ranking', async () => {
   const controller = new AbortController();
   const runner = createRunner(options(async () => {
@@ -174,7 +193,7 @@ test('abort during an approved call discards the ranking', async () => {
   assert.deepEqual(result.rankedIds, ['a','b']);
 });
 
-test('parent abort and shutdown reach the adapter and release the invocation lock', async () => {
+test('parent abort and shutdown reach the provider call and release the invocation lock', async () => {
   for (const cause of ['parent', 'shutdown']) {
     const controller = new AbortController();
     let started, calls = 0;
@@ -205,30 +224,37 @@ test('provider failure preserves order, does not retry or echo exception', async
   assert.doesNotMatch(JSON.stringify(r), /SECRET/);
 });
 
-// Real subprocess tests with an offline fixture; no SDK, credentials or network.
-const fixture = fileURLToPath(new URL('./fixture.py', import.meta.url));
-const python = process.env.JEV_TEST_PYTHON || '/usr/bin/python3';
-const invoke = (mode, extra = {}) => runAdapter({ python, adapter: fixture, serialized: JSON.stringify({ mode }), env: { TYPESAFE_API_KEY: 'FAKE_TEST_KEY', UNRELATED_SECRET: 'must_not_inherit' }, ...extra });
+const fetchResponse = (body, status = 200) => async (url, init) => {
+  assert.equal(url, ENDPOINT);
+  assert.equal(init.method, 'POST');
+  assert.equal(init.headers.Authorization, 'Bearer FAKE_TEST_KEY');
+  assert.equal(init.headers['Content-Type'], 'application/json');
+  assert.equal(init.redirect, 'error');
+  return new Response(body, { status });
+};
 
-test('stdin transport and child environment isolation', async () => {
-  const result = JSON.parse(await invoke('inspect'));
-  assert.equal(result.stdin_mode, 'inspect');
-  assert.equal(result.has_unrelated_secret, false);
-  assert.equal(result.has_key, true);
-  assert.equal(result.args_contain_key, false);
+test('OpenRouter transport sends one bounded authenticated request', async () => {
+  let calls = 0;
+  const raw = await runDecision({
+    apiKey: 'FAKE_TEST_KEY', serialized: buildRequest(input()).serialized,
+    fetchImpl: async (...args) => { calls++; return fetchResponse(JSON.stringify(response()))(...args); },
+  });
+  assert.equal(calls, 1);
+  assert.equal(JSON.parse(raw).model, response().model);
+  await assert.rejects(runDecision({
+    apiKey: 'FAKE_TEST_KEY', serialized: '{}', fetchImpl: fetchResponse('x'.repeat(LIMITS.outputBytes + 1)),
+  }), /output_too_large/);
 });
 
-test('timeout and cancellation kill and settle the subprocess', async () => {
-  await assert.rejects(invoke('sleep', { timeoutMs: 100 }), /timeout/);
+test('OpenRouter transport maps status, timeout, cancellation, and network failures', async () => {
+  for (const [status, code] of [[401, 'authentication_failed'], [429, 'rate_limited'], [400, 'invalid_request'], [500, 'provider_error']]) {
+    await assert.rejects(runDecision({ apiKey: 'FAKE_TEST_KEY', serialized: '{}', fetchImpl: fetchResponse('PRIVATE', status) }), new RegExp(code));
+  }
+  const hanging = async (_url, { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('PRIVATE')), { once: true }));
+  await assert.rejects(runDecision({ apiKey: 'FAKE_TEST_KEY', serialized: '{}', timeoutMs: 10, fetchImpl: hanging }), /timeout/);
   const controller = new AbortController();
-  const pending = invoke('sleep', { signal: controller.signal });
-  setTimeout(() => controller.abort(), 100);
+  const pending = runDecision({ apiKey: 'FAKE_TEST_KEY', serialized: '{}', signal: controller.signal, fetchImpl: hanging });
+  controller.abort();
   await assert.rejects(pending, /cancelled/);
-});
-
-test('stdout limit, bad executable and exit failure are sanitized', async () => {
-  await assert.rejects(invoke('overflow'), /output_too_large/);
-  await assert.rejects(invoke('exit'), /adapter_failed/);
-  await assert.rejects(invoke('inspect', { python: '/does/not/exist' }), /adapter_failed/);
-  assert.equal(LIMITS.timeoutMs, 30000);
+  await assert.rejects(runDecision({ apiKey: 'FAKE_TEST_KEY', serialized: '{}', fetchImpl: async () => { throw new Error('PRIVATE'); } }), /provider_error/);
 });

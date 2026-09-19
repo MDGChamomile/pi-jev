@@ -1,13 +1,8 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { Type } from '@earendil-works/pi-ai';
-import { fileURLToPath } from 'node:url';
 import { createRunner, JevError, LIMITS } from './core.mjs';
 
 export default function (pi: ExtensionAPI) {
-  pi.registerFlag('jev-python', {
-    description: 'Absolute path to an existing Python interpreter with typesafe-sdk installed. No automatic installation or .env loading.',
-    type: 'string', default: '',
-  });
   let runner: ReturnType<typeof createRunner> | undefined;
   pi.on('session_shutdown', () => runner?.shutdown());
   pi.registerTool({
@@ -26,14 +21,13 @@ export default function (pi: ExtensionAPI) {
     }, { additionalProperties: false }),
     async execute(_id, params, signal, _onUpdate, ctx) {
       runner ??= createRunner({
-        python: String(pi.getFlag('jev-python') ?? ''),
-        adapter: fileURLToPath(new URL('./adapter.py', import.meta.url)),
+        resolveApiKey: async () => (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
       });
       try {
         const result = await runner.execute(params, signal, ctx);
         return { content: [{ type: 'text' as const, text: JSON.stringify(result) }], details: result };
       } catch (error) {
-        // Never expose SDK/OS exception messages or input excerpts.
+        // Never expose provider exception messages or input excerpts.
         throw new Error(error instanceof JevError ? `jev_rerank: ${error.code}` : 'jev_rerank: internal_error');
       }
     },
