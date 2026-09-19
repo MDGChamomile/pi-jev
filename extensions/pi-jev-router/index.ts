@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { Type } from '@earendil-works/pi-ai';
 import { fileURLToPath } from 'node:url';
-import { createRunner, JevRouterError, LIMITS, TOOL_NAME } from './core.mjs';
+import { createRunner, isJevWorkflowSkill, JevRouterError, LIMITS, TOOL_NAME } from './core.mjs';
 
 function runtimeCatalog(pi: ExtensionAPI) {
   const active = new Set(pi.getActiveTools());
@@ -9,7 +9,7 @@ function runtimeCatalog(pi: ExtensionAPI) {
     .filter(tool => active.has(tool.name) && tool.name !== TOOL_NAME)
     .map(tool => ({ name: tool.name, description: tool.description || 'No description provided.' }));
   const skills = pi.getCommands()
-    .filter(command => command.source === 'skill' && !/^pi-jev-router(?::\d+)?$/.test(command.name))
+    .filter(command => command.source === 'skill' && !isJevWorkflowSkill(command.name))
     .map(command => ({ name: command.name, description: command.description || 'No description provided.' }));
   return { tools, skills };
 }

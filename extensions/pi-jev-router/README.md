@@ -2,7 +2,7 @@
 
 An optional `jev_route_task` tool for the **parent Pi agent**. It asks TypeSafe Jev for one advisory primary route, one active tool, one discovered specialist skill, a pi-subagent preset, and the probability that independent parallel investigations would help. It does not execute a route, activate a tool, load a skill, create a subagent, grant authorization, or enforce policy.
 
-The companion [`pi-jev-router` skill](../../skills/pi-jev-router/README.md) describes when to call the tool and how to interpret its result. The existing [`pi-jev-tools`](../pi-jev-tools/README.md) remains a separate public-passage reranker and is not modified or required by this router.
+The shared [`pi-jev` skill](../../skills/pi-jev/README.md) describes when to select this tool or the separate [`jev_rerank`](../pi-jev-tools/README.md) public-passage reranker, and how to interpret each result. The reranking extension is not required by this router.
 
 **Status:** experimental source implementation with offline tests and no live routing evaluation yet. The option set, input bounds, and usefulness in Korean operating workflows are hypotheses to test against the ordinary parent-agent baseline. Keep it only if representative comparisons show a net improvement.
 
@@ -34,7 +34,7 @@ Choice answers retain the complete probability distribution and confidence. Noul
 - An **existing** Python 3.10+ interpreter with `typesafe-sdk` installed. The offline SDK contract targets 0.6.0.
 - `TYPESAFE_API_KEY` inherited by Pi from its environment. The extension never loads `.env`, searches for keys, or accepts credentials in tool arguments.
 - An interactive Pi UI, or an RPC host implementing editor and confirmation dialogs. Print/JSON modes fail closed with `confirmation_unavailable`.
-- For automatic workflow guidance, copy the companion skill separately. The extension itself still works when called explicitly without the skill.
+- For automatic workflow guidance, copy the shared `pi-jev` skill separately. The extension itself still works when called explicitly without the skill.
 
 After separately authorizing runtime use, load only this source extension and point it at an existing interpreter:
 

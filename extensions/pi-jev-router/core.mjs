@@ -3,6 +3,7 @@ import { isAbsolute } from 'node:path';
 
 export const TOOL_NAME = 'jev_route_task';
 export const MODEL = 'jev-latest';
+export const isJevWorkflowSkill = name => /^pi-jev(?:-router)?(?::\d+)?$/.test(name);
 export const LIMITS = Object.freeze({
   taskChars: 8000,
   constraintsChars: 4000,

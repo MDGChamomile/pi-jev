@@ -1,6 +1,6 @@
 # Pi Jev Tools — experimental public-passage reranking
 
-An optional `jev_rerank` tool for the **parent Pi agent**. It ranks already collected public web passages with TypeSafe Jev, after user review and confirmation. It does not search, write answers, replace a model, or modify another extension.
+An optional `jev_rerank` tool for the **parent Pi agent**. It ranks already collected public web passages with TypeSafe Jev, after user review and confirmation. It does not search, write answers, replace a model, or modify another extension. The shared [`pi-jev` skill](../../skills/pi-jev/README.md) lets the agent select this tool without requiring the user to request Jev explicitly.
 
 **Status:** experimental source implementation with offline tests and a live interactive demonstration using three public English passages. This does not establish Korean-language quality, general provider compatibility, or improvements in accuracy, latency, or cost. Start small; keep the extension only if comparison against the existing workflow shows a net benefit.
 

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
-import { buildRequest, createRunner, parseResponse, runAdapter, LIMITS } from '../core.mjs';
+import { buildRequest, createRunner, isJevWorkflowSkill, parseResponse, runAdapter, LIMITS } from '../core.mjs';
 
 const input = () => ({ task: 'Determine whether this request requires both web and local investigation.', constraints: 'Read-only investigation; do not modify files.' });
 const catalog = () => ({
@@ -31,6 +31,15 @@ const response = () => ({
 });
 const ctx = (confirm = true) => ({ hasUI: true, ui: { editor: async (_title, value) => value, confirm: async () => confirm } });
 const options = run => ({ python: '/existing/python', adapter: '/adapter.py', env: { TYPESAFE_API_KEY: 'FAKE_TEST_KEY' }, run });
+
+test('shared and legacy Jev workflow skills are excluded from routing candidates', () => {
+  for (const name of ['pi-jev', 'pi-jev:2', 'pi-jev-router', 'pi-jev-router:2']) {
+    assert.equal(isJevWorkflowSkill(name), true, name);
+  }
+  for (const name of ['pi-subagent', 'pi-jev-tools', 'pi-jev-router-extra']) {
+    assert.equal(isJevWorkflowSkill(name), false, name);
+  }
+});
 
 test('request preserves the English task and builds fixed plus runtime-bounded questions', () => {
   const built = buildRequest(input(), catalog());
