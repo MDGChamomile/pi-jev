@@ -23,17 +23,17 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: TOOL_NAME,
     label: 'Jev Route Task',
-    description: 'Optionally ask TypeSafe Jev for an advisory primary route, active tool, specialist skill, pi-subagent preset, and probability that independent parallel investigations would help. Use only when the route is genuinely ambiguous or worth measuring; skip obvious/simple tasks. Write the task and constraints in English while preserving operative details, names, numbers, negation, and scope. Sends only those fields plus active tool and discovered skill names/descriptions after full-payload user review and separate confirmation. Never include secrets, credentials, session history, private file contents, authenticated-page content, or data the user is not authorized to disclose. Jev does not execute tools, load skills, create subagents, grant authorization, or enforce safety policy. One paid request, no retries. On not_routed continue normally without retrying.',
+    description: 'Ask TypeSafe Jev for advisory task, active-tool, specialist-skill, pi-subagent-preset, and parallel-investigation routing only when the route is genuinely ambiguous; skip simple tasks. External paid request: write task and constraints in English, review the full payload, and confirm before sending. Preserve operative details, names, numbers, negation, and scope. Never include secrets, credentials, session/local/private data, authenticated content, or unauthorized data. Jev neither executes nor authorizes actions. One request; no retries. On not_routed continue normally.',
     parameters: Type.Object({
       task: Type.String({
         minLength: 1,
         maxLength: LIMITS.taskChars,
-        description: 'English description of the current user request. Preserve operative details, names, numbers, negation, and scope; do not include prior session content or unrelated context.',
+        description: 'Current request in English. Preserve operative details, names, numbers, negation, and scope; exclude history and unrelated context.',
       }),
       constraints: Type.Optional(Type.String({
         minLength: 1,
         maxLength: LIMITS.constraintsChars,
-        description: 'English statement of only material constraints already established for this task, such as read-only scope or required source type. Do not add secrets or private content.',
+        description: 'Only established material constraints in English; exclude secrets and private content.',
       })),
     }, { additionalProperties: false }),
     async execute(_id, params, signal, _onUpdate, ctx) {
