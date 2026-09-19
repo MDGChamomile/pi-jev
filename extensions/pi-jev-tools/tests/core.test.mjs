@@ -14,7 +14,7 @@ const options = (run) => ({ resolveApiKey: async () => 'FAKE_TEST_KEY', run });
 test('request preserves Korean text; uses shared concrete English levels and explicit candidate paths', () => {
   const built = buildRequest(input());
   assert.equal(built.request.state.candidates[0].excerpt, input().candidates[0].excerpt);
-  assert.equal(built.request.model, 'typesafe/jev-1.13');
+  assert.equal(built.request.model, '~typesafe/jev-latest');
   assert.deepEqual(built.request.provider, { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } });
   assert.match(built.request.questions.candidate_1.instructions, /candidates\[1\]/);
   assert.deepEqual(built.request.questions.candidate_0.criteria, built.request.questions.candidate_1.criteria);
@@ -58,6 +58,8 @@ test('generated instructions count toward 64KiB; nothing is silently shortened',
 test('stable ranking retains all candidates and strips unrelated response text', () => {
   const r = response(); r.secret = 'DO_NOT_RETURN';
   assert.deepEqual(parseResponse(JSON.stringify(r), ['a','b']).rankedIds, ['b','a']);
+  r.model = 'typesafe/jev-2.0';
+  assert.equal(parseResponse(JSON.stringify(r), ['a','b']).model, 'typesafe/jev-2.0');
   r.answers.candidate_0 = answer(3);
   const result = parseResponse(JSON.stringify(r), ['a','b']);
   assert.deepEqual(result.rankedIds, ['a','b']);
@@ -74,7 +76,8 @@ test('malformed or partial responses fail closed', () => {
     r => r.answers.candidate_0.score = 2,
     r => r.usage.input_tokens = -1,
     r => r.model = 'SECRET_OR_RAW_RESPONSE',
-    r => r.model = 'typesafe/jev-2.0',
+    r => r.model = 'typesafe/not-jev-2.0',
+    r => r.model = '~typesafe/jev-latest',
   ]) {
     const r = response(); change(r);
     assert.throws(() => parseResponse(JSON.stringify(r), ['a','b']), /invalid_response/);
@@ -107,8 +110,8 @@ test('English review and approval UI retain disclosure and safety boundaries', a
     assert.equal(title, 'Send to TypeSafe Jev through OpenRouter?');
     for (const disclosure of [
       'reviewed question, criteria, and 2 candidates', ENDPOINT,
-      'OpenRouter / typesafe/jev-1.13', 'one paid request', 'US$0.001344',
-      'no automatic retries', '30-second timeout', 'Public web sources only',
+      'OpenRouter / ~typesafe/jev-latest', 'one paid request',
+      '$0.042/M input', '$0/M output', 'no hard total-cost cap', 'no automatic retries', '30-second timeout', 'Public web sources only',
       'sessions, internal data, authenticated pages, or secrets',
       'Cancelling cannot undo a request or charges already incurred',
     ]) assert.ok(message.includes(disclosure), disclosure);

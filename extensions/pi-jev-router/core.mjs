@@ -1,7 +1,6 @@
 export const TOOL_NAME = 'jev_route_task';
-export const MODEL = 'typesafe/jev-1.13';
+export const MODEL = '~typesafe/jev-latest';
 export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
-export const MAX_SPEND_USD = 0.001344;
 export const isJevWorkflowSkill = name => /^pi-jev(?:-router)?(?::\d+)?$/.test(name);
 export const LIMITS = Object.freeze({
   taskChars: 8000,
@@ -202,7 +201,8 @@ export function parseResponse(raw, prepared) {
   let response;
   try { response = JSON.parse(raw); } catch { fail('invalid_response'); }
   const expectedIds = ['route', 'subagent_preset', 'primary_tool', 'specialist_skill', 'parallel_investigation'];
-  if (!plain(response) || typeof response.model !== 'string' || !/^typesafe\/jev-1\.13(?:-[a-zA-Z0-9._-]{1,64})?$/.test(response.model) ||
+  if (!plain(response) || typeof response.model !== 'string' ||
+      !/^typesafe\/jev-\d+(?:\.\d+)*(?:-[a-zA-Z0-9._-]{1,64})?$/.test(response.model) ||
       !plain(response.answers) || Object.keys(response.answers).sort().join('|') !== expectedIds.sort().join('|') || !plain(response.usage)) fail('invalid_response');
 
   const route = parseChoice(response.answers.route, prepared.optionMaps.route);
@@ -314,7 +314,7 @@ export function createRunner({ resolveApiKey, run = runDecision }) {
         if (reviewed === undefined) return fallback('declined');
         if (reviewed !== preview) return fallback('preview_changed');
         const ok = await ctx.ui.confirm('Send task routing data to TypeSafe Jev through OpenRouter?',
-          `Send the reviewed task, constraints, and ${prepared.catalog.tools.length} tool / ${prepared.catalog.skills.length} skill metadata entries to ${ENDPOINT}.\nProvider/model: OpenRouter / ${MODEL} (TypeSafe upstream)\nMaximum batch: one paid request, at most US$${MAX_SPEND_USD.toFixed(6)} at the enforced $0.042/M input and $0/M output price caps; no automatic retries; 30-second timeout.\nDo not approve secrets, credentials, session history, private file contents, authenticated-page content, or data you are not authorized to disclose.\nJev returns advice only and cannot authorize actions. Cancelling cannot undo a request or charges already incurred.`,
+          `Send the reviewed task, constraints, and ${prepared.catalog.tools.length} tool / ${prepared.catalog.skills.length} skill metadata entries to ${ENDPOINT}.\nProvider/model: OpenRouter / ${MODEL} (TypeSafe upstream)\nMaximum batch: one paid request; enforced price ceilings are $0.042/M input and $0/M output; no automatic retries; 30-second timeout. Because this moving alias can select a future model with a different context limit, OpenRouter provides no hard total-cost cap for this request.\nDo not approve secrets, credentials, session history, private file contents, authenticated-page content, or data you are not authorized to disclose.\nJev returns advice only and cannot authorize actions. Cancelling cannot undo a request or charges already incurred.`,
           { signal: combinedSignal });
         if (combinedSignal.aborted) return fallback('cancelled');
         if (!ok) return fallback('declined');

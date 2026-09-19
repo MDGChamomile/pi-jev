@@ -1,7 +1,6 @@
 export const LIMITS = Object.freeze({ candidates: 10, excerptChars: 4000, bytes: 65536, timeoutMs: 30000, outputBytes: 32768 });
-export const MODEL = 'typesafe/jev-1.13';
+export const MODEL = '~typesafe/jev-latest';
 export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
-export const MAX_SPEND_USD = 0.001344;
 export const LEVELS = Object.freeze([
   'The passage provides no information useful for answering the question under the stated evaluation criteria.',
   'The passage concerns the topic but supplies only background, not evidence that resolves the question.',
@@ -69,7 +68,8 @@ const finiteRange = (x, min, max) => typeof x === 'number' && Number.isFinite(x)
 export function parseResponse(raw, originalOrder) {
   let response;
   try { response = JSON.parse(raw); } catch { fail('invalid_response'); }
-  if (!plain(response) || typeof response.model !== 'string' || !/^typesafe\/jev-1\.13(?:-[a-zA-Z0-9._-]{1,64})?$/.test(response.model) ||
+  if (!plain(response) || typeof response.model !== 'string' ||
+      !/^typesafe\/jev-\d+(?:\.\d+)*(?:-[a-zA-Z0-9._-]{1,64})?$/.test(response.model) ||
       !plain(response.answers) || !plain(response.usage)) fail('invalid_response');
   const expected = originalOrder.map((_, i) => `candidate_${i}`);
   if (Object.keys(response.answers).sort().join('|') !== expected.sort().join('|')) fail('invalid_response');
@@ -173,7 +173,7 @@ export function createRunner({ resolveApiKey, run = runDecision }) {
         if (reviewed === undefined) return fallback('declined');
         if (reviewed !== preview) return fallback('preview_changed');
         const ok = await ctx.ui.confirm('Send to TypeSafe Jev through OpenRouter?',
-          `Send the reviewed question, criteria, and ${prepared.originalOrder.length} candidates to ${ENDPOINT}.\nProvider/model: OpenRouter / ${MODEL} (TypeSafe upstream)\nMaximum batch: one paid request, at most US$${MAX_SPEND_USD.toFixed(6)} at the enforced $0.042/M input and $0/M output price caps; no automatic retries; 30-second timeout.\nPublic web sources only. Decline if the payload includes sessions, internal data, authenticated pages, or secrets.\nCancelling cannot undo a request or charges already incurred.`,
+          `Send the reviewed question, criteria, and ${prepared.originalOrder.length} candidates to ${ENDPOINT}.\nProvider/model: OpenRouter / ${MODEL} (TypeSafe upstream)\nMaximum batch: one paid request; enforced price ceilings are $0.042/M input and $0/M output; no automatic retries; 30-second timeout. Because this moving alias can select a future model with a different context limit, OpenRouter provides no hard total-cost cap for this request.\nPublic web sources only. Decline if the payload includes sessions, internal data, authenticated pages, or secrets.\nCancelling cannot undo a request or charges already incurred.`,
           { signal: combinedSignal });
         if (combinedSignal.aborted) return fallback('cancelled');
         if (!ok) return fallback('declined');

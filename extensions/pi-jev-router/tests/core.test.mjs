@@ -43,7 +43,7 @@ test('shared and legacy Jev workflow skills are excluded from routing candidates
 test('request preserves the English task and builds fixed plus runtime-bounded questions', () => {
   const built = buildRequest(input(), catalog());
   assert.equal(built.request.state.task, input().task);
-  assert.equal(built.request.model, 'typesafe/jev-1.13');
+  assert.equal(built.request.model, '~typesafe/jev-latest');
   assert.deepEqual(built.request.provider, { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } });
   assert.equal(built.request.questions.route.type, 'choice');
   assert.deepEqual(Object.keys(built.request.questions.primary_tool.criteria), ['none', 'tool_0', 'tool_1']);
@@ -77,7 +77,10 @@ test('input and runtime catalog limits fail closed without truncation', () => {
 
 test('response maps opaque options back to runtime names and retains distributions', () => {
   const prepared = buildRequest(input(), catalog());
-  const result = parseResponse(JSON.stringify(response()), prepared);
+  const current = response();
+  current.model = 'typesafe/jev-2.0';
+  const result = parseResponse(JSON.stringify(current), prepared);
+  assert.equal(result.model, 'typesafe/jev-2.0');
   assert.equal(result.route.choice, 'web_subagent');
   assert.equal(result.subagentPreset.name, 'analysis-standard');
   assert.equal(result.primaryTool.name, 'web_search');
@@ -98,7 +101,8 @@ test('malformed, inconsistent, partial, or extra responses fail closed', () => {
     r => { r.answers.parallel_investigation.noul = NaN; },
     r => { r.usage.input_tokens = -1; },
     r => { r.model = 'RAW_OR_SECRET'; },
-    r => { r.model = 'typesafe/jev-2.0'; },
+    r => { r.model = 'typesafe/not-jev-2.0'; },
+    r => { r.model = '~typesafe/jev-latest'; },
   ];
   for (const change of changes) {
     const value = response(); change(value);
@@ -132,7 +136,8 @@ test('approval UI discloses payload categories, provider, cost boundary, and lim
     assert.equal(title, 'Send task routing data to TypeSafe Jev through OpenRouter?');
     for (const disclosure of [
       'reviewed task, constraints', '2 tool / 2 skill metadata entries', ENDPOINT,
-      'OpenRouter / typesafe/jev-1.13', 'one paid request', 'US$0.001344', 'no automatic retries', '30-second timeout',
+      'OpenRouter / ~typesafe/jev-latest', 'one paid request', '$0.042/M input', '$0/M output',
+      'no hard total-cost cap', 'no automatic retries', '30-second timeout',
       'secrets, credentials, session history, private file contents, authenticated-page content',
       'cannot authorize actions', 'cannot undo a request or charges already incurred',
     ]) assert.ok(message.includes(disclosure), disclosure);

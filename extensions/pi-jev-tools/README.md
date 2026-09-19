@@ -10,14 +10,14 @@ This recording demonstrates the review-and-confirmation workflow on three public
 
 ![Jev's English payload-review and approval dialogs, followed by a reranking result and sourced answer](assets/pi-jev-tools-demo.gif)
 
-The recording predates the OpenRouter transport and pinned model now used by the extension, so it is evidence for the interaction pattern rather than current provider compatibility, ranking quality, or latency. No private documents or personal sessions are used.
+The recording predates the OpenRouter transport now used by the extension, so it is evidence for the interaction pattern rather than current provider compatibility, ranking quality, or latency. No private documents or personal sessions are used.
 
 ## Flow
 
 1. The parent collects public candidates with existing web tools.
 2. It supplies an English question and criteria with original-language excerpts.
 3. The tool validates the input, then shows the **entire immutable request** in a scrollable editor. Submit it unchanged to continue; cancel or edit it to stop.
-4. A separate confirmation names OpenRouter, TypeSafe, the pinned model, request count, maximum model charge, and deadline.
+4. A separate confirmation names OpenRouter, TypeSafe, the requested latest-model alias, request count, per-token price ceilings, absence of a hard total-cost cap, and deadline.
 5. Only after approval does the extension resolve Pi's existing OpenRouter authentication and send one Decisions API request.
 6. Jev supplies one relevance Score per candidate. Code validates the response and sorts every ID by descending score; ties preserve input order.
 7. The parent reads original sources and writes the final answer.
@@ -61,13 +61,13 @@ The example is synthetic. For real use, supply confirmed public URLs and accurat
 - Candidates: 1–10; unique IDs matching `[A-Za-z0-9_-]{1,64}`; public HTTP(S) URL up to 2,048 characters; title up to 500 characters; excerpt up to 4,000 characters.
 - Prefer excerpts around 2,000 characters. Preserve context, negation, uncertainty, names, numbers, dates, quotes, and plan/execution distinctions.
 - The constructed request, including generated questions, must fit **65,536 UTF-8 bytes**. Nothing is truncated or split into batches.
-- The request pins `typesafe/jev-1.13`, disables fallbacks, restricts routing to TypeSafe, and sets OpenRouter provider price caps of $0.042/M input tokens and $0/M output tokens.
-- With Jev's 32K context, those enforced caps bound the listed model charge for one approved request to **US$0.001344**. Taxes, currency conversion, and account-level billing behavior are outside this extension.
+- The request uses OpenRouter's `~typesafe/jev-latest` alias, which redirects to the latest Jev-family model. It disables provider fallbacks, restricts routing to TypeSafe, and sets price caps of $0.042/M input tokens and $0/M output tokens.
+- One approval still permits only one paid request, but OpenRouter does not provide a hard total-cost cap for a moving model alias. The confirmation therefore discloses this explicitly. If a future Jev version exceeds either per-token price ceiling, the request fails instead of using it. Taxes, currency conversion, and account-level billing behavior are outside this extension.
 - One approval permits one request to `https://openrouter.ai/api/alpha/decisions`, with no retry and a 30-second HTTP deadline. Review time is not part of that deadline.
 
 Jev receives the question, criteria, candidate IDs, URLs, titles, excerpts, and generated English Score questions. Four fixed levels distinguish no useful evidence, background only, partial evidence, and direct evidence. Contradictory evidence can score highly; source authority and truth are not scored.
 
-Success returns `status: "ok"`, requested and returned model IDs, original and ranked IDs, per-ID scores (0–3), confidence, probabilities, and token usage. Unrelated response fields and source text are not returned.
+Success returns `status: "ok"`, the requested latest alias and concrete returned Jev model ID, original and ranked IDs, per-ID scores (0–3), confidence, probabilities, and token usage. Unrelated response fields and source text are not returned.
 
 Failure or decline returns `status: "not_ranked"`, a fixed code, and unchanged IDs. Codes include `declined`, `preview_changed`, `missing_key`, `authentication_failed`, `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
 

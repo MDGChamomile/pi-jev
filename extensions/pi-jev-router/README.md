@@ -24,7 +24,7 @@ Choice answers retain their probability distributions and confidence. The questi
 2. It supplies an English task description and optional constraints while omitting unrelated history.
 3. The extension snapshots active tool and discovered skill names/descriptions. It does not read session history, files, skill bodies, or tool results.
 4. It validates and displays the complete immutable payload in an editor. Submit it unchanged to continue; cancellation or edits stop without sending.
-5. A separate confirmation names OpenRouter, TypeSafe, the pinned model, request count, maximum model charge, deadline, and data risks.
+5. A separate confirmation names OpenRouter, TypeSafe, the requested latest-model alias, request count, per-token price ceilings, absence of a hard total-cost cap, deadline, and data risks.
 6. Only after approval does the extension resolve Pi's existing OpenRouter authentication and send one Decisions API request.
 7. It validates typed judgments and maps opaque candidate IDs back to runtime names.
 8. The parent applies existing authorization, safety, privacy, tool, skill, browser, and pi-subagent rules before acting.
@@ -56,8 +56,8 @@ No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key
 - `task`: English routing description, 1–8,000 Unicode characters, representing only the current request.
 - `constraints`: optional English text, 1–4,000 characters, containing only established material constraints.
 - The extension adds up to 32 active tools and 32 discovered skills with names/descriptions. Larger catalogs and semantic payloads over 65,536 UTF-8 bytes are rejected, not truncated.
-- The request pins `typesafe/jev-1.13`, disables fallbacks, restricts routing to TypeSafe, and sets OpenRouter provider price caps of $0.042/M input tokens and $0/M output tokens.
-- With Jev's 32K context, those enforced caps bound the listed model charge for one approved request to **US$0.001344**. Taxes, currency conversion, and account-level billing behavior are outside this extension.
+- The request uses OpenRouter's `~typesafe/jev-latest` alias, which redirects to the latest Jev-family model. It disables provider fallbacks, restricts routing to TypeSafe, and sets price caps of $0.042/M input tokens and $0/M output tokens.
+- One approval still permits only one paid request, but OpenRouter does not provide a hard total-cost cap for a moving model alias. The confirmation therefore discloses this explicitly. If a future Jev version exceeds either per-token price ceiling, the request fails instead of using it. Taxes, currency conversion, and account-level billing behavior are outside this extension.
 - One approval permits one request to `https://openrouter.ai/api/alpha/decisions`, with no retry and a 30-second HTTP deadline.
 
 Success returns `status: "ok"`, the route and full probabilities, mapped tool/skill candidates, optional subagent preset, parallel-investigation probability, token usage, and an advisory limitation note.
@@ -76,7 +76,7 @@ Failure or decline returns `status: "not_routed"` with a fixed code such as `dec
 - The endpoint is fixed and HTTP redirects are rejected. The extension makes no model-list request, shell call, child process, cache, or separate raw request/response log. Pi may retain ordinary tool arguments and results.
 - Invisible Unicode format controls are visibly escaped in the review JSON without changing the text sent after approval. HTTP output is limited to 32KiB. Provider bodies and exception text are sanitized to fixed codes.
 - Only one invocation can be pending per extension instance. Cancellation aborts the HTTP request but cannot retract accepted data or charges.
-- Routing quality and calibration remain task-specific. The pinned model avoids alias drift but still needs representative evaluation.
+- Routing quality and calibration remain task-specific. The latest alias can move to a new Jev version; record the concrete returned model ID and reevaluate behavior after changes.
 
 ## Offline verification
 
