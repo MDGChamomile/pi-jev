@@ -23,7 +23,7 @@ Choice answers retain their probability distributions and confidence. The questi
 1. The parent decides that routing is genuinely ambiguous or worth measuring; obvious tasks skip Jev.
 2. It supplies an English task description and optional constraints while omitting unrelated history.
 3. The extension snapshots active tool and discovered skill names/descriptions. It does not read session history, files, skill bodies, or tool results.
-4. It validates and displays the complete immutable payload in an editor. Submit it unchanged to continue; cancellation or edits stop without sending.
+4. It validates and displays the complete immutable payload for review. In the interactive TUI, submit the editor unchanged to continue; cancellation or edits stop without sending. In RPC mode, the host receives the exact payload in an abortable confirmation dialog.
 5. A separate confirmation names OpenRouter, TypeSafe, the requested latest-model alias, request count, per-token price ceilings, absence of a hard total-cost cap, deadline, and data risks.
 6. Only after approval does the extension resolve Pi's existing OpenRouter authentication and send one Decisions API request.
 7. It validates typed judgments and maps opaque candidate IDs back to runtime names.
@@ -33,7 +33,7 @@ Choice answers retain their probability distributions and confidence. The questi
 
 - Node.js 22.22+ and Pi with `ctx.modelRegistry.getProviderAuth()` support.
 - A configured Pi `openrouter` provider. The extension reuses Pi's resolved provider authentication; it does not read `models.json`, `auth.json`, environment variables, `.env`, or credential files itself.
-- An interactive Pi UI, or an RPC host implementing editor and confirmation dialogs. Print/JSON modes fail closed with `confirmation_unavailable`.
+- An interactive Pi UI, or an RPC host implementing confirmation dialogs. Print/JSON modes fail closed with `confirmation_unavailable`.
 - Copy the shared `pi-jev` skill separately for automatic workflow guidance.
 
 Load only this source extension:
@@ -75,7 +75,7 @@ Failure or decline returns `status: "not_routed"` with a fixed code such as `dec
 - Authentication is resolved from Pi only after approval and sent only in the OpenRouter `Authorization` header. It is never accepted in tool input or returned.
 - The endpoint is fixed and HTTP redirects are rejected. The extension makes no model-list request, shell call, child process, cache, or separate raw request/response log. Pi may retain ordinary tool arguments and results.
 - Invisible Unicode format controls are visibly escaped in the review JSON without changing the text sent after approval. HTTP output is limited to 32KiB. Provider bodies and exception text are sanitized to fixed codes.
-- Only one invocation can be pending per extension instance. Cancellation aborts the HTTP request but cannot retract accepted data or charges.
+- Only one invocation can be pending per extension instance. Parent cancellation or session shutdown dismisses an active payload review, releases the invocation lock, and aborts an active HTTP request. Cancellation cannot retract accepted data or charges.
 - Routing quality and calibration remain task-specific. The latest alias can move to a new Jev version; record the concrete returned model ID and reevaluate behavior after changes.
 
 ## Offline verification

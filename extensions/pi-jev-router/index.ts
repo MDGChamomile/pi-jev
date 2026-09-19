@@ -1,6 +1,9 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { Type } from '@earendil-works/pi-ai';
-import { createRunner, isJevWorkflowSkill, JevRouterError, LIMITS, TOOL_NAME } from './core.mjs';
+import { Editor, truncateToWidth } from '@earendil-works/pi-tui';
+import { createPayloadReviewer, createRunner, isJevWorkflowSkill, JevRouterError, LIMITS, TOOL_NAME } from './core.mjs';
+
+const reviewPayload = createPayloadReviewer({ Editor, truncateToWidth });
 
 function runtimeCatalog(pi: ExtensionAPI) {
   const active = new Set(pi.getActiveTools());
@@ -36,6 +39,7 @@ export default function (pi: ExtensionAPI) {
     async execute(_id, params, signal, _onUpdate, ctx) {
       runner ??= createRunner({
         resolveApiKey: async () => (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
+        review: reviewPayload,
       });
       try {
         // Resource-loader smoke tests and noninteractive modes have no live session catalog.

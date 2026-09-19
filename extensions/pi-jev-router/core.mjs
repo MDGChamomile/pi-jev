@@ -288,8 +288,64 @@ export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMI
   }
 }
 
+export function createPayloadReviewer({ Editor, truncateToWidth }) {
+  if (typeof Editor !== 'function' || typeof truncateToWidth !== 'function') throw new TypeError('invalid_payload_reviewer');
+  return async ({ ctx, title, preview, signal }) => {
+    if (signal.aborted) return undefined;
+    if (ctx.mode !== 'tui') {
+      const accepted = await ctx.ui.confirm(title, `${preview}\n\nContinue with this exact payload?`, { signal });
+      return accepted ? preview : undefined;
+    }
+    return ctx.ui.custom((tui, theme, keybindings, done) => {
+      let settled = false;
+      const editor = new Editor(tui, {
+        borderColor: value => theme.fg('accent', value),
+        selectList: {
+          selectedPrefix: value => theme.fg('accent', value),
+          selectedText: value => theme.fg('accent', value),
+          description: value => theme.fg('muted', value),
+          scrollInfo: value => theme.fg('dim', value),
+          noMatch: value => theme.fg('warning', value),
+        },
+      });
+      editor.setText(preview);
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        signal.removeEventListener('abort', onAbort);
+        done(value);
+      };
+      const onAbort = () => finish(undefined);
+      signal.addEventListener('abort', onAbort, { once: true });
+      editor.onSubmit = value => finish(value);
+      return {
+        get focused() { return editor.focused; },
+        set focused(value) { editor.focused = value; },
+        render(width) {
+          const available = Math.max(1, width);
+          return [
+            truncateToWidth(theme.fg('accent', theme.bold(title)), available),
+            ...editor.render(available),
+            truncateToWidth(theme.fg('dim', 'Enter to submit unchanged • Esc to cancel'), available),
+          ];
+        },
+        handleInput(data) {
+          if (keybindings.matches(data, 'tui.select.cancel')) finish(undefined);
+          else if (!settled) {
+            editor.handleInput(data);
+            tui.requestRender();
+          }
+        },
+        invalidate() { editor.invalidate(); },
+        dispose() { signal.removeEventListener('abort', onAbort); },
+      };
+    });
+  };
+}
+
 /** Consent is bound to one immutable serialized request; no session history is collected. */
-export function createRunner({ resolveApiKey, run = runDecision }) {
+export function createRunner({ resolveApiKey, run = runDecision, review }) {
+  if (typeof review !== 'function') throw new TypeError('missing_payload_reviewer');
   let active;
   return {
     shutdown() { active?.abort(); },
@@ -309,7 +365,12 @@ export function createRunner({ resolveApiKey, run = runDecision }) {
         // Escape invisible Unicode format controls for an unambiguous review; JSON parsing preserves the exact payload text.
         const preview = JSON.stringify(prepared.request, null, 2).replace(/\p{Cf}/gu, character =>
           `\\u${character.codePointAt(0).toString(16).padStart(4, '0')}`);
-        const reviewed = await ctx.ui.editor('Review Jev routing payload. Submit unchanged to continue.', preview);
+        const reviewed = await review({
+          ctx,
+          title: 'Review Jev routing payload',
+          preview,
+          signal: combinedSignal,
+        });
         if (combinedSignal.aborted) return fallback('cancelled');
         if (reviewed === undefined) return fallback('declined');
         if (reviewed !== preview) return fallback('preview_changed');

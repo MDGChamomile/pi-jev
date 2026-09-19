@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRequest, createRunner, ENDPOINT, isJevWorkflowSkill, parseResponse, runDecision, LIMITS } from '../core.mjs';
+import { buildRequest, createPayloadReviewer, createRunner, ENDPOINT, isJevWorkflowSkill, parseResponse, runDecision, LIMITS } from '../core.mjs';
 
 const input = () => ({ task: 'Determine whether this request requires both web and local investigation.', constraints: 'Read-only investigation; do not modify files.' });
 const catalog = () => ({
@@ -29,7 +29,53 @@ const response = () => ({
   usage: { input_tokens: 120, output_tokens: 30 },
 });
 const ctx = (confirm = true) => ({ hasUI: true, ui: { editor: async (_title, value) => value, confirm: async () => confirm } });
-const options = run => ({ resolveApiKey: async () => 'FAKE_TEST_KEY', run });
+const review = ({ ctx: context, title, preview }) => context.ui.editor(title, preview);
+const options = run => ({ resolveApiKey: async () => 'FAKE_TEST_KEY', run, review });
+
+function payloadReviewHarness() {
+  let latestEditor;
+  class FakeEditor {
+    focused = false;
+    onSubmit;
+    constructor() { latestEditor = this; }
+    setText(value) { this.value = value; }
+    render() { return []; }
+    handleInput() {}
+    invalidate() {}
+  }
+  const reviewer = createPayloadReviewer({ Editor: FakeEditor, truncateToWidth: value => value });
+  const makeContext = (autoSubmit = false) => {
+    let component, editor, markOpened;
+    const opened = new Promise(resolve => { markOpened = resolve; });
+    const context = {
+      mode: 'tui',
+      hasUI: true,
+      ui: {
+        custom(factory) {
+          return new Promise(resolve => {
+            const done = value => {
+              component?.dispose?.();
+              component = undefined;
+              resolve(value);
+            };
+            component = factory(
+              { requestRender() {} },
+              { fg: (_color, value) => value, bold: value => value },
+              { matches: (data, binding) => data === 'escape' && binding === 'tui.select.cancel' },
+              done,
+            );
+            editor = latestEditor;
+            markOpened();
+            if (autoSubmit) queueMicrotask(() => editor.onSubmit(editor.value));
+          });
+        },
+        confirm: async () => true,
+      },
+    };
+    return { context, opened, get editor() { return editor; }, isOpen: () => component !== undefined };
+  };
+  return { reviewer, makeContext };
+}
 
 test('shared and legacy Jev workflow skills are excluded from routing candidates', () => {
   for (const name of ['pi-jev', 'pi-jev:2', 'pi-jev-router', 'pi-jev-router:2']) {
@@ -127,7 +173,7 @@ test('approval UI discloses payload categories, provider, cost boundary, and lim
   const context = ctx();
   const prompts = [];
   context.ui.editor = async (title, preview) => {
-    assert.equal(title, 'Review Jev routing payload. Submit unchanged to continue.');
+    assert.equal(title, 'Review Jev routing payload');
     assert.deepEqual(JSON.parse(preview), buildRequest(input(), catalog()).request);
     prompts.push('review');
     return preview;
@@ -151,6 +197,31 @@ test('approval UI discloses payload categories, provider, cost boundary, and lim
   assert.equal((await runner.execute(input(), catalog(), undefined, context)).status, 'ok');
 });
 
+test('RPC payload review uses an abortable full-payload confirmation', async () => {
+  const controller = new AbortController();
+  let received;
+  const reviewer = createPayloadReviewer({ Editor: class Editor {}, truncateToWidth: value => value });
+  const pending = reviewer({
+    ctx: {
+      mode: 'rpc',
+      ui: {
+        confirm: async (title, message, options) => {
+          received = { title, message, signal: options.signal };
+          return new Promise(resolve => options.signal.addEventListener('abort', () => resolve(false), { once: true }));
+        },
+      },
+    },
+    title: 'Review payload',
+    preview: '{"complete":true}',
+    signal: controller.signal,
+  });
+  controller.abort();
+  assert.equal(await pending, undefined);
+  assert.equal(received.title, 'Review payload');
+  assert.ok(received.message.includes('{"complete":true}'));
+  assert.equal(received.signal, controller.signal);
+});
+
 test('decline, edited preview, no UI, missing key, and pre-abort never invoke provider', async () => {
   let calls = 0;
   const runner = createRunner(options(async () => { calls++; throw new Error('must not run'); }));
@@ -168,16 +239,34 @@ test('decline, edited preview, no UI, missing key, and pre-abort never invoke pr
   assert.equal(calls, 0);
 });
 
-test('parallel calls are rejected and shutdown cancels pending approval', async () => {
-  let release;
-  const context = ctx(); context.ui.editor = () => new Promise(resolve => { release = resolve; });
-  let calls = 0;
-  const runner = createRunner(options(async () => { calls++; }));
-  const first = runner.execute(input(), catalog(), undefined, context);
-  assert.equal((await runner.execute(input(), catalog(), undefined, ctx())).code, 'busy');
-  runner.shutdown(); release('unchanged');
-  assert.equal((await first).code, 'cancelled');
-  assert.equal(calls, 0);
+test('parent abort and shutdown dismiss payload review, release the lock, and ignore late submission', async () => {
+  for (const cause of ['parent', 'shutdown']) {
+    const controller = new AbortController();
+    const harness = payloadReviewHarness();
+    let calls = 0;
+    const runner = createRunner({
+      resolveApiKey: async () => 'FAKE_TEST_KEY',
+      review: harness.reviewer,
+      run: async () => { calls++; return JSON.stringify(response()); },
+    });
+    const pendingReview = harness.makeContext();
+    const first = runner.execute(input(), catalog(), controller.signal, pendingReview.context);
+    await pendingReview.opened;
+    assert.equal((await runner.execute(input(), catalog(), undefined, ctx())).code, 'busy');
+
+    if (cause === 'parent') controller.abort(); else runner.shutdown();
+    const firstResult = await Promise.race([
+      first,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('review did not cancel')), 100)),
+    ]);
+    assert.equal(firstResult.code, 'cancelled');
+    assert.equal(pendingReview.isOpen(), false);
+    pendingReview.editor.onSubmit(pendingReview.editor.value);
+
+    const nextReview = harness.makeContext(true);
+    assert.equal((await runner.execute(input(), catalog(), undefined, nextReview.context)).status, 'ok');
+    assert.equal(calls, 1);
+  }
 });
 
 test('mutating inputs after review cannot change the approved request', async () => {
