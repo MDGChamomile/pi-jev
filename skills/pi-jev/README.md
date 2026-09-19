@@ -4,7 +4,7 @@ A shared workflow that lets the parent Pi agent select among available consent-g
 
 The skill currently covers:
 
-- [`jev_route_task`](../../extensions/pi-jev-router/README.md) for genuinely ambiguous task, tool, skill, browser, and pi-subagent routing; and
+- [`jev_route_task`](../../extensions/pi-jev-router/README.md) when comparing multiple plausible task, tool, skill, browser, and pi-subagent routes could materially improve the outcome, or when explicitly evaluating routing quality; and
 - [`jev_rerank`](../../extensions/pi-jev-tools/README.md) for relevance ranking of already-collected public web passages.
 
 The skill does not contact a provider. Each extension validates its own input, displays the complete payload, requires separate approval, resolves Pi's existing OpenRouter authentication, performs at most one paid request per invocation, and returns advisory output.

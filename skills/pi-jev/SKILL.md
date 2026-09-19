@@ -1,6 +1,6 @@
 ---
 name: pi-jev
-description: Use available TypeSafe Jev tools without requiring the user to request Jev explicitly. Use jev_route_task when the best handling route is genuinely ambiguous, and jev_rerank when prioritizing already-collected public web passages would materially help. Skip simple or obvious tasks.
+description: Use available TypeSafe Jev tools without requiring the user to request Jev explicitly. Use jev_route_task when comparing multiple plausible handling routes could materially improve the outcome or when explicitly evaluating routing quality, and jev_rerank when prioritizing already-collected public web passages would materially help. Skip simple tasks and low-benefit calls.
 license: MIT
 compatibility: Requires at least one companion Jev extension, an interactive Pi or compatible RPC approval UI, and a configured Pi OpenRouter provider.
 ---
@@ -11,7 +11,7 @@ Use this workflow to select among the available consent-gated TypeSafe Jev tools
 
 ## Select a tool
 
-- Use `jev_route_task` when the best primary handling route, active tool, specialist skill, or pi-subagent mode for the current task is genuinely ambiguous. Skip obvious routes and simple lookups.
+- Use `jev_route_task` when multiple plausible primary routes, active tools, specialist skills, or pi-subagent modes could materially affect the outcome, or when explicitly evaluating routing quality. Skip simple tasks and obvious routes with little expected benefit from a second opinion.
 - Use `jev_rerank` only after collecting public web passages, when prioritizing those candidates by relevance would materially improve the investigation. It ranks supplied passages; it does not search, fetch, verify truth, or write the answer.
 - Do not call a Jev tool merely because it is available. If a needed tool is inactive, continue with the normal workflow.
 - Avoid multiple Jev calls for one task unless each call has a distinct, material purpose. Never retry a declined or failed call automatically.
