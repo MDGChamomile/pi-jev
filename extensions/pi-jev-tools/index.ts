@@ -8,15 +8,15 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: 'jev_rerank',
     label: 'Jev Rerank',
-    description: 'Rerank collected public-web passages by relevance with TypeSafe Jev when candidate prioritization would help. The runtime sends the supplied data to this external paid service only after full-payload user review and confirmation. Parent only: never send session, local, or private data, credentials, or authenticated-page content. Use English for question and criteria; preserve excerpts verbatim, including names, numbers, dates, and negation. This tool only ranks; it does not fetch, translate, delete, or verify truth. Inputs over 64KiB UTF-8 are rejected, not truncated. Returns bounded candidate IDs, scores, and usage, not source text. Never retry automatically; on not_ranked, keep the original order.',
+    description: 'Rank 1–10 collected public-web passages by relevance with TypeSafe Jev. Use only when prioritization would help. External paid request: review the full payload and confirm before sending. Parent only; never send secrets, credentials, session/local/private data, signed URLs, or authenticated content. Write question and criteria in English; preserve excerpts verbatim, including names, numbers, dates, and negation. It does not fetch or verify facts. Inputs over 64KiB UTF-8 fail. Never retry; on not_ranked keep the original order.',
     parameters: Type.Object({
-      question: Type.String({ minLength: 1, maxLength: 4000, description: 'English research question; exclude private context.' }),
-      criteria: Type.String({ minLength: 1, maxLength: 4000, description: 'English relevance criteria; preserve distinctions such as planned versus completed.' }),
+      question: Type.String({ minLength: 1, maxLength: 4000, description: 'English research question; no private context.' }),
+      criteria: Type.String({ minLength: 1, maxLength: 4000, description: 'English relevance criteria; preserve state distinctions.' }),
       candidates: Type.Array(Type.Object({
-        id: Type.String({ pattern: '^[A-Za-z0-9_-]{1,64}$', description: 'Unique stable ID.' }),
-        url: Type.String({ minLength: 1, maxLength: 2048, description: 'Public source URL; never local, signed, private, or authenticated.' }),
+        id: Type.String({ pattern: '^[A-Za-z0-9_-]{1,64}$', description: 'Unique candidate ID.' }),
+        url: Type.String({ minLength: 1, maxLength: 2048, description: 'Public, unsigned, unauthenticated source URL.' }),
         title: Type.String({ minLength: 1, maxLength: 500 }),
-        excerpt: Type.String({ minLength: 1, maxLength: LIMITS.excerptChars, description: 'Relevant verbatim passage with context; prefer about 2000 characters.' }),
+        excerpt: Type.String({ minLength: 1, maxLength: LIMITS.excerptChars, description: 'Relevant verbatim passage with context (~2,000 characters).' }),
       }, { additionalProperties: false }), { minItems: 1, maxItems: LIMITS.candidates }),
     }, { additionalProperties: false }),
     async execute(_id, params, signal, _onUpdate, ctx) {
