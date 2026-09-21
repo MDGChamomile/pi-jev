@@ -60,9 +60,9 @@ No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key
 - One approval still permits only one paid request, but OpenRouter does not provide a hard total-cost cap for a moving model alias. The confirmation therefore discloses this explicitly. If a future Jev version exceeds either per-token price ceiling, the request fails instead of using it. Taxes, currency conversion, and account-level billing behavior are outside this extension.
 - One approval permits one request to `https://openrouter.ai/api/alpha/decisions`, with no retry and a 30-second HTTP deadline.
 
-Success returns `status: "ok"`, the route and full probabilities, mapped tool/skill candidates, optional subagent preset, parallel-investigation probability, token usage, and an advisory limitation note.
+Success returns `status: "ok"`, the route and full probabilities, mapped tool/skill candidates, optional subagent preset, parallel-investigation probability, token usage, and an advisory limitation note. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals.
 
-Failure or decline returns `status: "not_routed"` with a fixed code such as `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
+Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
 
 ## Boundaries and limitations
 
@@ -76,7 +76,7 @@ Failure or decline returns `status: "not_routed"` with a fixed code such as `dec
 - The endpoint is fixed and HTTP redirects are rejected. The extension makes no model-list request, shell call, child process, cache, or separate raw request/response log. Pi may retain ordinary tool arguments and results.
 - Invisible Unicode format controls are visibly escaped in the review JSON without changing the text sent after approval. HTTP output is limited to 32KiB. Provider bodies and exception text are sanitized to fixed codes.
 - Only one invocation can be pending per extension instance. Parent cancellation or session shutdown dismisses an active payload review, releases the invocation lock, and aborts an active HTTP request. Cancellation cannot retract accepted data or charges.
-- Routing quality and calibration remain task-specific. The latest alias can move to a new Jev version; record the concrete returned model ID and reevaluate behavior after changes.
+- Routing quality and calibration remain task-specific. The latest alias can move to a new Jev version; record the returned Jev-family model ID and reevaluate behavior after changes.
 
 ## Offline verification
 
@@ -95,7 +95,7 @@ node live/extensions/pi-jev-router/tests/pi-check.mjs \
   /absolute/path/to/typescript
 ```
 
-Tests use mocked HTTP responses and synthetic keys. They cover request construction, candidate mapping, size limits, malformed replies, immutable review and approval, Pi-auth resolution failures, unchanged fallback, concurrency, single-call/no-retry behavior, HTTP status mapping, cancellation, deadline, bounded output, sanitized errors, and noninteractive refusal.
+Tests use mocked HTTP responses and synthetic keys. They cover request construction, candidate mapping, size limits, preflight fallback, future Jev-family model names, current-context authentication, non-persistent call diagnostics, malformed replies, immutable review and approval, Pi-auth resolution failures, unchanged fallback, concurrency, single-call/no-retry behavior, HTTP status mapping, cancellation, deadline, bounded output, sanitized errors, and noninteractive refusal.
 
 ## Evaluation before automation
 

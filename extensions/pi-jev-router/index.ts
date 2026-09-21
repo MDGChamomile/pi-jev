@@ -38,7 +38,7 @@ export default function (pi: ExtensionAPI) {
     }, { additionalProperties: false }),
     async execute(_id, params, signal, _onUpdate, ctx) {
       runner ??= createRunner({
-        resolveApiKey: async () => (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
+        resolveApiKey: async (currentCtx: typeof ctx) => (await currentCtx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
         review: reviewPayload,
       });
       try {

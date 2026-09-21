@@ -14,10 +14,13 @@ const piRoot = resolve(piArg), tsRoot = resolve(tsArg);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const piRequire = createRequire(resolve(piRoot, 'package.json'));
 const ts = (await import(pathToFileURL(resolve(tsRoot, 'lib/typescript.js')).href)).default;
-const aiRoot = piRequire.resolve.paths('@earendil-works/pi-ai')
-  .map(base => resolve(base, '@earendil-works/pi-ai'))
+const dependencyRoot = packageName => piRequire.resolve.paths(packageName)
+  .map(base => resolve(base, packageName))
   .find(base => existsSync(resolve(base, 'dist/index.d.ts')));
+const aiRoot = dependencyRoot('@earendil-works/pi-ai');
+const tuiRoot = dependencyRoot('@earendil-works/pi-tui');
 assert.ok(aiRoot, 'Existing pi-ai types must be available to Pi.');
+assert.ok(tuiRoot, 'Existing pi-tui types must be available to Pi.');
 const nodeRoot = dirname(piRequire.resolve('@types/node/package.json'));
 const program = ts.createProgram([resolve(root, 'index.ts')], {
   target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext,
@@ -27,6 +30,7 @@ const program = ts.createProgram([resolve(root, 'index.ts')], {
   paths: {
     '@earendil-works/pi-coding-agent': [resolve(piRoot, 'dist/index.d.ts')],
     '@earendil-works/pi-ai': [resolve(aiRoot, 'dist/index.d.ts')],
+    '@earendil-works/pi-tui': [resolve(tuiRoot, 'dist/index.d.ts')],
   },
 });
 const diagnostics = ts.getPreEmitDiagnostics(program);

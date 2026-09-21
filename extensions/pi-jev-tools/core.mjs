@@ -69,7 +69,7 @@ export function parseResponse(raw, originalOrder) {
   let response;
   try { response = JSON.parse(raw); } catch { fail('invalid_response'); }
   if (!plain(response) || typeof response.model !== 'string' ||
-      !/^typesafe\/jev-\d+(?:\.\d+)*(?:-[a-zA-Z0-9._-]{1,64})?$/.test(response.model) ||
+      !/^typesafe\/jev-[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(response.model) ||
       !plain(response.answers) || !plain(response.usage)) fail('invalid_response');
   const expected = originalOrder.map((_, i) => `candidate_${i}`);
   if (Object.keys(response.answers).sort().join('|') !== expected.sort().join('|')) fail('invalid_response');
@@ -150,15 +150,82 @@ export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMI
   }
 }
 
+export function createPayloadReviewer({ Editor, truncateToWidth }) {
+  if (typeof Editor !== 'function' || typeof truncateToWidth !== 'function') throw new TypeError('invalid_payload_reviewer');
+  return async ({ ctx, title, preview, signal }) => {
+    if (signal.aborted) return undefined;
+    if (ctx.mode !== 'tui') {
+      const accepted = await ctx.ui.confirm(title, `${preview}\n\nContinue with this exact payload?`, { signal });
+      return accepted ? preview : undefined;
+    }
+    return ctx.ui.custom((tui, theme, keybindings, done) => {
+      let settled = false;
+      const editor = new Editor(tui, {
+        borderColor: value => theme.fg('accent', value),
+        selectList: {
+          selectedPrefix: value => theme.fg('accent', value),
+          selectedText: value => theme.fg('accent', value),
+          description: value => theme.fg('muted', value),
+          scrollInfo: value => theme.fg('dim', value),
+          noMatch: value => theme.fg('warning', value),
+        },
+      });
+      editor.setText(preview);
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        signal.removeEventListener('abort', onAbort);
+        done(value);
+      };
+      const onAbort = () => finish(undefined);
+      signal.addEventListener('abort', onAbort, { once: true });
+      editor.onSubmit = value => finish(value);
+      return {
+        get focused() { return editor.focused; },
+        set focused(value) { editor.focused = value; },
+        render(width) {
+          const available = Math.max(1, width);
+          return [
+            truncateToWidth(theme.fg('accent', theme.bold(title)), available),
+            ...editor.render(available),
+            truncateToWidth(theme.fg('dim', 'Enter to submit unchanged • Esc to cancel'), available),
+          ];
+        },
+        handleInput(data) {
+          if (keybindings.matches(data, 'tui.select.cancel')) finish(undefined);
+          else if (!settled) {
+            editor.handleInput(data);
+            tui.requestRender();
+          }
+        },
+        invalidate() { editor.invalidate(); },
+        dispose() { signal.removeEventListener('abort', onAbort); },
+      };
+    });
+  };
+}
+
+function candidateOrder(input) {
+  if (!plain(input) || !Array.isArray(input.candidates)) return [];
+  return input.candidates
+    .map(candidate => plain(candidate) && typeof candidate.id === 'string' ? candidate.id : undefined)
+    .filter(id => id !== undefined);
+}
+
 /** Consent is bound to an immutable serialized request; no history is collected. */
-export function createRunner({ resolveApiKey, run = runDecision }) {
+export function createRunner({ resolveApiKey, run = runDecision, review, now = () => performance.now() }) {
+  if (typeof review !== 'function') throw new TypeError('missing_payload_reviewer');
   let active;
   return {
     shutdown() { active?.abort(); },
     async execute(input, signal, ctx) {
-      const prepared = buildRequest(input);
-      const fallback = (code) => ({ status: 'not_ranked', code, originalOrder: prepared.originalOrder, rankedIds: prepared.originalOrder, note: 'No ranking applied. Use the original candidates; do not retry automatically.' });
+      let originalOrder = candidateOrder(input);
+      const fallback = (code) => ({ status: 'not_ranked', code, originalOrder: [...originalOrder], rankedIds: [...originalOrder], note: 'No ranking applied. Use the original candidates; do not retry automatically.' });
       if (active !== undefined) return fallback('busy');
+      let prepared;
+      try { prepared = buildRequest(input); }
+      catch (error) { return fallback(error instanceof JevError ? error.code : 'internal_error'); }
+      originalOrder = prepared.originalOrder;
       if (signal?.aborted) return fallback('cancelled');
       if (!ctx.hasUI) return fallback('confirmation_unavailable');
       const controller = new AbortController();
@@ -168,7 +235,12 @@ export function createRunner({ resolveApiKey, run = runDecision }) {
         // Escape invisible Unicode format controls for an unambiguous review; JSON parsing preserves the exact payload text.
         const preview = JSON.stringify(prepared.request, null, 2).replace(/\p{Cf}/gu, character =>
           `\\u${character.codePointAt(0).toString(16).padStart(4, '0')}`);
-        const reviewed = await ctx.ui.editor('Review Jev payload — public sources only. Submit unchanged to continue.', preview);
+        const reviewed = await review({
+          ctx,
+          title: 'Review Jev payload — public sources only',
+          preview,
+          signal: combinedSignal,
+        });
         if (combinedSignal.aborted) return fallback('cancelled');
         if (reviewed === undefined) return fallback('declined');
         if (reviewed !== preview) return fallback('preview_changed');
@@ -178,11 +250,18 @@ export function createRunner({ resolveApiKey, run = runDecision }) {
         if (combinedSignal.aborted) return fallback('cancelled');
         if (!ok) return fallback('declined');
         let apiKey;
-        try { apiKey = await resolveApiKey(); } catch { return fallback('authentication_failed'); }
+        try { apiKey = await resolveApiKey(ctx); } catch { return fallback('authentication_failed'); }
         if (typeof apiKey !== 'string' || !apiKey.trim()) return fallback('missing_key');
+        const startedAt = now();
         const raw = await run({ apiKey, serialized: prepared.serialized, signal: combinedSignal });
+        const elapsedMs = Math.max(0, Math.round(now() - startedAt));
         if (combinedSignal.aborted) return fallback('cancelled');
-        return parseResponse(raw, prepared.originalOrder);
+        return {
+          ...parseResponse(raw, prepared.originalOrder),
+          elapsedMs,
+          inputBytes: Buffer.byteLength(prepared.serialized, 'utf8'),
+          questionCount: Object.keys(prepared.request.questions).length,
+        };
       } catch (error) {
         return fallback(combinedSignal.aborted ? 'cancelled' : error instanceof JevError ? error.code : 'internal_error');
       } finally {

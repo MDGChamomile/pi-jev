@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRequest, createRunner, ENDPOINT, parseResponse, runDecision, LIMITS } from '../core.mjs';
+import { buildRequest, createPayloadReviewer, createRunner, ENDPOINT, parseResponse, runDecision, LIMITS } from '../core.mjs';
 
 const input = () => ({ question: 'Was the cancellation completed?', criteria: 'Distinguish approval from completed execution.', candidates: [
   { id: 'a', url: 'https://example.com/a', title: 'Plan', excerpt: '다음 달 소각하기로 결의했다.' },
@@ -9,7 +9,53 @@ const input = () => ({ question: 'Was the cancellation completed?', criteria: 'D
 const answer = (level) => ({ type: 'score', score: level, confidence: 1, probabilities: Object.fromEntries([0,1,2,3].map(i => [String(i), Number(i === level)])) });
 const response = () => ({ model: 'typesafe/jev-1.13-20260917', answers: { candidate_0: answer(1), candidate_1: answer(3) }, usage: { input_tokens: 100, output_tokens: 20, cost: 0.0000042 } });
 const ctx = (confirm = true) => ({ hasUI: true, ui: { editor: async (_, value) => value, confirm: async () => confirm } });
-const options = (run) => ({ resolveApiKey: async () => 'FAKE_TEST_KEY', run });
+const review = ({ ctx: context, title, preview }) => context.ui.editor(title, preview);
+const options = (run) => ({ resolveApiKey: async () => 'FAKE_TEST_KEY', run, review });
+
+function payloadReviewHarness() {
+  let latestEditor;
+  class FakeEditor {
+    focused = false;
+    onSubmit;
+    constructor() { latestEditor = this; }
+    setText(value) { this.value = value; }
+    render() { return []; }
+    handleInput() {}
+    invalidate() {}
+  }
+  const reviewer = createPayloadReviewer({ Editor: FakeEditor, truncateToWidth: value => value });
+  const makeContext = (autoSubmit = false) => {
+    let component, editor, markOpened;
+    const opened = new Promise(resolve => { markOpened = resolve; });
+    const context = {
+      mode: 'tui',
+      hasUI: true,
+      ui: {
+        custom(factory) {
+          return new Promise(resolve => {
+            const done = value => {
+              component?.dispose?.();
+              component = undefined;
+              resolve(value);
+            };
+            component = factory(
+              { requestRender() {} },
+              { fg: (_color, value) => value, bold: value => value },
+              { matches: (data, binding) => data === 'escape' && binding === 'tui.select.cancel' },
+              done,
+            );
+            editor = latestEditor;
+            markOpened();
+            if (autoSubmit) queueMicrotask(() => editor.onSubmit(editor.value));
+          });
+        },
+        confirm: async () => true,
+      },
+    };
+    return { context, opened, get editor() { return editor; }, isOpen: () => component !== undefined };
+  };
+  return { reviewer, makeContext };
+}
 
 test('request preserves Korean text; uses shared concrete English levels and explicit candidate paths', () => {
   const built = buildRequest(input());
@@ -58,8 +104,8 @@ test('generated instructions count toward 64KiB; nothing is silently shortened',
 test('stable ranking retains all candidates and strips unrelated response text', () => {
   const r = response(); r.secret = 'DO_NOT_RETURN';
   assert.deepEqual(parseResponse(JSON.stringify(r), ['a','b']).rankedIds, ['b','a']);
-  r.model = 'typesafe/jev-2.0';
-  assert.equal(parseResponse(JSON.stringify(r), ['a','b']).model, 'typesafe/jev-2.0');
+  r.model = 'typesafe/jev-next-stable';
+  assert.equal(parseResponse(JSON.stringify(r), ['a','b']).model, 'typesafe/jev-next-stable');
   r.answers.candidate_0 = answer(3);
   const result = parseResponse(JSON.stringify(r), ['a','b']);
   assert.deepEqual(result.rankedIds, ['a','b']);
@@ -96,13 +142,44 @@ test('approval binds the reviewed request and triggers exactly one invocation', 
   assert.equal(calls, 1);
   assert.equal(r.status, 'ok');
   assert.deepEqual(r.rankedIds, ['b','a']);
+  assert.equal(r.inputBytes, Buffer.byteLength(buildRequest(input()).serialized, 'utf8'));
+  assert.equal(r.questionCount, 2);
+  assert.ok(Number.isSafeInteger(r.elapsedMs) && r.elapsedMs >= 0);
+});
+
+test('runner converts preflight validation failures to a sanitized order-preserving fallback', async () => {
+  let calls = 0;
+  const x = input();
+  x.candidates[0].url = 'file:///private/file';
+  const runner = createRunner(options(async () => { calls++; throw new Error('must not run'); }));
+  const result = await runner.execute(x, undefined, ctx());
+  assert.equal(result.status, 'not_ranked');
+  assert.equal(result.code, 'invalid_source_url');
+  assert.deepEqual(result.originalOrder, ['a', 'b']);
+  assert.deepEqual(result.rankedIds, ['a', 'b']);
+  assert.equal(calls, 0);
+  assert.doesNotMatch(JSON.stringify(result), /private/);
+});
+
+test('runner resolves authentication from the current execution context and reports deterministic timing', async () => {
+  const keys = [];
+  const times = [100, 125, 200, 240];
+  const runner = createRunner({
+    resolveApiKey: async context => context.apiKey,
+    review,
+    now: () => times.shift(),
+    run: async ({ apiKey }) => { keys.push(apiKey); return JSON.stringify(response()); },
+  });
+  assert.equal((await runner.execute(input(), undefined, { ...ctx(), apiKey: 'FIRST' })).elapsedMs, 25);
+  assert.equal((await runner.execute(input(), undefined, { ...ctx(), apiKey: 'SECOND' })).elapsedMs, 40);
+  assert.deepEqual(keys, ['FIRST', 'SECOND']);
 });
 
 test('English review and approval UI retain disclosure and safety boundaries', async () => {
   const context = ctx();
   const prompts = [];
   context.ui.editor = async (title, preview) => {
-    assert.equal(title, 'Review Jev payload — public sources only. Submit unchanged to continue.');
+    assert.equal(title, 'Review Jev payload — public sources only');
     prompts.push('review');
     return preview;
   };
@@ -143,16 +220,30 @@ test('decline, edited preview, no UI, missing key, pre-abort: no invocation', as
   assert.equal(calls, 0);
 });
 
-test('parallel invocation is rejected; shutdown cancels pending approval', async () => {
-  let release;
-  const context = ctx(); context.ui.editor = () => new Promise(resolve => { release = resolve; });
+test('parallel invocation is rejected; shutdown dismisses pending payload review and releases the lock', async () => {
+  const harness = payloadReviewHarness();
   let calls = 0;
-  const runner = createRunner(options(async () => { calls++; }));
-  const first = runner.execute(input(), undefined, context);
+  const runner = createRunner({
+    resolveApiKey: async () => 'FAKE_TEST_KEY',
+    review: harness.reviewer,
+    run: async () => { calls++; return JSON.stringify(response()); },
+  });
+  const pendingReview = harness.makeContext();
+  const first = runner.execute(input(), undefined, pendingReview.context);
+  await pendingReview.opened;
   assert.equal((await runner.execute(input(), undefined, ctx())).code, 'busy');
-  runner.shutdown(); release('anything');
-  assert.equal((await first).code, 'cancelled');
-  assert.equal(calls, 0);
+  runner.shutdown();
+  const firstResult = await Promise.race([
+    first,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('review did not cancel')), 100)),
+  ]);
+  assert.equal(firstResult.code, 'cancelled');
+  assert.equal(pendingReview.isOpen(), false);
+  pendingReview.editor.onSubmit(pendingReview.editor.value);
+
+  const nextReview = harness.makeContext(true);
+  assert.equal((await runner.execute(input(), undefined, nextReview.context)).status, 'ok');
+  assert.equal(calls, 1);
 });
 
 test('input mutation after preview cannot change the approved request', async () => {

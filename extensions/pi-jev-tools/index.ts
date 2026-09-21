@@ -1,6 +1,9 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { Type } from '@earendil-works/pi-ai';
-import { createRunner, JevError, LIMITS } from './core.mjs';
+import { Editor, truncateToWidth } from '@earendil-works/pi-tui';
+import { createPayloadReviewer, createRunner, JevError, LIMITS } from './core.mjs';
+
+const reviewPayload = createPayloadReviewer({ Editor, truncateToWidth });
 
 export default function (pi: ExtensionAPI) {
   let runner: ReturnType<typeof createRunner> | undefined;
@@ -21,7 +24,8 @@ export default function (pi: ExtensionAPI) {
     }, { additionalProperties: false }),
     async execute(_id, params, signal, _onUpdate, ctx) {
       runner ??= createRunner({
-        resolveApiKey: async () => (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
+        resolveApiKey: async (currentCtx: typeof ctx) => (await currentCtx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
+        review: reviewPayload,
       });
       try {
         const result = await runner.execute(params, signal, ctx);

@@ -202,7 +202,7 @@ export function parseResponse(raw, prepared) {
   try { response = JSON.parse(raw); } catch { fail('invalid_response'); }
   const expectedIds = ['route', 'subagent_preset', 'primary_tool', 'specialist_skill', 'parallel_investigation'];
   if (!plain(response) || typeof response.model !== 'string' ||
-      !/^typesafe\/jev-\d+(?:\.\d+)*(?:-[a-zA-Z0-9._-]{1,64})?$/.test(response.model) ||
+      !/^typesafe\/jev-[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(response.model) ||
       !plain(response.answers) || Object.keys(response.answers).sort().join('|') !== expectedIds.sort().join('|') || !plain(response.usage)) fail('invalid_response');
 
   const route = parseChoice(response.answers.route, prepared.optionMaps.route);
@@ -344,18 +344,20 @@ export function createPayloadReviewer({ Editor, truncateToWidth }) {
 }
 
 /** Consent is bound to one immutable serialized request; no session history is collected. */
-export function createRunner({ resolveApiKey, run = runDecision, review }) {
+export function createRunner({ resolveApiKey, run = runDecision, review, now = () => performance.now() }) {
   if (typeof review !== 'function') throw new TypeError('missing_payload_reviewer');
   let active;
   return {
     shutdown() { active?.abort(); },
     async execute(input, catalog, signal, ctx) {
-      const prepared = buildRequest(input, catalog);
       const fallback = code => ({
         status: 'not_routed', code,
         note: 'No Jev routing recommendation was applied. Continue with the normal parent-agent workflow; do not retry automatically.',
       });
       if (active !== undefined) return fallback('busy');
+      let prepared;
+      try { prepared = buildRequest(input, catalog); }
+      catch (error) { return fallback(error instanceof JevRouterError ? error.code : 'internal_error'); }
       if (signal?.aborted) return fallback('cancelled');
       if (!ctx.hasUI) return fallback('confirmation_unavailable');
       const controller = new AbortController();
@@ -380,11 +382,18 @@ export function createRunner({ resolveApiKey, run = runDecision, review }) {
         if (combinedSignal.aborted) return fallback('cancelled');
         if (!ok) return fallback('declined');
         let apiKey;
-        try { apiKey = await resolveApiKey(); } catch { return fallback('authentication_failed'); }
+        try { apiKey = await resolveApiKey(ctx); } catch { return fallback('authentication_failed'); }
         if (typeof apiKey !== 'string' || !apiKey.trim()) return fallback('missing_key');
+        const startedAt = now();
         const raw = await run({ apiKey, serialized: prepared.serialized, signal: combinedSignal });
+        const elapsedMs = Math.max(0, Math.round(now() - startedAt));
         if (combinedSignal.aborted) return fallback('cancelled');
-        return parseResponse(raw, prepared);
+        return {
+          ...parseResponse(raw, prepared),
+          elapsedMs,
+          inputBytes: Buffer.byteLength(prepared.serialized, 'utf8'),
+          questionCount: Object.keys(prepared.request.questions).length,
+        };
       } catch (error) {
         return fallback(combinedSignal.aborted ? 'cancelled' : error instanceof JevRouterError ? error.code : 'internal_error');
       } finally {

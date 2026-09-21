@@ -16,7 +16,7 @@ The recording predates the OpenRouter transport now used by the extension, so it
 
 1. The parent collects public candidates with existing web tools.
 2. It supplies an English question and criteria with original-language excerpts.
-3. The tool validates the input, then shows the **entire immutable request** in a scrollable editor. Submit it unchanged to continue; cancel or edit it to stop.
+3. The tool validates the input, then shows the **entire immutable request**. In the interactive TUI it uses a scrollable editor that must be submitted unchanged; in RPC mode the host receives the exact payload in an abortable confirmation. Cancellation or edits stop without sending.
 4. A separate confirmation names OpenRouter, TypeSafe, the requested latest-model alias, request count, per-token price ceilings, absence of a hard total-cost cap, and deadline.
 5. Only after approval does the extension resolve Pi's existing OpenRouter authentication and send one Decisions API request.
 6. Jev supplies one relevance Score per candidate. Code validates the response and sorts every ID by descending score; ties preserve input order.
@@ -28,7 +28,7 @@ There is no automatic hook into web results, saved-response access, session/hist
 
 - Node.js 22.22+ and Pi with `ctx.modelRegistry.getProviderAuth()` support. Offline loading/typechecking was checked with Pi 0.85.0.
 - A configured Pi `openrouter` provider. The extension reuses Pi's resolved provider authentication; it does not read `models.json`, `auth.json`, environment variables, `.env`, or credential files itself.
-- An interactive Pi UI, or an RPC host implementing both editor and confirmation dialogs. Print/JSON mode fails closed with `confirmation_unavailable`.
+- An interactive Pi UI, or an RPC host implementing confirmation dialogs. Print/JSON mode fails closed with `confirmation_unavailable`.
 
 Load only this source extension:
 
@@ -67,9 +67,9 @@ The example is synthetic. For real use, supply confirmed public URLs and accurat
 
 Jev receives the question, criteria, candidate IDs, URLs, titles, excerpts, and generated English Score questions. Four fixed levels distinguish no useful evidence, background only, partial evidence, and direct evidence. Contradictory evidence can score highly; source authority and truth are not scored.
 
-Success returns `status: "ok"`, the requested latest alias and concrete returned Jev model ID, original and ranked IDs, per-ID scores (0–3), confidence, probabilities, and token usage. Unrelated response fields and source text are not returned.
+Success returns `status: "ok"`, the requested latest alias and returned Jev-family model ID, original and ranked IDs, per-ID scores (0–3), confidence, probabilities, and token usage. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals. Unrelated response fields and source text are not returned.
 
-Failure or decline returns `status: "not_ranked"`, a fixed code, and unchanged IDs. Codes include `declined`, `preview_changed`, `missing_key`, `authentication_failed`, `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
+Failure or decline, including preflight validation failure, returns `status: "not_ranked"`, a fixed code, and every recoverable original candidate ID in unchanged order. Codes include `invalid_input`, `invalid_candidate_id`, `invalid_source_url`, `input_too_large`, `declined`, `preview_changed`, `missing_key`, `authentication_failed`, `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
 
 ## Boundaries and limitations
 
@@ -79,7 +79,7 @@ Failure or decline returns `status: "not_ranked"`, a fixed code, and unchanged I
 - Authentication is resolved from Pi only after approval and is sent only in the OpenRouter `Authorization` header. It is never accepted as a tool argument or returned in results.
 - The endpoint is fixed and HTTP redirects are rejected. The extension makes no model-list request, runs no shell or child process, creates no cache, and adds no raw request/response log. Pi may retain ordinary tool arguments and results in session history.
 - Invisible Unicode format controls are visibly escaped in the review JSON without changing the text sent after approval. HTTP output is limited to 32KiB. Raw provider bodies and exception text are never returned to the model.
-- Only one invocation can be pending per extension instance. Shutdown or parent cancellation aborts the HTTP request, but cannot retract accepted data or charges.
+- Only one invocation can be pending per extension instance. Shutdown or parent cancellation dismisses an active payload review, releases the invocation lock, and aborts the HTTP request, but cannot retract accepted data or charges.
 - Byte limits are not exact tokenizer limits. A request can still exceed provider limits and fail without retry.
 - Reranking cannot recover omitted candidates and can misrank useful material. Keep the original candidates and never treat a low score as deletion.
 
@@ -99,7 +99,7 @@ node live/extensions/pi-jev-tools/tests/pi-check.mjs \
   /absolute/path/to/typescript
 ```
 
-Tests use mocked HTTP responses and synthetic keys. They cover request limits and immutability, response validation, stable sorting, review and approval gates, Pi-auth resolution failures, single-call/no-retry behavior, HTTP status mapping, cancellation, deadline, bounded output, sanitized errors, and noninteractive refusal.
+Tests use mocked HTTP responses and synthetic keys. They cover request limits and immutability, preflight order-preserving fallback, future Jev-family model names, current-context authentication, non-persistent call diagnostics, response validation, stable sorting, abortable review and approval gates, Pi-auth resolution failures, single-call/no-retry behavior, HTTP status mapping, cancellation, deadline, bounded output, sanitized errors, and noninteractive refusal.
 
 ## Opt-in evaluation
 

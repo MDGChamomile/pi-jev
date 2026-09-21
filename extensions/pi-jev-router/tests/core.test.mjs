@@ -124,15 +124,33 @@ test('input and runtime catalog limits fail closed without truncation', () => {
 test('response maps opaque options back to runtime names and retains distributions', () => {
   const prepared = buildRequest(input(), catalog());
   const current = response();
-  current.model = 'typesafe/jev-2.0';
+  current.model = 'typesafe/jev-next-stable';
   const result = parseResponse(JSON.stringify(current), prepared);
-  assert.equal(result.model, 'typesafe/jev-2.0');
+  assert.equal(result.model, 'typesafe/jev-next-stable');
   assert.equal(result.route.choice, 'web_subagent');
   assert.equal(result.subagentPreset.name, 'analysis-standard');
   assert.equal(result.primaryTool.name, 'web_search');
   assert.equal(result.specialistSkill.name, 'pi-subagent');
   assert.equal(result.parallelInvestigationProbability, 0.72);
   assert.equal(result.primaryTool.probabilities.find(item => item.name === 'read').probability, 0);
+});
+
+test('no-match, none, low-confidence, and conflicting speculative answers remain advisory data', () => {
+  const prepared = buildRequest(input(), catalog());
+  const current = response();
+  current.answers.route = choice('no_match', ['direct', 'local_subagent', 'web_subagent', 'browser_interaction', 'specialist_skill', 'clarify_with_user', 'no_match'], 0.2);
+  current.answers.subagent_preset = choice('review_standard', ['lookup_standard', 'analysis_standard', 'review_standard', 'not_applicable'], 0.3);
+  current.answers.primary_tool = choice('none', ['none', 'tool_0', 'tool_1'], 0.4);
+  current.answers.specialist_skill = choice('none', ['none', 'skill_0', 'skill_1'], 0.4);
+  current.answers.parallel_investigation.noul = 0.49;
+  const result = parseResponse(JSON.stringify(current), prepared);
+  assert.equal(result.route.choice, 'no_match');
+  assert.equal(result.route.confidence, 0.2);
+  assert.equal(result.subagentPreset.name, 'review-standard');
+  assert.equal(result.primaryTool.name, null);
+  assert.equal(result.specialistSkill.name, null);
+  assert.equal(result.parallelInvestigationProbability, 0.49);
+  assert.match(result.note, /Advisory routing only/);
 });
 
 test('malformed, inconsistent, partial, or extra responses fail closed', () => {
@@ -167,6 +185,35 @@ test('full immutable review and confirmation permit exactly one invocation', asy
   const result = await runner.execute(input(), catalog(), undefined, ctx());
   assert.equal(calls, 1);
   assert.equal(result.status, 'ok');
+  assert.equal(result.inputBytes, Buffer.byteLength(buildRequest(input(), catalog()).serialized, 'utf8'));
+  assert.equal(result.questionCount, 5);
+  assert.ok(Number.isSafeInteger(result.elapsedMs) && result.elapsedMs >= 0);
+});
+
+test('runner converts preflight validation failures to a sanitized fallback', async () => {
+  let calls = 0;
+  const runner = createRunner(options(async () => { calls++; throw new Error('must not run'); }));
+  const result = await runner.execute({ task: '' }, catalog(), undefined, ctx());
+  assert.equal(result.status, 'not_routed');
+  assert.equal(result.code, 'invalid_input');
+  assert.equal(calls, 0);
+  assert.doesNotMatch(JSON.stringify(result), /task/);
+});
+
+test('runner resolves authentication from the current execution context and reports deterministic timing', async () => {
+  const keys = [];
+  const times = [100, 125, 200, 240];
+  const runner = createRunner({
+    resolveApiKey: async context => context.apiKey,
+    review,
+    now: () => times.shift(),
+    run: async ({ apiKey }) => { keys.push(apiKey); return JSON.stringify(response()); },
+  });
+  const first = { ...ctx(), apiKey: 'FIRST' };
+  const second = { ...ctx(), apiKey: 'SECOND' };
+  assert.equal((await runner.execute(input(), catalog(), undefined, first)).elapsedMs, 25);
+  assert.equal((await runner.execute(input(), catalog(), undefined, second)).elapsedMs, 40);
+  assert.deepEqual(keys, ['FIRST', 'SECOND']);
 });
 
 test('approval UI discloses payload categories, provider, cost boundary, and limitations', async () => {
