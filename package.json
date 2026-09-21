@@ -1,0 +1,19 @@
+{
+  "name": "pi-jev-development",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test extensions/pi-jev-router/tests/core.test.mjs extensions/pi-jev-tools/tests/core.test.mjs",
+    "check:pi": "node scripts/check-pi.mjs",
+    "check:skills": "python3 -B -m unittest discover -s .github/scripts -p 'test_*.py' -v && python3 -B .github/scripts/validate_skills.py",
+    "check": "npm test && npm run check:pi && npm run check:skills"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "0.85.0",
+    "@earendil-works/pi-coding-agent": "0.85.0",
+    "@earendil-works/pi-tui": "0.85.0",
+    "@types/node": "22.20.1",
+    "typescript": "5.9.3"
+  }
+}

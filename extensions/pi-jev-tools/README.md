@@ -33,7 +33,7 @@ There is no automatic hook into web results, saved-response access, session/hist
 Load only this source extension:
 
 ```bash
-pi -e ./live/extensions/pi-jev-tools/index.ts
+pi -e ./extensions/pi-jev-tools/index.ts
 ```
 
 No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers only `jev_rerank`, installs nothing, and makes no startup request. Do not add it to a subagent's tool list.
@@ -88,16 +88,17 @@ Failure or decline, including preflight validation failure, returns `status: "no
 From the repository root, without credentials or provider calls:
 
 ```bash
-node --test live/extensions/pi-jev-tools/tests/core.test.mjs
+node --test extensions/pi-jev-tools/tests/core.test.mjs
 ```
 
-For TypeScript checking and offline Pi loading, provide existing package directories:
+For TypeScript checking and offline Pi loading, install this repository's locked development dependencies (accesses npm), then run:
 
 ```bash
-node live/extensions/pi-jev-tools/tests/pi-check.mjs \
-  /absolute/path/to/pi-coding-agent \
-  /absolute/path/to/typescript
+npm ci --include=dev --ignore-scripts
+npm run check:pi
 ```
+
+This checks each extension separately and all three source-copy installation combinations with exactly one shared skill. It uses no subagent checkout or active Pi configuration. The standalone `tests/pi-check.mjs` also accepts explicit Pi and TypeScript package directories.
 
 Tests use mocked HTTP responses and synthetic keys. They cover request limits and immutability, preflight order-preserving fallback, future Jev-family model names, current-context authentication, non-persistent call diagnostics, response validation, stable sorting, abortable review and approval gates, Pi-auth resolution failures, single-call/no-retry behavior, HTTP status mapping, cancellation, deadline, bounded output, sanitized errors, and noninteractive refusal.
 

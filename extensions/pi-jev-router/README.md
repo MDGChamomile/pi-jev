@@ -39,7 +39,7 @@ Choice answers retain their probability distributions and confidence. The questi
 Load only this source extension:
 
 ```bash
-pi -e ./live/extensions/pi-jev-router/index.ts
+pi -e ./extensions/pi-jev-router/index.ts
 ```
 
 No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers only `jev_route_task`, installs nothing, makes no startup request, and does not change active tools.
@@ -83,17 +83,18 @@ Failure or decline, including preflight validation failure, returns `status: "no
 From the repository root, without credentials or provider calls:
 
 ```bash
-node --test live/extensions/pi-jev-router/tests/core.test.mjs
+node --test extensions/pi-jev-router/tests/core.test.mjs
 python3 -B .github/scripts/validate_skills.py
 ```
 
-For TypeScript checking and offline Pi loading, provide existing package directories:
+For TypeScript checking and offline Pi loading, install this repository's locked development dependencies (accesses npm), then run:
 
 ```bash
-node live/extensions/pi-jev-router/tests/pi-check.mjs \
-  /absolute/path/to/pi-coding-agent \
-  /absolute/path/to/typescript
+npm ci --include=dev --ignore-scripts
+npm run check:pi
 ```
+
+This checks each extension separately and all three source-copy installation combinations with exactly one shared skill. It uses no subagent checkout or active Pi configuration. The standalone `tests/pi-check.mjs` also accepts explicit Pi and TypeScript package directories.
 
 Tests use mocked HTTP responses and synthetic keys. They cover request construction, candidate mapping, size limits, preflight fallback, future Jev-family model names, current-context authentication, non-persistent call diagnostics, malformed replies, immutable review and approval, Pi-auth resolution failures, unchanged fallback, concurrency, single-call/no-retry behavior, HTTP status mapping, cancellation, deadline, bounded output, sanitized errors, and noninteractive refusal.
 

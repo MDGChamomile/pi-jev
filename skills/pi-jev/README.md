@@ -11,13 +11,13 @@ The skill does not contact a provider. Each extension validates its own input, d
 
 ## Requirements and installation
 
-Copy the shared skill and whichever Jev extensions you intend to expose:
+From this repository's root, copy the shared skill once and whichever Jev extensions you intend to expose. For an existing kit installation, first review the [migration guide](../../MIGRATION.md) rather than overlaying existing directories.
 
 ```bash
 mkdir -p ~/.pi/agent/extensions ~/.pi/agent/skills
-cp -R live/skills/pi-jev ~/.pi/agent/skills/
-cp -R live/extensions/pi-jev-router ~/.pi/agent/extensions/   # optional
-cp -R live/extensions/pi-jev-tools ~/.pi/agent/extensions/    # optional
+cp -R skills/pi-jev ~/.pi/agent/skills/
+cp -R extensions/pi-jev-router ~/.pi/agent/extensions/   # optional
+cp -R extensions/pi-jev-tools ~/.pi/agent/extensions/    # optional
 ```
 
 At least one extension is required. Each extension needs a configured Pi `openrouter` provider and a compatible approval UI. No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. The extensions do not install dependencies or read credential files themselves.
