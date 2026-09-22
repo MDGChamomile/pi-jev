@@ -1,7 +1,10 @@
 export const TOOL_NAME = 'jev_route_task';
 export const MODEL = '~typesafe/jev-latest';
 export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
-export const isJevWorkflowSkill = name => /^pi-jev(?:-router)?(?::\d+)?$/.test(name);
+export const isJevWorkflowSkill = name => /^(?:skill:)?pi-jev(?:-router)?(?::\d+)?$/.test(name);
+export const runtimeSkillCatalog = commands => commands
+  .filter(command => command.source === 'skill' && !isJevWorkflowSkill(command.name))
+  .map(command => ({ name: command.name, description: command.description || 'No description provided.' }));
 export const LIMITS = Object.freeze({
   taskChars: 8000,
   constraintsChars: 4000,

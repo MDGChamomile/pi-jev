@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { Type } from '@earendil-works/pi-ai';
 import { Editor, truncateToWidth } from '@earendil-works/pi-tui';
-import { createPayloadReviewer, createRunner, isJevWorkflowSkill, JevRouterError, LIMITS, TOOL_NAME } from './core.mjs';
+import { createPayloadReviewer, createRunner, JevRouterError, LIMITS, runtimeSkillCatalog, TOOL_NAME } from './core.mjs';
 
 const reviewPayload = createPayloadReviewer({ Editor, truncateToWidth });
 
@@ -10,9 +10,7 @@ function runtimeCatalog(pi: ExtensionAPI) {
   const tools = pi.getAllTools()
     .filter(tool => active.has(tool.name) && tool.name !== TOOL_NAME)
     .map(tool => ({ name: tool.name, description: tool.description || 'No description provided.' }));
-  const skills = pi.getCommands()
-    .filter(command => command.source === 'skill' && !isJevWorkflowSkill(command.name))
-    .map(command => ({ name: command.name, description: command.description || 'No description provided.' }));
+  const skills = runtimeSkillCatalog(pi.getCommands());
   return { tools, skills };
 }
 
