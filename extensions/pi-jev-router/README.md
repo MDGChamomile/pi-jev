@@ -75,7 +75,7 @@ Failure or decline, including preflight validation failure, returns `status: "no
 - Authentication is resolved from Pi only after approval and sent only in the OpenRouter `Authorization` header. It is never accepted in tool input or returned.
 - The endpoint is fixed and HTTP redirects are rejected. The extension makes no model-list request, shell call, child process, cache, or separate raw request/response log. Pi may retain ordinary tool arguments and results.
 - Invisible Unicode format controls are visibly escaped in the review JSON without changing the text sent after approval. HTTP output is limited to 32KiB. Provider bodies and exception text are sanitized to fixed codes.
-- Only one invocation can be pending per extension instance. Parent cancellation or session shutdown dismisses an active payload review, releases the invocation lock, and aborts an active HTTP request. Cancellation cannot retract accepted data or charges.
+- Only one invocation can be pending per extension instance. Parent cancellation or session shutdown dismisses an active payload review, stops waiting for Pi authentication, releases the invocation lock, and aborts an active HTTP request. A late authentication result is ignored. Cancellation cannot retract accepted data or charges.
 - Routing quality and calibration remain task-specific. The latest alias can move to a new Jev version; record the returned Jev-family model ID and reevaluate behavior after changes.
 
 ## Offline verification
@@ -96,7 +96,7 @@ npm run check:pi
 
 This checks each extension separately and all three source-copy installation combinations with exactly one shared skill. It uses no subagent checkout or active Pi configuration. The standalone `tests/pi-check.mjs` also accepts explicit Pi and TypeScript package directories.
 
-Tests use mocked HTTP responses and synthetic keys. They cover request construction, candidate mapping, size limits, preflight fallback, future Jev-family model names, current-context authentication, non-persistent call diagnostics, malformed replies, immutable review and approval, Pi-auth resolution failures, unchanged fallback, concurrency, single-call/no-retry behavior, HTTP status mapping, cancellation, deadline, bounded output, sanitized errors, and noninteractive refusal.
+Tests use mocked HTTP responses and synthetic keys. They cover request construction, candidate mapping, size limits, preflight fallback, future Jev-family model names, current-context authentication and cancellation, non-persistent call diagnostics, malformed replies, immutable review and approval, Pi-auth resolution failures, unchanged fallback, concurrency, single-call/no-retry behavior, HTTP status mapping, deadline, bounded output, sanitized errors, and noninteractive refusal.
 
 ## Evaluation before automation
 

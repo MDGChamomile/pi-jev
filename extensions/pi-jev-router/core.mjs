@@ -343,6 +343,25 @@ export function createPayloadReviewer({ Editor, truncateToWidth }) {
   };
 }
 
+async function resolveWhileActive(resolveValue, signal) {
+  if (signal.aborted) fail('cancelled');
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      signal.removeEventListener('abort', onAbort);
+      callback(value);
+    };
+    const onAbort = () => finish(reject, new JevRouterError('cancelled'));
+    signal.addEventListener('abort', onAbort, { once: true });
+    Promise.resolve().then(resolveValue).then(
+      value => finish(resolve, value),
+      error => finish(reject, error),
+    );
+  });
+}
+
 /** Consent is bound to one immutable serialized request; no session history is collected. */
 export function createRunner({ resolveApiKey, run = runDecision, review, now = () => performance.now() }) {
   if (typeof review !== 'function') throw new TypeError('missing_payload_reviewer');
@@ -382,7 +401,8 @@ export function createRunner({ resolveApiKey, run = runDecision, review, now = (
         if (combinedSignal.aborted) return fallback('cancelled');
         if (!ok) return fallback('declined');
         let apiKey;
-        try { apiKey = await resolveApiKey(ctx); } catch { return fallback('authentication_failed'); }
+        try { apiKey = await resolveWhileActive(() => resolveApiKey(ctx), combinedSignal); }
+        catch { return fallback(combinedSignal.aborted ? 'cancelled' : 'authentication_failed'); }
         if (typeof apiKey !== 'string' || !apiKey.trim()) return fallback('missing_key');
         const startedAt = now();
         const raw = await run({ apiKey, serialized: prepared.serialized, signal: combinedSignal });

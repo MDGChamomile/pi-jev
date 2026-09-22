@@ -175,6 +175,39 @@ test('runner resolves authentication from the current execution context and repo
   assert.deepEqual(keys, ['FIRST', 'SECOND']);
 });
 
+test('parent abort and shutdown cancel pending authentication, release the lock, and ignore late credentials', async () => {
+  for (const cause of ['parent', 'shutdown']) {
+    const controller = new AbortController();
+    let authStarted, releaseAuth, resolutions = 0, calls = 0;
+    const started = new Promise(resolve => { authStarted = resolve; });
+    const runner = createRunner({
+      resolveApiKey: async () => {
+        if (++resolutions > 1) return 'FAKE_TEST_KEY';
+        authStarted();
+        return new Promise(resolve => { releaseAuth = resolve; });
+      },
+      review,
+      run: async () => { calls++; return JSON.stringify(response()); },
+    });
+    const first = runner.execute(input(), controller.signal, ctx());
+    await started;
+    assert.equal((await runner.execute(input(), undefined, ctx())).code, 'busy');
+
+    if (cause === 'parent') controller.abort(); else runner.shutdown();
+    const firstResult = await Promise.race([
+      first,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('authentication did not cancel')), 100)),
+    ]);
+    assert.equal(firstResult.code, 'cancelled');
+    assert.equal((await runner.execute(input(), undefined, ctx())).status, 'ok');
+
+    releaseAuth('LATE_KEY');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(calls, 1);
+    assert.equal(resolutions, 2);
+  }
+});
+
 test('English review and approval UI retain disclosure and safety boundaries', async () => {
   const context = ctx();
   const prompts = [];

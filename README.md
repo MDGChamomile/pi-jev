@@ -160,7 +160,7 @@ See the [reranker guide](extensions/pi-jev-tools/README.md) for the full contrac
 - **No hard total-cost cap.** OpenRouter does not provide one for a moving model alias; confirmations disclose this explicitly. If a future Jev version exceeds either per-token price ceiling, the request fails instead of using it. Taxes, currency conversion, and account-level billing behavior are outside the extensions.
 - **Credentials and transport.** Authentication is resolved from Pi only after approval and sent only in the OpenRouter `Authorization` header. The endpoint is fixed and HTTP redirects are rejected. The extensions make no model-list request, run no shell or child process, create no cache, and add no raw request/response log. Pi may retain ordinary tool arguments and results.
 - **Bounded, sanitized output.** Invisible Unicode format controls are visibly escaped in review JSON without changing approved text. HTTP output is limited to 32KiB. Provider bodies and exception text are sanitized to fixed codes.
-- **Cancellation and concurrency.** Only one invocation can be pending per extension instance. Parent cancellation or session shutdown dismisses an active payload review, releases the invocation lock, and aborts an active HTTP request. Cancellation cannot retract accepted data or charges.
+- **Cancellation and concurrency.** Only one invocation can be pending per extension instance. Parent cancellation or session shutdown dismisses an active payload review, stops waiting for Pi authentication, releases the invocation lock, and aborts an active HTTP request. A late authentication result is ignored. Cancellation cannot retract accepted data or charges.
 - **Diagnostics are not quality evidence.** Successful calls also return non-persistent provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These observations are not proof of quality or billing totals. The latest alias can move to a new Jev version; record returned Jev-family model IDs and reevaluate behavior after changes.
 
 ## Offline verification
@@ -179,7 +179,7 @@ npm ci --include=dev --ignore-scripts
 npm run check
 ```
 
-Tests use mocked HTTP responses and synthetic keys. They cover request construction and limits, candidate mapping and stable sorting, preflight fallbacks, immutable review and approval, current-context authentication, non-persistent call diagnostics, malformed replies, single-call/no-retry behavior, cancellation, deadlines, bounded output, sanitized errors, and noninteractive refusal.
+Tests use mocked HTTP responses and synthetic keys. They cover request construction and limits, candidate mapping and stable sorting, preflight fallbacks, immutable review and approval, current-context authentication and cancellation, non-persistent call diagnostics, malformed replies, single-call/no-retry behavior, deadlines, bounded output, sanitized errors, and noninteractive refusal.
 
 The Pi check loads each extension separately, then verifies router-only, reranker-only, and combined source-copy installations with exactly one shared skill. It uses this repository's pinned Pi 0.85.0/TypeScript dependencies and isolated configuration, not a subagent checkout or active Pi settings. No model session or provider request is created.
 
