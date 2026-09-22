@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRequest, createPayloadReviewer, createRunner, ENDPOINT, isJevWorkflowSkill, parseResponse, runDecision, LIMITS } from '../core.mjs';
+import { buildRequest, createPayloadReviewer, createRunner, ENDPOINT, isJevWorkflowSkill, parseResponse, runDecision, runtimeSkillCatalog, LIMITS } from '../core.mjs';
 
 const input = () => ({ task: 'Determine whether this request requires both web and local investigation.', constraints: 'Read-only investigation; do not modify files.' });
 const catalog = () => ({
@@ -77,13 +77,23 @@ function payloadReviewHarness() {
   return { reviewer, makeContext };
 }
 
-test('shared and legacy Jev workflow skills are excluded from routing candidates', () => {
-  for (const name of ['pi-jev', 'pi-jev:2', 'pi-jev-router', 'pi-jev-router:2']) {
-    assert.equal(isJevWorkflowSkill(name), true, name);
-  }
-  for (const name of ['pi-subagent', 'pi-jev-tools', 'pi-jev-router-extra']) {
+test('shared and legacy Jev workflow skills are excluded from Pi command candidates', () => {
+  for (const name of [
+    'pi-jev', 'pi-jev:2', 'pi-jev-router', 'pi-jev-router:2',
+    'skill:pi-jev', 'skill:pi-jev:2', 'skill:pi-jev-router', 'skill:pi-jev-router:2',
+  ]) assert.equal(isJevWorkflowSkill(name), true, name);
+  for (const name of ['pi-subagent', 'skill:pi-subagent', 'pi-jev-tools', 'skill:pi-jev-router-extra']) {
     assert.equal(isJevWorkflowSkill(name), false, name);
   }
+
+  const skills = runtimeSkillCatalog([
+    { name: 'skill:pi-jev', source: 'skill', description: 'Current shared workflow.' },
+    { name: 'skill:pi-jev-router:2', source: 'skill', description: 'Legacy duplicate.' },
+    { name: 'skill:security-audit', source: 'skill', description: 'Review source defensively.' },
+    { name: 'extension-command', source: 'extension', description: 'Not a skill.' },
+  ]);
+  assert.deepEqual(skills, [{ name: 'skill:security-audit', description: 'Review source defensively.' }]);
+  assert.deepEqual(buildRequest(input(), { tools: [], skills }).request.state.available_skills, skills);
 });
 
 test('request preserves the English task and builds fixed plus runtime-bounded questions', () => {
