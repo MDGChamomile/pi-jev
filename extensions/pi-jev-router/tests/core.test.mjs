@@ -374,13 +374,14 @@ test('mutating inputs after review cannot change the approved request', async ()
   assert.equal((await runner.execute(task, candidates, undefined, context)).status, 'ok');
 });
 
-test('review escapes invisible format controls while preserving the exact approved text', async () => {
+test('review escapes BMP and supplementary format controls while preserving the exact approved request', async () => {
   const task = input();
-  task.task = 'route\u202ethis';
+  task.task = `route\u202e${String.fromCodePoint(0xe0001, 0xe0020, 0x1d173)}this`;
   const context = ctx();
   context.ui.editor = async (_title, preview) => {
-    assert.ok(preview.includes('route\\u202ethis'));
-    assert.equal(JSON.parse(preview).state.task, task.task);
+    assert.ok(preview.includes('route\\u202e\\udb40\\udc01\\udb40\\udc20\\ud834\\udd73this'));
+    assert.doesNotMatch(preview, /\p{Cf}/u);
+    assert.deepEqual(JSON.parse(preview), buildRequest(task, catalog()).request);
     return preview;
   };
   const runner = createRunner(options(async ({ serialized }) => {

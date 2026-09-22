@@ -253,7 +253,8 @@ export function createRunner({ resolveApiKey, run = runDecision, review, now = (
       try {
         // Escape invisible Unicode format controls for an unambiguous review; JSON parsing preserves the exact payload text.
         const preview = JSON.stringify(prepared.request, null, 2).replace(/\p{Cf}/gu, character =>
-          `\\u${character.codePointAt(0).toString(16).padStart(4, '0')}`);
+          Array.from({ length: character.length }, (_, index) =>
+            `\\u${character.charCodeAt(index).toString(16).padStart(4, '0')}`).join(''));
         const reviewed = await review({
           ctx,
           title: 'Review Jev payload — public sources only',
