@@ -260,13 +260,14 @@ test('input mutation after preview cannot change the approved request', async ()
   assert.equal((await runner.execute(x, undefined, context)).status, 'ok');
 });
 
-test('review escapes invisible format controls while preserving the exact approved text', async () => {
+test('review escapes BMP and supplementary format controls while preserving the exact approved request', async () => {
   const x = input();
-  x.candidates[0].excerpt = 'public\u202etext';
+  x.candidates[0].excerpt = `public\u202e${String.fromCodePoint(0xe0001, 0xe0020, 0x1d173)}text`;
   const context = ctx();
   context.ui.editor = async (_title, preview) => {
-    assert.ok(preview.includes('public\\u202etext'));
-    assert.equal(JSON.parse(preview).state.candidates[0].excerpt, x.candidates[0].excerpt);
+    assert.ok(preview.includes('public\\u202e\\udb40\\udc01\\udb40\\udc20\\ud834\\udd73text'));
+    assert.doesNotMatch(preview, /\p{Cf}/u);
+    assert.deepEqual(JSON.parse(preview), buildRequest(x).request);
     return preview;
   };
   const runner = createRunner(options(async ({ serialized }) => {
