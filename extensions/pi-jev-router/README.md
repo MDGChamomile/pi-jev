@@ -64,6 +64,8 @@ Success returns `status: "ok"`, the route and full probabilities, mapped tool/sk
 
 Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
 
+When supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
+
 ## Boundaries and limitations
 
 - **English semantic input.** Preserve names, numbers, negation, uncertainty, scope, and plan-versus-execution distinctions. Do not use another translation provider merely to prepare a payload.

@@ -221,6 +221,8 @@ export function parseResponse(raw, prepared) {
     if (value !== null && (!Number.isSafeInteger(value) || value < 0)) fail('invalid_response');
     usage[field] = value;
   }
+  const cost = response.usage.cost;
+  if (typeof cost === 'number' && Number.isFinite(cost) && cost >= 0) usage.cost = cost;
 
   const presetNames = { lookup_standard: 'lookup-standard', analysis_standard: 'analysis-standard', review_standard: 'review-standard', not_applicable: null };
   return {
