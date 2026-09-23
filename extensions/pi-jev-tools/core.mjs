@@ -135,7 +135,9 @@ export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMI
     });
     if (!response.ok) {
       try { await response.body?.cancel(); } catch {}
-      if (response.status === 401 || response.status === 403) fail('authentication_failed');
+      if (response.status === 401) fail('authentication_failed');
+      if (response.status === 402) fail('payment_required');
+      if (response.status === 403) fail('request_forbidden');
       if (response.status === 429) fail('rate_limited');
       if (response.status === 408 || response.status === 504) fail('timeout');
       if (response.status === 400 || response.status === 422) fail('invalid_request');

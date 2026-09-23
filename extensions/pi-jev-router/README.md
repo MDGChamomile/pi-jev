@@ -62,7 +62,7 @@ No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key
 
 Success returns `status: "ok"`, the route and full probabilities, mapped tool/skill candidates, optional subagent preset, parallel-investigation probability, token usage, and an advisory limitation note. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals.
 
-Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
+Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
 
 ## Boundaries and limitations
 
