@@ -446,6 +446,21 @@ test('OpenRouter transport sends one bounded authenticated request', async () =>
   }), /output_too_large/);
 });
 
+test('HTTP authorization and payment failures preserve sanitized fallback without retry', async () => {
+  for (const [status, code] of [[401, 'authentication_failed'], [402, 'payment_required'], [403, 'request_forbidden']]) {
+    let calls = 0;
+    const runner = createRunner(options(args => runDecision({ ...args, fetchImpl: async () => {
+      calls++;
+      return new Response('SYNTHETIC_PRIVATE_BODY', { status });
+    } })));
+    const result = await runner.execute(input(), catalog(), undefined, ctx());
+    assert.equal(result.status, 'not_routed');
+    assert.equal(result.code, code);
+    assert.equal(calls, 1);
+    assert.doesNotMatch(JSON.stringify(result), /SYNTHETIC_PRIVATE_BODY/);
+  }
+});
+
 test('OpenRouter transport maps status, timeout, cancellation, and network failures', async () => {
   for (const [status, code] of [[401, 'authentication_failed'], [429, 'rate_limited'], [400, 'invalid_request'], [500, 'provider_error']]) {
     await assert.rejects(runDecision({ apiKey: 'FAKE_TEST_KEY', serialized: '{}', fetchImpl: fetchResponse('PRIVATE', status) }), new RegExp(code));
