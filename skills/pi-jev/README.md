@@ -11,7 +11,7 @@ The skill does not contact a provider. Each extension validates its own input, d
 
 ## Requirements and installation
 
-From this repository's root, copy the shared skill once and whichever Jev extensions you intend to expose. For an existing kit installation, first review the [migration guide](../../MIGRATION.md) rather than overlaying existing directories.
+From this repository's root, copy the shared skill once and whichever Jev extensions you intend to expose. For an existing kit installation, first review the [migration guide](https://github.com/MDGChamomile/pi-jev/blob/main/MIGRATION.md) rather than overlaying existing directories.
 
 ```bash
 mkdir -p ~/.pi/agent/extensions ~/.pi/agent/skills

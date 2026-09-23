@@ -2,7 +2,7 @@
 // Launched by check-pi.mjs with an isolated HOME and PI_OFFLINE=1.
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +28,10 @@ for (const [extensions, expectedTools] of cases) {
     }
     const skillDirectory = join(agentDir, 'skills/pi-jev');
     await cp(join(root, 'skills/pi-jev'), skillDirectory, { recursive: true });
+    const readme = await readFile(join(skillDirectory, 'README.md'), 'utf8');
+    assert.equal(existsSync(join(agentDir, 'MIGRATION.md')), false);
+    assert.match(readme, /\[migration guide\]\(https:\/\/github\.com\/MDGChamomile\/pi-jev\/blob\/main\/MIGRATION\.md\)/,
+      'copied README must link to migration guidance outside the source checkout');
     const loader = new DefaultResourceLoader({
       cwd: temporary,
       agentDir,

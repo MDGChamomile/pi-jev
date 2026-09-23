@@ -101,6 +101,27 @@ test('generated instructions count toward 64KiB; nothing is silently shortened',
   assert.equal(x.candidates[0].excerpt.length, 2000);
 });
 
+test('optional provider cost is allowlisted without affecting valid rankings', () => {
+  for (const cost of [0, 0.000018774, undefined, null, '0.01', -1, true, {}, []]) {
+    const r = response();
+    r.usage = { input_tokens: 100, output_tokens: 20, cost, extra: 'SYNTHETIC_UNRELATED' };
+    const result = parseResponse(JSON.stringify(r), ['a', 'b']);
+    const expected = { input_tokens: 100, output_tokens: 20 };
+    if (typeof cost === 'number' && cost >= 0) expected.cost = cost;
+    assert.deepEqual(result.usage, expected);
+    assert.equal(result.status, 'ok');
+    assert.deepEqual(result.rankedIds, ['b', 'a']);
+    assert.doesNotMatch(JSON.stringify(result), /SYNTHETIC_UNRELATED/);
+  }
+  // JSON numbers can overflow to infinity even though NaN/Infinity literals are invalid JSON.
+  for (const literal of ['1e400', '-1e400']) {
+    const raw = JSON.stringify(response()).replace(/"cost":[^,}]+/, `"cost":${literal}`);
+    const result = parseResponse(raw, ['a', 'b']);
+    assert.equal(result.status, 'ok');
+    assert.equal(Object.hasOwn(result.usage, 'cost'), false);
+  }
+});
+
 test('stable ranking retains all candidates and strips unrelated response text', () => {
   const r = response(); r.secret = 'DO_NOT_RETURN';
   assert.deepEqual(parseResponse(JSON.stringify(r), ['a','b']).rankedIds, ['b','a']);

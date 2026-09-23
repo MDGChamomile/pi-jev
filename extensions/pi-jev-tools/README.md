@@ -71,6 +71,8 @@ Success returns `status: "ok"`, the requested latest alias and returned Jev-fami
 
 Failure or decline, including preflight validation failure, returns `status: "not_ranked"`, a fixed code, and every recoverable original candidate ID in unchanged order. Codes include `invalid_input`, `invalid_candidate_id`, `invalid_source_url`, `input_too_large`, `declined`, `preview_changed`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
 
+When supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
+
 ## Boundaries and limitations
 
 - **Public web data only**, including the question and criteria. Never send session contents, session-search output, local code, private notes, internal documents, signed URLs, credentials, or authenticated-page excerpts.

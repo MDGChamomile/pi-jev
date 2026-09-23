@@ -91,6 +91,8 @@ export function parseResponse(raw, originalOrder) {
     if (n !== null && (!Number.isSafeInteger(n) || n < 0)) fail('invalid_response');
     usage[field] = n;
   }
+  const cost = response.usage.cost;
+  if (typeof cost === 'number' && Number.isFinite(cost) && cost >= 0) usage.cost = cost;
   return {
     status: 'ok', requestedModel: MODEL, model: response.model,
     originalOrder: [...originalOrder],
