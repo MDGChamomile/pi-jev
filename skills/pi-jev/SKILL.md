@@ -1,20 +1,20 @@
 ---
 name: pi-jev
-description: Use available TypeSafe Jev tools without requiring the user to request Jev explicitly. Use jev_route_task when comparing multiple plausible handling routes could materially improve the outcome or when explicitly evaluating routing quality, and jev_rerank when prioritizing already-collected public web passages would materially help. Skip simple tasks and low-benefit calls.
+description: Use available TypeSafe Jev tools at two decision points without requiring the user to name Jev. Use jev_route_task before choosing among two or more unresolved, feasible research, comparison, or review workflows, or for explicit routing evaluation. Use jev_rerank after collecting multiple usable public passages, before reading all sources in depth, when reading order remains open. Use the applicable tool once, subject to data and consent boundaries; skip trivial tasks, settled routes, and sufficient evidence.
 license: MIT
 compatibility: Requires at least one companion Jev extension, an interactive Pi or compatible RPC approval UI, and a configured Pi OpenRouter provider.
 ---
 
 # Pi Jev
 
-Use this workflow to select among the available consent-gated TypeSafe Jev tools. The user does not need to mention Jev. Each tool is optional and advisory; use ordinary reasoning when its expected benefit is small.
+Use this workflow to select among the available consent-gated TypeSafe Jev tools. The user does not need to mention Jev. When a decision point below applies, use the corresponding tool once; do not require a second, speculative estimate of a large benefit. These are advisory tools, not mandatory steps for every task.
 
 ## Select a tool
 
-- Use `jev_route_task` when multiple plausible primary routes, active tools, specialist skills, or pi-subagent modes could materially affect the outcome, or when explicitly evaluating routing quality. Skip simple tasks and obvious routes with little expected benefit from a second opinion.
-- Use `jev_rerank` only after collecting public web passages, when prioritizing those candidates by relevance would materially improve the investigation. It ranks supplied passages; it does not search, fetch, verify truth, or write the answer.
-- Do not call a Jev tool merely because it is available. If a needed tool is inactive, continue with the normal workflow.
-- Avoid multiple Jev calls for one task unless each call has a distinct, material purpose. Never retry a declined or failed call automatically.
+- Use `jev_route_task` at the planning stage of research, comparison, or review when two or more feasible workflow choices remain unresolved, before committing to one. Examples include parent-led versus delegated investigation, choosing between applicable specialist skills, or deciding whether independent tracks are useful. Merely having several tools available is not a workflow choice. Also use it for explicit routing evaluation. Otherwise skip trivial tasks, user-specified workflows, and settled routes.
+- Use `jev_rerank` after collecting multiple usable public passages and before reading all candidate sources in depth, when their reading order remains open. Skip a single sufficient source, evidence that already answers the question, fully reviewed candidates, or passages with inadequate provenance or context. It ranks supplied passages; it does not search, fetch, verify truth, or write the answer.
+- These decision points do not override data or consent boundaries. If a needed tool is inactive or a permitted payload cannot be prepared, continue with the normal workflow.
+- Do not repeat a call for the same decision. Routing and later reranking may serve distinct decisions in one task. Never retry a declined or failed call automatically.
 
 ## Shared boundaries
 
@@ -47,5 +47,7 @@ When `jev_rerank` applies:
 4. Never supply local or private material, credentials, session data, internal documents, signed URLs, or authenticated-page content. A public-looking URL does not make attached text public.
 5. Call the tool once. On `not_ranked`, retain the original order and continue without retrying.
 6. Use the result to prioritize reading; do not treat a low score as deletion or the ranking as authority or factual verification.
+
+Use the shortest exact excerpts that preserve the context needed for relevance, including plan-versus-execution distinctions. A sufficient public search excerpt can be used; do not infer text from titles, pad to a target length, or read every source in depth just to prepare the call.
 
 For the complete input limits, output shape, and data boundary, read the [`pi-jev-tools` extension guide](../../extensions/pi-jev-tools/README.md).
