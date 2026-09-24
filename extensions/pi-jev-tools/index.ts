@@ -14,7 +14,7 @@ export default function (pi: ExtensionAPI) {
     description: 'Rank 1–10 collected public-web passages by relevance with TypeSafe Jev. Use once after collecting multiple usable public passages, before reading all sources in depth, when reading order remains open. Skip a single sufficient source, evidence already answering the question, fully reviewed candidates, or inadequate provenance or context. External paid request: review the full payload and confirm before sending. Parent only; never send secrets, credentials, session/local/private data, signed URLs, or authenticated content. Write question and criteria in English; preserve excerpts verbatim, including names, numbers, dates, and negation. It does not fetch or verify facts. Inputs over 64KiB UTF-8 fail. Never retry; on not_ranked keep the original order.',
     parameters: Type.Object({
       question: Type.String({ minLength: 1, maxLength: 4000, description: 'English research question; no private context.' }),
-      criteria: Type.String({ minLength: 1, maxLength: 4000, description: 'English relevance criteria; preserve state distinctions.' }),
+      criteria: Type.Optional(Type.String({ minLength: 1, maxLength: 4000, description: 'Optional English relevance criteria; preserve state distinctions. If omitted, prioritize direct evidence over background while preserving dates, negation, uncertainty, planned versus completed actions, and contradictory evidence. Empty or invalid values are rejected.' })),
       candidates: Type.Array(Type.Object({
         id: Type.String({ pattern: '^[A-Za-z0-9_-]{1,64}$', description: 'Unique candidate ID.' }),
         url: Type.String({ minLength: 1, maxLength: 2048, description: 'Public, unsigned, unauthenticated source URL.' }),
