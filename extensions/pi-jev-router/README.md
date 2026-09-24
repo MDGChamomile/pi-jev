@@ -20,7 +20,7 @@ Choice answers retain their probability distributions and confidence. The questi
 
 ## Flow
 
-1. The parent decides that comparing multiple plausible handling routes could materially improve the outcome or that routing quality should be evaluated explicitly; simple tasks and low-benefit calls skip Jev.
+1. At the planning stage of research, comparison, or review, the parent uses Jev once before choosing among two or more unresolved, feasible workflows (for example, parent-led versus delegated investigation). Several available tools alone do not qualify. Explicit routing evaluation also qualifies; otherwise trivial tasks, user-specified workflows, and settled routes skip Jev. No additional speculative large-benefit estimate is required; data and consent boundaries still apply.
 2. It supplies an English task description and optional constraints while omitting unrelated history.
 3. The extension snapshots active tool and discovered skill names/descriptions. It does not read session history, files, skill bodies, or tool results.
 4. It validates and displays the complete immutable payload for review. In the interactive TUI, submit the editor unchanged to continue; cancellation or edits stop without sending. In RPC mode, the host receives the exact payload in an abortable confirmation dialog.

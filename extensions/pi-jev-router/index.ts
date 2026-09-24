@@ -21,7 +21,7 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: TOOL_NAME,
     label: 'Jev Route Task',
-    description: 'Ask TypeSafe Jev for advisory task, active-tool, specialist-skill, pi-subagent-preset, and parallel-investigation routing when comparing multiple plausible handling routes could materially improve the outcome or when explicitly evaluating routing quality; skip simple tasks and low-benefit calls. External paid request: write task and constraints in English, review the full payload, and confirm before sending. Preserve operative details, names, numbers, negation, and scope. Never include secrets, credentials, session/local/private data, authenticated content, or unauthorized data. Jev neither executes nor authorizes actions. One request; no retries. On not_routed continue normally.',
+    description: 'Ask TypeSafe Jev for advisory task, active-tool, specialist-skill, pi-subagent-preset, and parallel-investigation routing. Use once before choosing among two or more unresolved, feasible research, comparison, or review workflows, such as parent-led versus delegated investigation; several available tools alone do not qualify. Also use for explicit routing evaluation. Otherwise skip trivial tasks, user-specified workflows, and settled routes. External paid request: write task and constraints in English, review the full payload, and confirm before sending. Preserve operative details, names, numbers, negation, and scope. Never include secrets, credentials, session/local/private data, authenticated content, or unauthorized data. Jev neither executes nor authorizes actions. One request; no retries. On not_routed continue normally.',
     parameters: Type.Object({
       task: Type.String({
         minLength: 1,

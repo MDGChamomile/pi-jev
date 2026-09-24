@@ -12,6 +12,8 @@ This recording demonstrates the review-and-confirmation workflow on three public
 
 The recording predates the OpenRouter transport now used by the extension, so it is evidence for the interaction pattern rather than current provider compatibility, ranking quality, or latency. No private documents or personal sessions are used.
 
+Use Jev once after collecting multiple usable public passages, before reading all candidate sources in depth, when reading order remains open. Skip a single sufficient source, evidence that already answers the question, fully reviewed candidates, or passages with inadequate provenance or context. Data and consent boundaries still apply.
+
 ## Flow
 
 1. The parent collects public candidates with existing web tools.
@@ -59,7 +61,7 @@ The example is synthetic. For real use, supply confirmed public URLs and accurat
 
 - `question` / `criteria`: English instructions, at most 4,000 Unicode characters each.
 - Candidates: 1–10; unique IDs matching `[A-Za-z0-9_-]{1,64}`; public HTTP(S) URL up to 2,048 characters; title up to 500 characters; excerpt up to 4,000 characters.
-- Prefer excerpts around 2,000 characters. Preserve context, negation, uncertainty, names, numbers, dates, quotes, and plan/execution distinctions.
+- Use the shortest exact excerpts that preserve enough context for relevance, including negation, uncertainty, names, numbers, dates, quotes, and plan/execution distinctions. A sufficient public search excerpt can be used. Do not infer text from titles, pad excerpts to a target length, or read every source in depth merely to prepare a ranking request. The 1–10 candidate contract remains valid, but skip calls with no reading-priority decision to make.
 - The constructed request, including generated questions, must fit **65,536 UTF-8 bytes**. Nothing is truncated or split into batches.
 - The request uses OpenRouter's `~typesafe/jev-latest` alias, which redirects to the latest Jev-family model. It disables provider fallbacks, restricts routing to TypeSafe, and sets price caps of $0.042/M input tokens and $0/M output tokens.
 - One approval still permits only one paid request, but OpenRouter does not provide a hard total-cost cap for a moving model alias. The confirmation therefore discloses this explicitly. If a future Jev version exceeds either per-token price ceiling, the request fails instead of using it. Taxes, currency conversion, and account-level billing behavior are outside this extension.
