@@ -63,12 +63,19 @@ if (diagnostics.length) {
     assert.deepEqual([...extension.tools.keys()], ['jev_rerank']);
     const tool = extension.tools.get('jev_rerank').definition;
     assert.equal(tool.parameters.properties.candidates.maxItems, 10);
-    // Print/JSON contexts cannot approve: this must not start any process or API call.
-    const result = await tool.execute('offline-test', {
-      question: 'Which passage answers the question?', criteria: 'Direct evidence.',
-      candidates: [{ id: 'a', url: 'https://example.com', title: 'Synthetic', excerpt: 'A public example.' }],
-    }, undefined, undefined, { hasUI: false });
-    assert.equal(result.details.code, 'confirmation_unavailable');
+    assert.deepEqual([...tool.parameters.required].sort(), ['candidates', 'question']);
+    assert.equal(tool.parameters.additionalProperties, false);
+    assert.equal(tool.parameters.properties.criteria.type, 'string');
+    assert.equal(tool.parameters.properties.criteria.minLength, 1);
+    assert.equal(tool.parameters.properties.criteria.maxLength, 4000);
+    // Print/JSON contexts cannot approve either form: no process or API call starts.
+    for (const fields of [{}, { criteria: 'Direct evidence.' }]) {
+      const result = await tool.execute('offline-test', {
+        question: 'Which passage answers the question?', ...fields,
+        candidates: [{ id: 'a', url: 'https://example.com', title: 'Synthetic', excerpt: 'A public example.' }],
+      }, undefined, undefined, { hasUI: false });
+      assert.equal(result.details.code, 'confirmation_unavailable');
+    }
     const version = JSON.parse(readFileSync(resolve(piRoot, 'package.json'), 'utf8')).version;
     console.log(`Typecheck and offline Pi ${version} extension-load smoke passed.`);
   } finally {

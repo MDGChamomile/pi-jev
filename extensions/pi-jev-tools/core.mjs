@@ -1,4 +1,5 @@
 export const LIMITS = Object.freeze({ candidates: 10, excerptChars: 4000, bytes: 65536, timeoutMs: 30000, outputBytes: 32768 });
+export const DEFAULT_CRITERIA = 'Prioritize evidence that directly addresses the question. Distinguish useful background from resolving evidence. Preserve dates, negation, uncertainty, and planned versus completed actions. Contradictory evidence remains relevant.';
 export const MODEL = '~typesafe/jev-latest';
 export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
 export const LEVELS = Object.freeze([
@@ -13,8 +14,9 @@ export class JevError extends Error {
 }
 const fail = (code) => { throw new JevError(code); };
 const plain = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-function keys(value, expected) {
-  if (!plain(value) || Object.keys(value).sort().join('|') !== [...expected].sort().join('|')) fail('invalid_input');
+function keys(value, required, optional = []) {
+  if (!plain(value) || required.some(key => !Object.hasOwn(value, key)) ||
+      Object.keys(value).some(key => !required.includes(key) && !optional.includes(key))) fail('invalid_input');
 }
 function text(value, max) {
   if (typeof value !== 'string' || !value.trim() || [...value].length > max || !value.isWellFormed() || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value)) fail('invalid_input');
@@ -32,9 +34,9 @@ function sourceUrl(value) {
 }
 
 export function buildRequest(input) {
-  keys(input, ['question', 'criteria', 'candidates']);
+  keys(input, ['question', 'candidates'], ['criteria']);
   text(input.question, 4000);
-  text(input.criteria, 4000);
+  const criteria = Object.hasOwn(input, 'criteria') ? text(input.criteria, 4000) : DEFAULT_CRITERIA;
   if (!Array.isArray(input.candidates) || input.candidates.length < 1 || input.candidates.length > LIMITS.candidates) fail('invalid_input');
   const ids = new Set();
   const candidates = input.candidates.map((candidate) => {
@@ -55,7 +57,7 @@ export function buildRequest(input) {
   const request = {
     model: MODEL,
     provider: { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } },
-    state: { question: input.question, evaluation_criteria: input.criteria, candidates },
+    state: { question: input.question, evaluation_criteria: criteria, candidates },
     questions,
   };
   // Bound the actual semantic payload too: generated instructions count toward the budget.

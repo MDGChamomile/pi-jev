@@ -42,7 +42,7 @@ For the complete runtime contract and limitations, read the [`pi-jev-router` ext
 When `jev_rerank` applies:
 
 1. First collect 1–10 candidate passages from confirmed public HTTP(S) sources. Keep the original candidates available.
-2. Write an English research question and relevance criteria. Distinguish important states such as planned, approved, and completed when applicable.
+2. Write an English research question. Omit `criteria` for the default relevance standard, which prioritizes direct evidence over background while preserving dates, negation, uncertainty, planned versus completed actions, and contradictory evidence. Supply English criteria when the question needs a more specific standard, such as distinguishing planned, approved, and completed states. Empty or invalid criteria are not treated as omission.
 3. Preserve each excerpt verbatim, including its original language, names, numbers, dates, quotations, negation, and uncertainty. Include enough surrounding context; do not blindly take the beginning of a page.
 4. Never supply local or private material, credentials, session data, internal documents, signed URLs, or authenticated-page content. A public-looking URL does not make attached text public.
 5. Call the tool once. On `not_ranked`, retain the original order and continue without retrying.
