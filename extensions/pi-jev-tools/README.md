@@ -38,7 +38,15 @@ Load only this source extension:
 pi -e ./extensions/pi-jev-tools/index.ts
 ```
 
-No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers only `jev_rerank`, installs nothing, and makes no startup request. Do not add it to a subagent's tool list.
+No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers the `jev_rerank` tool and `/jev-rerank-status` command, installs nothing, and makes no startup request. Do not add it to a subagent's tool list.
+
+## Session status
+
+Run `/jev-rerank-status` to see whether the tool is currently active, calls received by its runner, approved request attempts, whether a call is pending, and the last completed result (`ok` or a fixed failure code). It also reports whether a validated provider response has been observed in this session runtime, not whether the provider is currently reachable.
+
+This command never resolves authentication or sends a request. Request attempts are counted just before transport is invoked after approval and authentication; they do not prove delivery or billing. A decline or missing key adds a call but no request attempt. A rejected concurrent call counts as `busy`; the last result follows completion order while the pending call remains visible.
+
+Only counters, a fixed result code, and flags are kept in memory. No payload, response body, credential, or session history is added to a log. Counters reset on session start, switch, resume, fork, or reload; they are not reconstructed from history or rewound by tree navigation. The router uses a separate `/jev-router-status` command, so either extension can be installed alone. Status notifications require an interactive UI or compatible RPC host.
 
 ## Tool contract
 

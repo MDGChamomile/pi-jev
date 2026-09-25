@@ -12,6 +12,52 @@ const ctx = (confirm = true) => ({ hasUI: true, ui: { editor: async (_, value) =
 const review = ({ ctx: context, title, preview }) => context.ui.editor(title, preview);
 const options = (run) => ({ resolveApiKey: async () => 'FAKE_TEST_KEY', run, review });
 
+test('session status counts calls separately from approved request attempts without retaining inputs', async () => {
+  let authCalls = 0, requests = 0, missingKey = false, malformed = false;
+  const runner = createRunner({ review,
+    resolveApiKey: async () => { authCalls++; return missingKey ? undefined : 'FAKE_TEST_KEY'; },
+    run: async () => { requests++; return malformed ? 'synthetic invalid body' : JSON.stringify(response()); },
+  });
+  assert.deepEqual(runner.getStatus(), { calls: 0, requestAttempts: 0, inFlight: false, lastResult: 'none', validatedResponseObserved: false });
+  runner.getStatus().calls = 999;
+  assert.equal(runner.getStatus().calls, 0);
+  await runner.execute({}, undefined, ctx());
+  assert.equal(runner.getStatus().lastResult, 'invalid_input');
+  await runner.execute(input(), undefined, ctx(false));
+  assert.equal(runner.getStatus().lastResult, 'declined');
+  assert.equal(authCalls, 0);
+  missingKey = true;
+  await runner.execute(input(), undefined, ctx());
+  assert.equal(runner.getStatus().lastResult, 'missing_key');
+  assert.equal(runner.getStatus().requestAttempts, 0);
+  missingKey = false;
+  await runner.execute(input(), undefined, ctx());
+  assert.equal(runner.getStatus().lastResult, 'ok');
+  malformed = true;
+  await runner.execute(input(), undefined, ctx());
+  assert.deepEqual(runner.getStatus(), { calls: 5, requestAttempts: 2, inFlight: false, lastResult: 'invalid_response', validatedResponseObserved: true });
+  assert.equal(authCalls, 3);
+  assert.equal(requests, 2);
+  assert.equal(JSON.stringify(runner.getStatus()).includes('FAKE_TEST_KEY'), false);
+});
+
+test('session status handles busy calls and cancellation during authentication without counting a request', async () => {
+  let markStarted;
+  const started = new Promise(resolve => { markStarted = resolve; });
+  const runner = createRunner({ review, resolveApiKey: () => { markStarted(); return new Promise(() => {}); },
+    run: async () => { assert.fail('must not send'); },
+  });
+  const pending = runner.execute(input(), undefined, ctx());
+  await started;
+  assert.equal(runner.getStatus().inFlight, true);
+  await runner.execute(input(), undefined, ctx());
+  assert.equal(runner.getStatus().lastResult, 'busy');
+  assert.equal(runner.getStatus().inFlight, true);
+  runner.shutdown();
+  assert.equal((await pending).code, 'cancelled');
+  assert.deepEqual(runner.getStatus(), { calls: 2, requestAttempts: 0, inFlight: false, lastResult: 'cancelled', validatedResponseObserved: false });
+});
+
 function payloadReviewHarness() {
   let latestEditor;
   class FakeEditor {
