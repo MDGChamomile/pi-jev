@@ -4,14 +4,16 @@ A shared workflow that lets the parent Pi agent select among available consent-g
 
 The skill currently covers:
 
-- [`jev_route_task`](../../extensions/pi-jev-router/README.md) when comparing multiple plausible task, tool, skill, browser, and pi-subagent routes could materially improve the outcome, or when explicitly evaluating routing quality; and
-- [`jev_rerank`](../../extensions/pi-jev-tools/README.md) for relevance ranking of already-collected public web passages.
+- [`jev_task_router`](../../extensions/pi-jev-router/README.md) before choosing among two or more unresolved, feasible research, comparison, or review workflows, or for explicit routing evaluation; and
+- [`jev_rerank`](../../extensions/pi-jev-tools/README.md) after collecting multiple usable public passages, before reading all sources in depth, when reading order remains open.
+
+Use the applicable tool once, subject to data and consent boundaries, rather than requiring a second speculative estimate of a large benefit. Skip trivial tasks, user-specified or settled routes, and sufficient or fully reviewed evidence. Several available tools alone do not justify routing.
 
 The skill does not contact a provider. Each extension validates its own input, displays the complete payload, requires separate approval, resolves Pi's existing OpenRouter authentication, performs at most one paid request per invocation, and returns advisory output.
 
 ## Requirements and installation
 
-From this repository's root, copy the shared skill once and whichever Jev extensions you intend to expose. For an existing kit installation, first review the [migration guide](../../MIGRATION.md) rather than overlaying existing directories.
+From this repository's root, copy the shared skill once and whichever Jev extensions you intend to expose. For an existing kit installation, first review the [migration guide](https://github.com/MDGChamomile/pi-jev/blob/main/MIGRATION.md) rather than overlaying existing directories.
 
 ```bash
 mkdir -p ~/.pi/agent/extensions ~/.pi/agent/skills
@@ -32,7 +34,7 @@ rm -R ~/.pi/agent/skills/pi-jev-router
 
 Replace copied extension directories cleanly rather than overlaying them, so removed Python adapters and tests do not linger. Remove the obsolete `--jev-python` and `--jev-router-python` arguments from Pi launchers; the new extensions register neither flag. If no other software uses them, the separate `TYPESAFE_API_KEY`, `typesafe-sdk` environment, and Jev-only virtual environment can also be retired. Do not remove shared credentials or environments without checking their other consumers.
 
-Restart Pi or use `/reload`. The model may load this skill automatically when an available Jev tool would materially help, or it can be invoked explicitly:
+Restart Pi or use `/reload`. The model may load this skill automatically at these decision points, or it can be invoked explicitly:
 
 ```text
 /skill:pi-jev Decide whether an available Jev tool would help with this task.

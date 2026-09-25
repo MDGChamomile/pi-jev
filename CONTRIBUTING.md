@@ -2,6 +2,18 @@
 
 Follow [PRINCIPLE.md](PRINCIPLE.md): keep procedures thin and boundaries firm. Explain the observed problem and expected benefit. Repository separation is not evidence for routing/ranking quality, and similar implementations alone do not justify a shared runtime library.
 
+## Pull requests
+
+Create your contribution branch from the latest `updates` branch, and select
+`updates` as the base branch when opening a pull request. GitHub may suggest
+`main` because it is the repository's default branch; please change the base
+to `updates` before submitting.
+
+Contributions are reviewed and merged into `updates`. Maintainers open pull
+requests from `updates` to `main` only when preparing a release. If you
+accidentally target `main`, the base can be changed to `updates`; the resulting
+diff and checks should then be reviewed again.
+
 ## Development
 
 With Node.js 22.22+ and Python 3.10+, from the repository root:

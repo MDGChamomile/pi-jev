@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRequest, createPayloadReviewer, createRunner, ENDPOINT, parseResponse, runDecision, LIMITS } from '../core.mjs';
+import { buildRequest, createPayloadReviewer, createRunner, DEFAULT_CRITERIA, ENDPOINT, parseResponse, runDecision, LIMITS } from '../core.mjs';
 
 const input = () => ({ question: 'Was the cancellation completed?', criteria: 'Distinguish approval from completed execution.', candidates: [
   { id: 'a', url: 'https://example.com/a', title: 'Plan', excerpt: '다음 달 소각하기로 결의했다.' },
@@ -67,6 +67,110 @@ test('request preserves Korean text; uses shared concrete English levels and exp
   assert.deepEqual(JSON.parse(built.serialized), built.request);
 });
 
+test('omitted criteria resolves to an explicit, immutable default without mutating input', () => {
+  const x = input();
+  delete x.criteria;
+  const before = structuredClone(x);
+  const built = buildRequest(x);
+  assert.equal(DEFAULT_CRITERIA, 'Prioritize evidence that directly addresses the question. Distinguish useful background from resolving evidence. Preserve dates, negation, uncertainty, and planned versus completed actions. Contradictory evidence remains relevant.');
+  assert.equal(built.request.state.evaluation_criteria, DEFAULT_CRITERIA);
+  assert.equal(built.serialized, buildRequest({ ...x, criteria: DEFAULT_CRITERIA }).serialized);
+  assert.deepEqual(x, before);
+  assert.deepEqual(JSON.parse(built.serialized), built.request);
+});
+
+test('explicit criteria stays verbatim; invalid present values and unknown or missing keys fail', () => {
+  const criteria = '  Distinguish planned, approved, and completed actions.\nEvidence of non-completion matters.  ';
+  assert.equal(buildRequest({ ...input(), criteria }).request.state.evaluation_criteria, criteria);
+  assert.doesNotThrow(() => buildRequest({ ...input(), criteria: 'a'.repeat(4000) }));
+  for (const value of ['', ' \n ', null, undefined, 0, false, [], {}, 'a'.repeat(4001)]) {
+    assert.throws(() => buildRequest({ ...input(), criteria: value }), /invalid_input/);
+  }
+  for (const change of [
+    x => { x.extra = 'synthetic'; },
+    x => { delete x.question; },
+    x => { delete x.candidates; },
+    x => { delete x.candidates[0].excerpt; },
+    x => { x.candidates[0].extra = 'synthetic'; },
+  ]) {
+    const x = input();
+    delete x.criteria;
+    change(x);
+    assert.throws(() => buildRequest(x), /invalid_input/);
+  }
+});
+
+test('resolved default and generated instructions count at the exact UTF-8 byte boundary', async () => {
+  const x = input();
+  delete x.criteria;
+  x.candidates = Array.from({ length: 10 }, (_, i) => ({ ...x.candidates[0], id: `id${i}`, excerpt: 'a'.repeat(4000) }));
+  let remaining = LIMITS.bytes - Buffer.byteLength(buildRequest(x).serialized);
+  assert.ok(remaining > 0);
+  for (const candidate of x.candidates) {
+    const extra = Math.min(remaining, 4000);
+    candidate.excerpt = 'é'.repeat(extra) + 'a'.repeat(4000 - extra);
+    remaining -= extra;
+  }
+  assert.equal(remaining, 0);
+  assert.equal(Buffer.byteLength(buildRequest(x).serialized), LIMITS.bytes);
+  const candidate = x.candidates.find(c => c.excerpt.includes('a'));
+  candidate.excerpt = candidate.excerpt.replace('a', 'é');
+  assert.ok(Buffer.byteLength(JSON.stringify(x)) < LIMITS.bytes);
+  assert.throws(() => buildRequest(x), /input_too_large/);
+  let invoked = false;
+  const unexpected = async () => { invoked = true; throw new Error('unexpected invocation'); };
+  const runner = createRunner({ review: unexpected, resolveApiKey: unexpected, run: unexpected });
+  const result = await runner.execute(x, undefined, ctx());
+  assert.equal(result.code, 'input_too_large');
+  assert.deepEqual(result.rankedIds, x.candidates.map(c => c.id));
+  assert.equal(invoked, false);
+});
+
+test('default is reviewed and approved before authentication; transmission matches preview', async () => {
+  const x = input();
+  delete x.criteria;
+  const events = [];
+  let previewRequest;
+  const runner = createRunner({
+    review: async ({ preview }) => {
+      events.push('review');
+      previewRequest = JSON.parse(preview);
+      assert.equal(previewRequest.state.evaluation_criteria, DEFAULT_CRITERIA);
+      x.criteria = 'Later input mutation must not change the approved request.';
+      return preview;
+    },
+    resolveApiKey: async () => { events.push('auth'); return 'FAKE_TEST_KEY'; },
+    run: async ({ serialized }) => {
+      events.push('run');
+      assert.deepEqual(JSON.parse(serialized), previewRequest);
+      return JSON.stringify(response());
+    },
+  });
+  const context = ctx();
+  context.ui.confirm = async () => { events.push('confirm'); return true; };
+  assert.equal((await runner.execute(x, undefined, context)).status, 'ok');
+  assert.deepEqual(events, ['review', 'confirm', 'auth', 'run']);
+});
+
+test('omitted criteria retains ordered fallback on decline, invalid input, and provider failure', async () => {
+  let calls = 0;
+  const runner = createRunner(options(async () => { calls++; throw new Error('synthetic failure'); }));
+  const x = input();
+  delete x.criteria;
+  for (const [value, context, code] of [
+    [x, ctx(false), 'declined'],
+    [{ ...x, criteria: null }, ctx(), 'invalid_input'],
+    [x, ctx(), 'internal_error'],
+  ]) {
+    const result = await runner.execute(value, undefined, context);
+    assert.equal(result.status, 'not_ranked');
+    assert.equal(result.code, code);
+    assert.deepEqual(result.originalOrder, ['a', 'b']);
+    assert.deepEqual(result.rankedIds, ['a', 'b']);
+  }
+  assert.equal(calls, 1);
+});
+
 test('input limits, IDs and source URLs are validated without echoing input', () => {
   const cases = [
     x => x.candidates.push(x.candidates[0]),
@@ -99,6 +203,27 @@ test('generated instructions count toward 64KiB; nothing is silently shortened',
   assert.ok(Buffer.byteLength(JSON.stringify(x)) < LIMITS.bytes);
   assert.throws(() => buildRequest(x), /input_too_large/);
   assert.equal(x.candidates[0].excerpt.length, 2000);
+});
+
+test('optional provider cost is allowlisted without affecting valid rankings', () => {
+  for (const cost of [0, 0.000018774, undefined, null, '0.01', -1, true, {}, []]) {
+    const r = response();
+    r.usage = { input_tokens: 100, output_tokens: 20, cost, extra: 'SYNTHETIC_UNRELATED' };
+    const result = parseResponse(JSON.stringify(r), ['a', 'b']);
+    const expected = { input_tokens: 100, output_tokens: 20 };
+    if (typeof cost === 'number' && cost >= 0) expected.cost = cost;
+    assert.deepEqual(result.usage, expected);
+    assert.equal(result.status, 'ok');
+    assert.deepEqual(result.rankedIds, ['b', 'a']);
+    assert.doesNotMatch(JSON.stringify(result), /SYNTHETIC_UNRELATED/);
+  }
+  // JSON numbers can overflow to infinity even though NaN/Infinity literals are invalid JSON.
+  for (const literal of ['1e400', '-1e400']) {
+    const raw = JSON.stringify(response()).replace(/"cost":[^,}]+/, `"cost":${literal}`);
+    const result = parseResponse(raw, ['a', 'b']);
+    assert.equal(result.status, 'ok');
+    assert.equal(Object.hasOwn(result.usage, 'cost'), false);
+  }
 });
 
 test('stable ranking retains all candidates and strips unrelated response text', () => {
@@ -372,6 +497,23 @@ test('OpenRouter transport sends one bounded authenticated request', async () =>
   await assert.rejects(runDecision({
     apiKey: 'FAKE_TEST_KEY', serialized: '{}', fetchImpl: fetchResponse('x'.repeat(LIMITS.outputBytes + 1)),
   }), /output_too_large/);
+});
+
+test('HTTP authorization and payment failures preserve sanitized fallback without retry', async () => {
+  for (const [status, code] of [[401, 'authentication_failed'], [402, 'payment_required'], [403, 'request_forbidden']]) {
+    let calls = 0;
+    const runner = createRunner(options(args => runDecision({ ...args, fetchImpl: async () => {
+      calls++;
+      return new Response('SYNTHETIC_PRIVATE_BODY', { status });
+    } })));
+    const result = await runner.execute(input(), undefined, ctx());
+    assert.equal(result.status, 'not_ranked');
+    assert.equal(result.code, code);
+    assert.deepEqual(result.originalOrder, ['a', 'b']);
+    assert.deepEqual(result.rankedIds, ['a', 'b']);
+    assert.equal(calls, 1);
+    assert.doesNotMatch(JSON.stringify(result), /SYNTHETIC_PRIVATE_BODY/);
+  }
 });
 
 test('OpenRouter transport maps status, timeout, cancellation, and network failures', async () => {

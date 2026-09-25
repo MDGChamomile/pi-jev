@@ -1,4 +1,5 @@
 export const LIMITS = Object.freeze({ candidates: 10, excerptChars: 4000, bytes: 65536, timeoutMs: 30000, outputBytes: 32768 });
+export const DEFAULT_CRITERIA = 'Prioritize evidence that directly addresses the question. Distinguish useful background from resolving evidence. Preserve dates, negation, uncertainty, and planned versus completed actions. Contradictory evidence remains relevant.';
 export const MODEL = '~typesafe/jev-latest';
 export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
 export const LEVELS = Object.freeze([
@@ -13,8 +14,9 @@ export class JevError extends Error {
 }
 const fail = (code) => { throw new JevError(code); };
 const plain = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-function keys(value, expected) {
-  if (!plain(value) || Object.keys(value).sort().join('|') !== [...expected].sort().join('|')) fail('invalid_input');
+function keys(value, required, optional = []) {
+  if (!plain(value) || required.some(key => !Object.hasOwn(value, key)) ||
+      Object.keys(value).some(key => !required.includes(key) && !optional.includes(key))) fail('invalid_input');
 }
 function text(value, max) {
   if (typeof value !== 'string' || !value.trim() || [...value].length > max || !value.isWellFormed() || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value)) fail('invalid_input');
@@ -32,9 +34,9 @@ function sourceUrl(value) {
 }
 
 export function buildRequest(input) {
-  keys(input, ['question', 'criteria', 'candidates']);
+  keys(input, ['question', 'candidates'], ['criteria']);
   text(input.question, 4000);
-  text(input.criteria, 4000);
+  const criteria = Object.hasOwn(input, 'criteria') ? text(input.criteria, 4000) : DEFAULT_CRITERIA;
   if (!Array.isArray(input.candidates) || input.candidates.length < 1 || input.candidates.length > LIMITS.candidates) fail('invalid_input');
   const ids = new Set();
   const candidates = input.candidates.map((candidate) => {
@@ -55,7 +57,7 @@ export function buildRequest(input) {
   const request = {
     model: MODEL,
     provider: { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } },
-    state: { question: input.question, evaluation_criteria: input.criteria, candidates },
+    state: { question: input.question, evaluation_criteria: criteria, candidates },
     questions,
   };
   // Bound the actual semantic payload too: generated instructions count toward the budget.
@@ -91,6 +93,8 @@ export function parseResponse(raw, originalOrder) {
     if (n !== null && (!Number.isSafeInteger(n) || n < 0)) fail('invalid_response');
     usage[field] = n;
   }
+  const cost = response.usage.cost;
+  if (typeof cost === 'number' && Number.isFinite(cost) && cost >= 0) usage.cost = cost;
   return {
     status: 'ok', requestedModel: MODEL, model: response.model,
     originalOrder: [...originalOrder],
@@ -135,7 +139,9 @@ export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMI
     });
     if (!response.ok) {
       try { await response.body?.cancel(); } catch {}
-      if (response.status === 401 || response.status === 403) fail('authentication_failed');
+      if (response.status === 401) fail('authentication_failed');
+      if (response.status === 402) fail('payment_required');
+      if (response.status === 403) fail('request_forbidden');
       if (response.status === 429) fail('rate_limited');
       if (response.status === 408 || response.status === 504) fail('timeout');
       if (response.status === 400 || response.status === 422) fail('invalid_request');

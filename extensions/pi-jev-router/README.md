@@ -1,6 +1,6 @@
 # Pi Jev Router — experimental advisory task routing
 
-An optional `jev_route_task` tool for the **parent Pi agent**. It asks TypeSafe Jev through OpenRouter for one advisory primary route, one active tool, one discovered specialist skill, a pi-subagent preset, and the probability that independent parallel investigations would help. It does not execute a route, activate tools, load skills, create subagents, grant authorization, or enforce policy.
+An optional `jev_task_router` tool for the **parent Pi agent**. It asks TypeSafe Jev through OpenRouter for one advisory primary route, one active tool, one discovered specialist skill, a pi-subagent preset, and the probability that independent parallel investigations would help. It does not execute a route, activate tools, load skills, create subagents, grant authorization, or enforce policy.
 
 The shared [`pi-jev` skill](../../skills/pi-jev/README.md) describes when to select this tool or the separate [`jev_rerank`](../pi-jev-tools/README.md) public-passage reranker.
 
@@ -20,7 +20,7 @@ Choice answers retain their probability distributions and confidence. The questi
 
 ## Flow
 
-1. The parent decides that comparing multiple plausible handling routes could materially improve the outcome or that routing quality should be evaluated explicitly; simple tasks and low-benefit calls skip Jev.
+1. At the planning stage of research, comparison, or review, the parent uses Jev once before choosing among two or more unresolved, feasible workflows (for example, parent-led versus delegated investigation). Several available tools alone do not qualify. Explicit routing evaluation also qualifies; otherwise trivial tasks, user-specified workflows, and settled routes skip Jev. No additional speculative large-benefit estimate is required; data and consent boundaries still apply.
 2. It supplies an English task description and optional constraints while omitting unrelated history.
 3. The extension snapshots active tool and discovered skill names/descriptions. It does not read session history, files, skill bodies, or tool results.
 4. It validates and displays the complete immutable payload for review. In the interactive TUI, submit the editor unchanged to continue; cancellation or edits stop without sending. In RPC mode, the host receives the exact payload in an abortable confirmation dialog.
@@ -42,7 +42,7 @@ Load only this source extension:
 pi -e ./extensions/pi-jev-router/index.ts
 ```
 
-No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers only `jev_route_task`, installs nothing, makes no startup request, and does not change active tools.
+No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers only `jev_task_router`, installs nothing, makes no startup request, and does not change active tools.
 
 ## Tool contract
 
@@ -62,7 +62,9 @@ No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key
 
 Success returns `status: "ok"`, the route and full probabilities, mapped tool/skill candidates, optional subagent preset, parallel-investigation probability, token usage, and an advisory limitation note. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals.
 
-Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
+Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
+
+When supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
 
 ## Boundaries and limitations
 

@@ -77,6 +77,30 @@ function payloadReviewHarness() {
   return { reviewer, makeContext };
 }
 
+test('optional provider cost is allowlisted without affecting valid routing', () => {
+  const prepared = buildRequest(input(), catalog());
+  const baseline = parseResponse(JSON.stringify(response()), prepared);
+  for (const cost of [0, 0.000018774, undefined, null, '0.01', -1, true, {}, []]) {
+    const r = response();
+    r.usage = { input_tokens: 120, output_tokens: 30, cost, extra: 'SYNTHETIC_UNRELATED' };
+    const result = parseResponse(JSON.stringify(r), prepared);
+    const expected = { input_tokens: 120, output_tokens: 30 };
+    if (typeof cost === 'number' && cost >= 0) expected.cost = cost;
+    assert.deepEqual(result.usage, expected);
+    assert.equal(result.status, 'ok');
+    assert.deepEqual(result.route, baseline.route);
+    assert.doesNotMatch(JSON.stringify(result), /SYNTHETIC_UNRELATED/);
+  }
+  // JSON numbers can overflow to infinity even though NaN/Infinity literals are invalid JSON.
+  for (const literal of ['1e400', '-1e400']) {
+    const r = response(); r.usage.cost = 0;
+    const raw = JSON.stringify(r).replace('"cost":0', `"cost":${literal}`);
+    const result = parseResponse(raw, prepared);
+    assert.equal(result.status, 'ok');
+    assert.equal(Object.hasOwn(result.usage, 'cost'), false);
+  }
+});
+
 test('shared and legacy Jev workflow skills are excluded from Pi command candidates', () => {
   for (const name of [
     'pi-jev', 'pi-jev:2', 'pi-jev-router', 'pi-jev-router:2',
@@ -420,6 +444,21 @@ test('OpenRouter transport sends one bounded authenticated request', async () =>
   await assert.rejects(runDecision({
     apiKey: 'FAKE_TEST_KEY', serialized: '{}', fetchImpl: fetchResponse('x'.repeat(LIMITS.outputBytes + 1)),
   }), /output_too_large/);
+});
+
+test('HTTP authorization and payment failures preserve sanitized fallback without retry', async () => {
+  for (const [status, code] of [[401, 'authentication_failed'], [402, 'payment_required'], [403, 'request_forbidden']]) {
+    let calls = 0;
+    const runner = createRunner(options(args => runDecision({ ...args, fetchImpl: async () => {
+      calls++;
+      return new Response('SYNTHETIC_PRIVATE_BODY', { status });
+    } })));
+    const result = await runner.execute(input(), catalog(), undefined, ctx());
+    assert.equal(result.status, 'not_routed');
+    assert.equal(result.code, code);
+    assert.equal(calls, 1);
+    assert.doesNotMatch(JSON.stringify(result), /SYNTHETIC_PRIVATE_BODY/);
+  }
 });
 
 test('OpenRouter transport maps status, timeout, cancellation, and network failures', async () => {

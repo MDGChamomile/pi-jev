@@ -12,10 +12,12 @@ This recording demonstrates the review-and-confirmation workflow on three public
 
 The recording predates the OpenRouter transport now used by the extension, so it is evidence for the interaction pattern rather than current provider compatibility, ranking quality, or latency. No private documents or personal sessions are used.
 
+Use Jev once after collecting multiple usable public passages, before reading all candidate sources in depth, when reading order remains open. Skip a single sufficient source, evidence that already answers the question, fully reviewed candidates, or passages with inadequate provenance or context. Data and consent boundaries still apply.
+
 ## Flow
 
 1. The parent collects public candidates with existing web tools.
-2. It supplies an English question and criteria with original-language excerpts.
+2. It supplies an English question, optional question-specific criteria, and original-language excerpts. Omitted criteria use the documented default relevance standard.
 3. The tool validates the input, then shows the **entire immutable request**. In the interactive TUI it uses a scrollable editor that must be submitted unchanged; in RPC mode the host receives the exact payload in an abortable confirmation. Cancellation or edits stop without sending.
 4. A separate confirmation names OpenRouter, TypeSafe, the requested latest-model alias, request count, per-token price ceilings, absence of a hard total-cost cap, and deadline.
 5. Only after approval does the extension resolve Pi's existing OpenRouter authentication and send one Decisions API request.
@@ -57,19 +59,28 @@ No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key
 
 The example is synthetic. For real use, supply confirmed public URLs and accurate excerpts.
 
-- `question` / `criteria`: English instructions, at most 4,000 Unicode characters each.
+- `question`: required English research question, at most 4,000 Unicode characters.
+- `criteria`: optional English relevance criteria, at most 4,000 Unicode characters. Omit it for the default below; provide it for a question-specific standard. Existing valid explicit criteria are sent unchanged. Only omission uses the default: empty/whitespace-only strings, `null`, and other invalid values are rejected.
 - Candidates: 1–10; unique IDs matching `[A-Za-z0-9_-]{1,64}`; public HTTP(S) URL up to 2,048 characters; title up to 500 characters; excerpt up to 4,000 characters.
-- Prefer excerpts around 2,000 characters. Preserve context, negation, uncertainty, names, numbers, dates, quotes, and plan/execution distinctions.
+- Use the shortest exact excerpts that preserve enough context for relevance, including negation, uncertainty, names, numbers, dates, quotes, and plan/execution distinctions. A sufficient public search excerpt can be used. Do not infer text from titles, pad excerpts to a target length, or read every source in depth merely to prepare a ranking request. The 1–10 candidate contract remains valid, but skip calls with no reading-priority decision to make.
 - The constructed request, including generated questions, must fit **65,536 UTF-8 bytes**. Nothing is truncated or split into batches.
 - The request uses OpenRouter's `~typesafe/jev-latest` alias, which redirects to the latest Jev-family model. It disables provider fallbacks, restricts routing to TypeSafe, and sets price caps of $0.042/M input tokens and $0/M output tokens.
 - One approval still permits only one paid request, but OpenRouter does not provide a hard total-cost cap for a moving model alias. The confirmation therefore discloses this explicitly. If a future Jev version exceeds either per-token price ceiling, the request fails instead of using it. Taxes, currency conversion, and account-level billing behavior are outside this extension.
 - One approval permits one request to `https://openrouter.ai/api/alpha/decisions`, with no retry and a 30-second HTTP deadline. Review time is not part of that deadline.
 
-Jev receives the question, criteria, candidate IDs, URLs, titles, excerpts, and generated English Score questions. Four fixed levels distinguish no useful evidence, background only, partial evidence, and direct evidence. Contradictory evidence can score highly; source authority and truth are not scored.
+When `criteria` is omitted, the extension uses this exact default:
+
+> Prioritize evidence that directly addresses the question. Distinguish useful background from resolving evidence. Preserve dates, negation, uncertainty, and planned versus completed actions. Contradictory evidence remains relevant.
+
+The default is included in the final payload before size validation, full-payload review, and separate approval. It is not added after approval. Generated questions and the resolved criteria all count toward the 65,536-byte request limit. Unknown input fields and incomplete candidate objects remain invalid.
+
+Jev receives the question, resolved criteria, candidate IDs, URLs, titles, excerpts, and generated English Score questions. Four fixed levels distinguish no useful evidence, background only, partial evidence, and direct evidence. Contradictory evidence can score highly; source authority and truth are not scored.
 
 Success returns `status: "ok"`, the requested latest alias and returned Jev-family model ID, original and ranked IDs, per-ID scores (0–3), confidence, probabilities, and token usage. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals. Unrelated response fields and source text are not returned.
 
-Failure or decline, including preflight validation failure, returns `status: "not_ranked"`, a fixed code, and every recoverable original candidate ID in unchanged order. Codes include `invalid_input`, `invalid_candidate_id`, `invalid_source_url`, `input_too_large`, `declined`, `preview_changed`, `missing_key`, `authentication_failed`, `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
+Failure or decline, including preflight validation failure, returns `status: "not_ranked"`, a fixed code, and every recoverable original candidate ID in unchanged order. Codes include `invalid_input`, `invalid_candidate_id`, `invalid_source_url`, `input_too_large`, `declined`, `preview_changed`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
+
+When supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
 
 ## Boundaries and limitations
 

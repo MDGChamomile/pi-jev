@@ -1,17 +1,31 @@
-# Pi Jev — experimental advisory routing and public-passage reranking
+# Pi Jev
 
-Optional TypeSafe Jev tools for the **parent Pi agent**. Each tool sends at most one consent-gated request through OpenRouter and returns advisory output; it does not execute a route, grant authorization, or replace the parent agent's judgment.
+[![Offline validation](https://github.com/MDGChamomile/pi-jev/actions/workflows/validation.yml/badge.svg?branch=main)](https://github.com/MDGChamomile/pi-jev/actions/workflows/validation.yml)
+[![Latest source release](https://img.shields.io/github/v/release/MDGChamomile/pi-jev?label=source%20release)](https://github.com/MDGChamomile/pi-jev/releases/latest)
+[![License](https://img.shields.io/github/license/MDGChamomile/pi-jev)](LICENSE)
 
-**Status:** experimental source implementations with offline tests. The router has no live routing evaluation yet, and the reranker has not established Korean-language quality or improvements in accuracy, latency, or cost. Keep them only if representative comparisons show a net benefit over ordinary parent-agent reasoning.
+> Consent-gated TypeSafe Jev advice for the [Pi coding agent](https://github.com/earendil-works/pi): choose a task route or rank public web passages without handing over control.
+
+Pi Jev provides two optional, independently installable tools for the **parent Pi agent** and one shared skill that helps decide when to use them. Each tool makes at most one approved request through OpenRouter. Jev returns advice, not an executed route, verified evidence, or authorization.
+
+**Status:** experimental source implementations with offline tests, not an npm package. The router has no live routing evaluation yet, and the reranker has not established Korean-language quality or improvements in accuracy, latency, or cost. Keep them only if representative comparisons show a net benefit over ordinary parent-agent reasoning.
+
+### See the review flow
+
+![Reranker demo: payload review, separate approval, ranked passages, and the parent's sourced answer](extensions/pi-jev-tools/assets/pi-jev-tools-demo.gif)
+
+*Reranker interaction recording only.* It predates the current OpenRouter transport; it shows the review-and-confirmation pattern, not current provider compatibility or measured quality.
 
 ## Choose a tool
 
 | Tool | Use it when | It does not |
 |---|---|---|
-| [`jev_route_task`](extensions/pi-jev-router/README.md) | Comparing multiple plausible task, active-tool, specialist-skill, browser, or pi-subagent routes could materially improve the outcome, or routing quality is being evaluated explicitly. | Execute a route, activate tools, load skills, create subagents, or authorize actions. |
-| [`jev_rerank`](extensions/pi-jev-tools/README.md) | Prioritizing 1–10 already-collected public web passages by relevance would materially help. | Search, fetch or verify sources, judge source authority, remove candidates, or write the answer. |
+| [`jev_task_router`](extensions/pi-jev-router/README.md) | Two or more feasible research, comparison, or review workflows remain unresolved, before choosing one; also for explicit routing evaluation. | Execute a route, activate tools, load skills, create subagents, or authorize actions. |
+| [`jev_rerank`](extensions/pi-jev-tools/README.md) | Multiple usable public passages have been collected and reading order remains open, before reading all candidate sources in depth. | Search, fetch or verify sources, judge source authority, remove candidates, or write the answer. |
 
-The shared [`pi-jev` skill](skills/pi-jev/README.md) teaches the parent agent when to use either available tool without requiring the user to name Jev. The skill itself does not contact a provider. Skip Jev for simple tasks and low-benefit calls.
+The shared [`pi-jev` skill](skills/pi-jev/README.md) teaches the parent agent when to use either available tool without requiring the user to name Jev. At these decision points, use the applicable tool once, subject to data and consent boundaries, without an additional speculative large-benefit test. Skip trivial tasks, user-specified or settled routes, and sufficient or fully reviewed evidence. Merely having several tools available does not justify routing. The skill itself does not contact a provider.
+
+**Flow:** parent identifies an applicable decision point → you review the full payload and separately approve one request → Jev returns bounded advice → parent verifies sources and decides what to do. No automatic routing or answer-writing follows.
 
 ## Requirements and installation
 
@@ -68,6 +82,10 @@ Declining, editing the preview, losing UI availability, or cancelling before tra
 
 Pi may retain ordinary tool arguments and results in session history. Successful calls include non-persistent `elapsedMs`, `inputBytes`, and `questionCount` diagnostics; these are not proof of quality or billing totals.
 
+## If Jev is not being used
+
+First distinguish no tool selection from a selected call returning `not_routed` or `not_ranked`. Confirm which extension and skill paths Pi actually loads, whether the tool is active, and the existing fixed failure code if a call failed. Reading the skill alone does not prove a tool was called. A source-copy installation does not change when this checkout changes; follow the migration guide before updating installed copies. Do not send session records to Jev or make a paid call merely to diagnose installation.
+
 ## Detailed guides
 
 - [Router input/output contract, failure codes, and limits](extensions/pi-jev-router/README.md)
@@ -87,10 +105,23 @@ npm run check
 
 The suite uses mocked HTTP, synthetic keys, isolated Pi loading, TypeScript checks, and skill validation. It makes no provider request and does not establish live compatibility, routing quality, reranking quality, latency, or cost.
 
-A reranker interaction recording is available in the [reranker guide](extensions/pi-jev-tools/README.md). It predates the current OpenRouter transport and demonstrates only the review-and-confirmation interaction pattern.
-
 ## Evaluation before automation
 
-Compare representative tasks with and without Jev before retaining or expanding either workflow. Record returned model IDs, important misses, unnecessary calls, latency, token use, and actual cost. Do not add silent calls, private-data routing, automatic execution, or broader integration merely because offline checks pass.
+The decision-point guidance is an unvalidated selection hypothesis, not evidence of improved model behavior. Review it after the first small representative comparison and before expanding use. First compare old and new guidance with the same model, tools, skills, and public/synthetic tasks; count both missed applicable calls and unnecessary calls. Include varied cases rather than only these example phrasings:
 
-MIT; see the extension-specific bundled licenses when copying directories.
+| Situation | Expected selection |
+|---|---|
+| One typo fix or a user-specified lookup | Skip routing |
+| Several tools are available, but the workflow is obvious | Skip routing |
+| Parent-led versus delegated research remains unresolved | Route once, before settling the plan |
+| Routing quality is explicitly being evaluated | Route once, subject to consent and permitted data |
+| Several usable public excerpts need a reading order | Rerank once, before reading all sources in depth |
+| A sufficient source answers the question, or all candidates are fully reviewed | Skip reranking |
+| Public excerpts are paired with a private question | Do not send the prohibited input |
+| Routing is followed by a distinct reading-priority decision | One routing call and one reranking call may apply; no automatic retry |
+
+Selection-only evaluation can stop before execution without making a provider request; it cannot establish Jev's usefulness. Live evaluation requires separate authorization. Compare representative tasks with and without Jev, recording returned model IDs, important misses, unnecessary calls, source reads, total time including preparation and approval, token use, and actual cost (missing cost is unknown). Keep contradictory evidence available regardless of rank. If selection increases without a net benefit, narrow or revert the guidance; the router and reranker need not have the same outcome. Do not add silent calls, private-data routing, automatic execution, or broader integration merely because offline checks pass.
+
+## License
+
+[MIT](LICENSE); keep the extension-specific bundled licenses when copying directories.

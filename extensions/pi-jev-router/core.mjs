@@ -1,4 +1,4 @@
-export const TOOL_NAME = 'jev_route_task';
+export const TOOL_NAME = 'jev_task_router';
 export const MODEL = '~typesafe/jev-latest';
 export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
 export const isJevWorkflowSkill = name => /^(?:skill:)?pi-jev(?:-router)?(?::\d+)?$/.test(name);
@@ -221,6 +221,8 @@ export function parseResponse(raw, prepared) {
     if (value !== null && (!Number.isSafeInteger(value) || value < 0)) fail('invalid_response');
     usage[field] = value;
   }
+  const cost = response.usage.cost;
+  if (typeof cost === 'number' && Number.isFinite(cost) && cost >= 0) usage.cost = cost;
 
   const presetNames = { lookup_standard: 'lookup-standard', analysis_standard: 'analysis-standard', review_standard: 'review-standard', not_applicable: null };
   return {
@@ -276,7 +278,9 @@ export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMI
     });
     if (!response.ok) {
       try { await response.body?.cancel(); } catch {}
-      if (response.status === 401 || response.status === 403) fail('authentication_failed');
+      if (response.status === 401) fail('authentication_failed');
+      if (response.status === 402) fail('payment_required');
+      if (response.status === 403) fail('request_forbidden');
       if (response.status === 429) fail('rate_limited');
       if (response.status === 408 || response.status === 504) fail('timeout');
       if (response.status === 400 || response.status === 422) fail('invalid_request');
