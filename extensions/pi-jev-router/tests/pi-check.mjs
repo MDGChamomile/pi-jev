@@ -70,8 +70,8 @@ if (diagnostics.length) {
     assert.equal(loaded.errors.length, 0, JSON.stringify(loaded.errors));
     assert.equal(loaded.extensions.length, 1);
     const extension = loaded.extensions[0];
-    assert.deepEqual([...extension.tools.keys()], ['jev_route_task']);
-    const tool = extension.tools.get('jev_route_task').definition;
+    assert.deepEqual([...extension.tools.keys()], ['jev_task_router']);
+    const tool = extension.tools.get('jev_task_router').definition;
     assert.equal(tool.parameters.properties.task.maxLength, 8000);
     const result = await tool.execute('offline-test', {
       task: 'Choose the best route for a bounded public web investigation.',

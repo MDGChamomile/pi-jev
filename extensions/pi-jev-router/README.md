@@ -1,6 +1,6 @@
 # Pi Jev Router — experimental advisory task routing
 
-An optional `jev_route_task` tool for the **parent Pi agent**. It asks TypeSafe Jev through OpenRouter for one advisory primary route, one active tool, one discovered specialist skill, a pi-subagent preset, and the probability that independent parallel investigations would help. It does not execute a route, activate tools, load skills, create subagents, grant authorization, or enforce policy.
+An optional `jev_task_router` tool for the **parent Pi agent**. It asks TypeSafe Jev through OpenRouter for one advisory primary route, one active tool, one discovered specialist skill, a pi-subagent preset, and the probability that independent parallel investigations would help. It does not execute a route, activate tools, load skills, create subagents, grant authorization, or enforce policy.
 
 The shared [`pi-jev` skill](../../skills/pi-jev/README.md) describes when to select this tool or the separate [`jev_rerank`](../pi-jev-tools/README.md) public-passage reranker.
 
@@ -42,7 +42,7 @@ Load only this source extension:
 pi -e ./extensions/pi-jev-router/index.ts
 ```
 
-No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers only `jev_route_task`, installs nothing, makes no startup request, and does not change active tools.
+No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers only `jev_task_router`, installs nothing, makes no startup request, and does not change active tools.
 
 ## Tool contract
 

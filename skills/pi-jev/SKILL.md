@@ -1,6 +1,6 @@
 ---
 name: pi-jev
-description: Use available TypeSafe Jev tools at two decision points without requiring the user to name Jev. Use jev_route_task before choosing among two or more unresolved, feasible research, comparison, or review workflows, or for explicit routing evaluation. Use jev_rerank after collecting multiple usable public passages, before reading all sources in depth, when reading order remains open. Use the applicable tool once, subject to data and consent boundaries; skip trivial tasks, settled routes, and sufficient evidence.
+description: Use available TypeSafe Jev tools at two decision points without requiring the user to name Jev. Use jev_task_router before choosing among two or more unresolved, feasible research, comparison, or review workflows, or for explicit routing evaluation. Use jev_rerank after collecting multiple usable public passages, before reading all sources in depth, when reading order remains open. Use the applicable tool once, subject to data and consent boundaries; skip trivial tasks, settled routes, and sufficient evidence.
 license: MIT
 compatibility: Requires at least one companion Jev extension, an interactive Pi or compatible RPC approval UI, and a configured Pi OpenRouter provider.
 ---
@@ -11,7 +11,7 @@ Use this workflow to select among the available consent-gated TypeSafe Jev tools
 
 ## Select a tool
 
-- Use `jev_route_task` at the planning stage of research, comparison, or review when two or more feasible workflow choices remain unresolved, before committing to one. Examples include parent-led versus delegated investigation, choosing between applicable specialist skills, or deciding whether independent tracks are useful. Merely having several tools available is not a workflow choice. Also use it for explicit routing evaluation. Otherwise skip trivial tasks, user-specified workflows, and settled routes.
+- Use `jev_task_router` at the planning stage of research, comparison, or review when two or more feasible workflow choices remain unresolved, before committing to one. Examples include parent-led versus delegated investigation, choosing between applicable specialist skills, or deciding whether independent tracks are useful. Merely having several tools available is not a workflow choice. Also use it for explicit routing evaluation. Otherwise skip trivial tasks, user-specified workflows, and settled routes.
 - Use `jev_rerank` after collecting multiple usable public passages and before reading all candidate sources in depth, when their reading order remains open. Skip a single sufficient source, evidence that already answers the question, fully reviewed candidates, or passages with inadequate provenance or context. It ranks supplied passages; it does not search, fetch, verify truth, or write the answer.
 - These decision points do not override data or consent boundaries. If a needed tool is inactive or a permitted payload cannot be prepared, continue with the normal workflow.
 - Do not repeat a call for the same decision. Routing and later reranking may serve distinct decisions in one task. Never retry a declined or failed call automatically.
@@ -26,7 +26,7 @@ Use this workflow to select among the available consent-gated TypeSafe Jev tools
 
 ## Route tasks
 
-When `jev_route_task` applies:
+When `jev_task_router` applies:
 
 1. Write `task` in English using only the current request and its operative details. Do not paste conversation history.
 2. Add `constraints` only when material constraints are already established. Never include secrets, credentials, session history, private file contents, internal documents, signed URLs, authenticated-page content, or data the user is not authorized to disclose.

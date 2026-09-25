@@ -4,7 +4,7 @@ A shared workflow that lets the parent Pi agent select among available consent-g
 
 The skill currently covers:
 
-- [`jev_route_task`](../../extensions/pi-jev-router/README.md) before choosing among two or more unresolved, feasible research, comparison, or review workflows, or for explicit routing evaluation; and
+- [`jev_task_router`](../../extensions/pi-jev-router/README.md) before choosing among two or more unresolved, feasible research, comparison, or review workflows, or for explicit routing evaluation; and
 - [`jev_rerank`](../../extensions/pi-jev-tools/README.md) after collecting multiple usable public passages, before reading all sources in depth, when reading order remains open.
 
 Use the applicable tool once, subject to data and consent boundaries, rather than requiring a second speculative estimate of a large benefit. Skip trivial tasks, user-specified or settled routes, and sufficient or fully reviewed evidence. Several available tools alone do not justify routing.

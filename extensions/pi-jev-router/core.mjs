@@ -1,4 +1,4 @@
-export const TOOL_NAME = 'jev_route_task';
+export const TOOL_NAME = 'jev_task_router';
 export const MODEL = '~typesafe/jev-latest';
 export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
 export const isJevWorkflowSkill = name => /^(?:skill:)?pi-jev(?:-router)?(?::\d+)?$/.test(name);

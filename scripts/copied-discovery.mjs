@@ -15,9 +15,9 @@ const { DefaultResourceLoader, SettingsManager } = await import(
   existsSync(bundle) ? bundle.href : sdkEntry
 );
 const cases = [
-  [['pi-jev-router'], ['jev_route_task']],
+  [['pi-jev-router'], ['jev_task_router']],
   [['pi-jev-tools'], ['jev_rerank']],
-  [['pi-jev-router', 'pi-jev-tools'], ['jev_rerank', 'jev_route_task']],
+  [['pi-jev-router', 'pi-jev-tools'], ['jev_rerank', 'jev_task_router']],
 ];
 for (const [extensions, expectedTools] of cases) {
   const temporary = await mkdtemp(join(tmpdir(), 'pi-jev-copy-'));

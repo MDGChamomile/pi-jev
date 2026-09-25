@@ -20,7 +20,7 @@ Pi Jev provides two optional, independently installable tools for the **parent P
 
 | Tool | Use it when | It does not |
 |---|---|---|
-| [`jev_route_task`](extensions/pi-jev-router/README.md) | Two or more feasible research, comparison, or review workflows remain unresolved, before choosing one; also for explicit routing evaluation. | Execute a route, activate tools, load skills, create subagents, or authorize actions. |
+| [`jev_task_router`](extensions/pi-jev-router/README.md) | Two or more feasible research, comparison, or review workflows remain unresolved, before choosing one; also for explicit routing evaluation. | Execute a route, activate tools, load skills, create subagents, or authorize actions. |
 | [`jev_rerank`](extensions/pi-jev-tools/README.md) | Multiple usable public passages have been collected and reading order remains open, before reading all candidate sources in depth. | Search, fetch or verify sources, judge source authority, remove candidates, or write the answer. |
 
 The shared [`pi-jev` skill](skills/pi-jev/README.md) teaches the parent agent when to use either available tool without requiring the user to name Jev. At these decision points, use the applicable tool once, subject to data and consent boundaries, without an additional speculative large-benefit test. Skip trivial tasks, user-specified or settled routes, and sufficient or fully reviewed evidence. Merely having several tools available does not justify routing. The skill itself does not contact a provider.
