@@ -123,6 +123,8 @@ Tests use mocked HTTP responses and synthetic keys. They cover request limits an
 
 ## Opt-in evaluation
 
+The repository's [offline reranker comparison](../../evaluations/reranker/README.md) provides synthetic Korean fixtures, deliberately mixed mock orders, ranking metrics, and optional preparation/review/request/reading timing fields. Run `npm run evaluate:reranker` from the development repository; nothing is sent externally. This developer-only harness is not part of a standalone source-copy installation and does not establish live quality.
+
 With separate authorization, compare representative public/synthetic tasks with and without reranking. Measure useful-evidence coverage, important evidence demotion, source reads, latency, token use, and actual OpenRouter cost. Record returned model IDs. Do not widen this into automatic calls or private-data workflows merely because offline checks pass.
 
 ## References

@@ -1,0 +1,81 @@
+[
+  {
+    "id": "ko-completion",
+    "provenance": "Synthetic Korean passages; reserved example.com URLs are placeholders, not fetched sources.",
+    "input": {
+      "question": "Had fictional Mirae Components completed the cancellation of 200,000 treasury shares by 20 September 2026?",
+      "candidates": [
+        { "id": "plan", "url": "https://example.com/plan", "title": "소각 계획", "excerpt": "가상의 미래부품은 2026년 9월 중 자사주 20만 주를 소각할 계획이라고 밝혔다." },
+        { "id": "approval", "url": "https://example.com/approval", "title": "이사회 결의", "excerpt": "2026년 9월 10일 이사회는 자사주 20만 주 소각을 승인했다. 소각 실행일은 아직 확정되지 않았다." },
+        { "id": "background", "url": "https://example.com/background", "title": "소각의 의미", "excerpt": "자사주 소각은 발행 주식 수를 줄이는 방법이다." },
+        { "id": "completion", "url": "https://example.com/completion", "title": "소각 완료", "excerpt": "가상의 미래부품은 2026년 9월 18일 자사주 20만 주의 소각을 완료했다고 밝혔다." }
+      ]
+    },
+    "relevance": { "plan": 1, "approval": 2, "background": 1, "completion": 3 },
+    "criticalIds": ["completion"],
+    "rationale": "Plans and board approval do not establish execution. Preserve the amount and as-of date."
+  },
+  {
+    "id": "ko-correction",
+    "provenance": "Synthetic Korean passages; reserved example.com URLs are placeholders, not fetched sources.",
+    "input": {
+      "question": "As of 24 September 2026, had fictional Hanbit completed its acquisition of Blue Harbor?",
+      "candidates": [
+        { "id": "old-report", "url": "https://example.com/old-report", "title": "인수 완료 보도", "excerpt": "2026년 9월 22일 보도: 가상의 한빛은 블루하버 인수를 완료했다고 밝혔다." },
+        { "id": "contract", "url": "https://example.com/contract", "title": "계약 체결", "excerpt": "가상의 한빛은 블루하버 인수 계약을 체결했다. 거래 종결에는 관계 기관의 승인이 필요하다." },
+        { "id": "background", "url": "https://example.com/sector", "title": "산업 개요", "excerpt": "블루하버가 속한 산업은 여러 기업이 경쟁하고 있다." },
+        { "id": "correction", "url": "https://example.com/correction", "title": "기존 보도 정정", "excerpt": "2026년 9월 24일 정정: 9월 22일의 인수 완료 보도는 잘못됐다. 가상의 한빛은 계약만 체결했으며, 승인은 진행 중이고 거래는 아직 종결되지 않았다." }
+      ]
+    },
+    "relevance": { "old-report": 2, "contract": 2, "background": 1, "correction": 3 },
+    "criticalIds": ["correction"],
+    "rationale": "The dated correction directly answers negatively. Do not rank contradiction as irrelevant or discard the older report."
+  },
+  {
+    "id": "ko-as-of",
+    "provenance": "Synthetic Korean passages; reserved example.com URLs are placeholders, not fetched sources.",
+    "input": {
+      "question": "What was the status of fictional Daeun's transaction on 10 September 2026?",
+      "criteria": "Prioritize direct evidence about the status on 10 September, not the latest eventual outcome. Preserve uncertainty and do not infer an earlier completion from a later completion.",
+      "candidates": [
+        { "id": "as-of", "url": "https://example.com/as-of", "title": "9월 10일 진행 상황", "excerpt": "2026년 9월 10일 현재 가상의 다은은 계약 체결을 마쳤다. 규제 승인은 심사 중이며 거래 종결 여부는 확정되지 않았다." },
+        { "id": "signing", "url": "https://example.com/signing", "title": "9월 1일 계약", "excerpt": "가상의 다은은 2026년 9월 1일 계약을 체결했다. 승인과 거래 종결은 추후 진행할 예정이다." },
+        { "id": "future", "url": "https://example.com/future", "title": "9월 25일 완료", "excerpt": "가상의 다은은 2026년 9월 25일 거래를 종결했다." },
+        { "id": "unrelated", "url": "https://example.com/unrelated", "title": "행사 안내", "excerpt": "가상의 다은은 임직원 체육행사를 개최했다." }
+      ]
+    },
+    "relevance": { "as-of": 3, "signing": 2, "future": 1, "unrelated": 0 },
+    "criticalIds": ["as-of"],
+    "rationale": "Newer is not always more relevant. A future completion cannot replace direct as-of evidence."
+  },
+  {
+    "id": "ko-no-evidence",
+    "provenance": "Synthetic Korean passages; reserved example.com URLs are placeholders, not fetched sources.",
+    "input": {
+      "question": "Did fictional Sora repay its bonds on 15 September 2026?",
+      "candidates": [
+        { "id": "weather", "url": "https://example.com/weather", "title": "날씨", "excerpt": "2026년 9월 15일에는 비가 내렸다." },
+        { "id": "festival", "url": "https://example.com/festival", "title": "축제", "excerpt": "지역 축제가 다음 주에 개최된다." },
+        { "id": "sports", "url": "https://example.com/sports", "title": "경기", "excerpt": "주말 경기가 예정되어 있다." }
+      ]
+    },
+    "relevance": { "weather": 0, "festival": 0, "sports": 0 },
+    "criticalIds": [],
+    "rationale": "No passage answers the question; even a valid ranking supplies no evidence. Undefined quality metrics must not become perfect scores."
+  },
+  {
+    "id": "ko-equal-evidence",
+    "provenance": "Synthetic Korean passages; reserved example.com URLs are placeholders, not fetched sources.",
+    "input": {
+      "question": "Was fictional Nuri's plant operating on 12 September 2026?",
+      "candidates": [
+        { "id": "notice", "url": "https://example.com/notice", "title": "가동 공지", "excerpt": "가상의 누리 공장은 2026년 9월 12일 정상 가동 중이었다." },
+        { "id": "report", "url": "https://example.com/report", "title": "운영 보고", "excerpt": "2026년 9월 12일 가상의 누리 공장은 생산을 계속했으며 가동 중단은 없었다." },
+        { "id": "history", "url": "https://example.com/history", "title": "공장 연혁", "excerpt": "가상의 누리 공장은 2020년에 설립됐다." }
+      ]
+    },
+    "relevance": { "notice": 3, "report": 3, "history": 1 },
+    "criticalIds": ["notice", "report"],
+    "rationale": "Both direct passages are relevant. Equal relevance does not justify a unique gold ordering; runtime score ties retain input order."
+  }
+]
