@@ -32,6 +32,7 @@ try {
       join(root, 'node_modules/typescript'));
   }
   run(join(root, 'scripts/copied-discovery.mjs'));
+  run(join(root, 'scripts/package-discovery.mjs'));
 } finally {
   await rm(temporary, { recursive: true, force: true });
 }

@@ -3,6 +3,19 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
+  "keywords": ["pi-package"],
+  "pi": {
+    "extensions": [
+      "./extensions/pi-jev-router/index.ts",
+      "./extensions/pi-jev-tools/index.ts"
+    ],
+    "skills": ["./skills/pi-jev"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
   "scripts": {
     "test": "node --test extensions/pi-jev-router/tests/core.test.mjs extensions/pi-jev-tools/tests/core.test.mjs",
     "check:pi": "node scripts/check-pi.mjs",
