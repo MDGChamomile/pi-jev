@@ -1,0 +1,10 @@
+{
+  "kind": "mock",
+  "cases": [
+    { "caseId": "ko-completion", "status": "ok", "rankedIds": ["completion", "approval", "plan", "background"], "returnedModel": null },
+    { "caseId": "ko-correction", "status": "ok", "rankedIds": ["correction", "old-report", "contract", "background"], "returnedModel": null },
+    { "caseId": "ko-as-of", "status": "ok", "rankedIds": ["future", "signing", "unrelated", "as-of"], "returnedModel": null },
+    { "caseId": "ko-no-evidence", "status": "not_ranked", "rankedIds": ["weather", "festival", "sports"], "returnedModel": null },
+    { "caseId": "ko-equal-evidence", "status": "ok", "rankedIds": ["notice", "report", "history"], "returnedModel": null }
+  ]
+}

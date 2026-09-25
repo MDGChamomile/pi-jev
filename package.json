@@ -17,7 +17,8 @@
     "@earendil-works/pi-tui": "*"
   },
   "scripts": {
-    "test": "node --test extensions/pi-jev-router/tests/core.test.mjs extensions/pi-jev-tools/tests/core.test.mjs",
+    "test": "node --test extensions/pi-jev-router/tests/core.test.mjs extensions/pi-jev-tools/tests/core.test.mjs evaluations/reranker/evaluate.test.mjs",
+    "evaluate:reranker": "node evaluations/reranker/evaluate.mjs --mock",
     "check:pi": "node scripts/check-pi.mjs",
     "check:skills": "python3 -B -m unittest discover -s .github/scripts -p 'test_*.py' -v && python3 -B .github/scripts/validate_skills.py",
     "check": "npm test && npm run check:pi && npm run check:skills"
