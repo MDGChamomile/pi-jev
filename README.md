@@ -8,7 +8,7 @@
 
 Pi Jev provides two optional, independently installable tools for the **parent Pi agent** and one shared skill that helps decide when to use them. Each tool makes at most one approved request through OpenRouter. Jev returns advice, not an executed route, verified evidence, or authorization.
 
-**Status:** experimental source implementations with offline tests, not an npm package. The router has no live routing evaluation yet, and the reranker has not established Korean-language quality or improvements in accuracy, latency, or cost. Keep them only if representative comparisons show a net benefit over ordinary parent-agent reasoning.
+**Status:** an experimental Git-installable Pi package with offline tests, not published to npm. The router has no live routing evaluation yet, and the reranker has not established Korean-language quality or improvements in accuracy, latency, or cost. Keep them only if representative comparisons show a net benefit over ordinary parent-agent reasoning.
 
 ### See the review flow
 
@@ -33,7 +33,21 @@ The shared [`pi-jev` skill](skills/pi-jev/README.md) teaches the parent agent wh
 - A configured Pi `openrouter` provider. The extensions reuse Pi's resolved authentication and do not read credential files or environment variables themselves.
 - An interactive Pi UI, or an RPC host implementing confirmation dialogs. Noninteractive modes fail closed.
 
-Review the source, then copy the shared skill once and whichever independently installable extensions you need:
+Review the source, then install the single Pi package (both extensions and the shared skill):
+
+```bash
+pi install git:github.com/MDGChamomile/pi-jev
+```
+
+This unpinned source follows the repository's default branch. To update all three resources together:
+
+```bash
+pi update --extension git:github.com/MDGChamomile/pi-jev
+```
+
+Restart Pi or use `/reload` after updating. Use `pi config` to select which extensions and skills load. Existing copied or symlinked resources are not automatically removed: follow [`MIGRATION.md`](MIGRATION.md) before switching to avoid duplicates. A local development checkout is separate from this installation; uncommitted development edits do not update it.
+
+Alternatively, preserve independent source-copy installation by copying the shared skill once and whichever extensions you need:
 
 ```bash
 git clone https://github.com/MDGChamomile/pi-jev.git
@@ -54,7 +68,7 @@ pi -e ./extensions/pi-jev-router/index.ts
 pi -e ./extensions/pi-jev-tools/index.ts
 ```
 
-Source-copy installation is the distribution method; this repository is not published as an npm package. No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is required at runtime.
+Git-package and independent source-copy installations are supported; this repository is not published to npm. No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is required at runtime.
 
 ## External transmission, consent, and cost
 
