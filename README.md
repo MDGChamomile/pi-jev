@@ -98,6 +98,8 @@ Pi may retain ordinary tool arguments and results in session history. Successful
 
 ## If Jev is not being used
 
+Use `/jev-router-status` or `/jev-rerank-status` for the installed extension. Each command shows tool activation, in-memory runner calls, approved request attempts, pending state, the last completed result, and whether a validated response has previously been observed. It never checks authentication or contacts a provider. Counts reset on session start/switch/resume/fork/reload and do not establish delivery, billing, or whether the agent considered using Jev.
+
 First distinguish no tool selection from a selected call returning `not_routed` or `not_ranked`. Confirm which extension and skill paths Pi actually loads, whether the tool is active, and the existing fixed failure code if a call failed. Reading the skill alone does not prove a tool was called. A source-copy installation does not change when this checkout changes; follow the migration guide before updating installed copies. Do not send session records to Jev or make a paid call merely to diagnose installation.
 
 ## Detailed guides

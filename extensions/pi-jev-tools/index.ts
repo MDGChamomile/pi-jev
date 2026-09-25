@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
+import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { Type } from '@earendil-works/pi-ai';
 import { Editor, truncateToWidth } from '@earendil-works/pi-tui';
 import { createPayloadReviewer, createRunner, JevError, LIMITS } from './core.mjs';
@@ -6,8 +6,27 @@ import { createPayloadReviewer, createRunner, JevError, LIMITS } from './core.mj
 const reviewPayload = createPayloadReviewer({ Editor, truncateToWidth });
 
 export default function (pi: ExtensionAPI) {
-  let runner: ReturnType<typeof createRunner> | undefined;
-  pi.on('session_shutdown', () => runner?.shutdown());
+  const newRunner = () => createRunner({
+    resolveApiKey: async (ctx: ExtensionContext) => (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
+    review: reviewPayload,
+  });
+  let runner = newRunner();
+  pi.on('session_shutdown', () => runner.shutdown());
+  pi.on('session_start', () => { runner.shutdown(); runner = newRunner(); });
+  pi.registerCommand('jev-rerank-status', {
+    description: 'Show in-memory reranker status without authentication or network access.',
+    handler: async (_args, ctx) => {
+      if (!ctx.hasUI) return;
+      const status = runner.getStatus();
+      ctx.ui.notify([
+        `Jev reranker: loaded / tool ${pi.getActiveTools().includes('jev_rerank') ? 'active' : 'inactive'}`,
+        `Calls since session start/reload: ${status.calls}`,
+        `Approved request attempts: ${status.requestAttempts} (delivery and billing unknown)`,
+        `In flight: ${status.inFlight ? 'yes' : 'no'}; last completed result: ${status.lastResult}`,
+        `Validated provider response observed: ${status.validatedResponseObserved ? 'yes (historical, not a current connection check)' : 'no (unverified)'}`,
+      ].join('\n'), 'info');
+    },
+  });
   pi.registerTool({
     name: 'jev_rerank',
     label: 'Jev Rerank',
@@ -23,10 +42,6 @@ export default function (pi: ExtensionAPI) {
       }, { additionalProperties: false }), { minItems: 1, maxItems: LIMITS.candidates }),
     }, { additionalProperties: false }),
     async execute(_id, params, signal, _onUpdate, ctx) {
-      runner ??= createRunner({
-        resolveApiKey: async (currentCtx: typeof ctx) => (await currentCtx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
-        review: reviewPayload,
-      });
       try {
         const result = await runner.execute(params, signal, ctx);
         return { content: [{ type: 'text' as const, text: JSON.stringify(result) }], details: result };

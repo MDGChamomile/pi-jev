@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
+import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { Type } from '@earendil-works/pi-ai';
 import { Editor, truncateToWidth } from '@earendil-works/pi-tui';
 import { createPayloadReviewer, createRunner, JevRouterError, LIMITS, runtimeSkillCatalog, TOOL_NAME } from './core.mjs';
@@ -15,8 +15,27 @@ function runtimeCatalog(pi: ExtensionAPI) {
 }
 
 export default function (pi: ExtensionAPI) {
-  let runner: ReturnType<typeof createRunner> | undefined;
-  pi.on('session_shutdown', () => runner?.shutdown());
+  const newRunner = () => createRunner({
+    resolveApiKey: async (ctx: ExtensionContext) => (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
+    review: reviewPayload,
+  });
+  let runner = newRunner();
+  pi.on('session_shutdown', () => runner.shutdown());
+  pi.on('session_start', () => { runner.shutdown(); runner = newRunner(); });
+  pi.registerCommand('jev-router-status', {
+    description: 'Show in-memory router status without authentication or network access.',
+    handler: async (_args, ctx) => {
+      if (!ctx.hasUI) return;
+      const status = runner.getStatus();
+      ctx.ui.notify([
+        `Jev router: loaded / tool ${pi.getActiveTools().includes(TOOL_NAME) ? 'active' : 'inactive'}`,
+        `Calls since session start/reload: ${status.calls}`,
+        `Approved request attempts: ${status.requestAttempts} (delivery and billing unknown)`,
+        `In flight: ${status.inFlight ? 'yes' : 'no'}; last completed result: ${status.lastResult}`,
+        `Validated provider response observed: ${status.validatedResponseObserved ? 'yes (historical, not a current connection check)' : 'no (unverified)'}`,
+      ].join('\n'), 'info');
+    },
+  });
 
   pi.registerTool({
     name: TOOL_NAME,
@@ -35,10 +54,6 @@ export default function (pi: ExtensionAPI) {
       })),
     }, { additionalProperties: false }),
     async execute(_id, params, signal, _onUpdate, ctx) {
-      runner ??= createRunner({
-        resolveApiKey: async (currentCtx: typeof ctx) => (await currentCtx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
-        review: reviewPayload,
-      });
       try {
         // Resource-loader smoke tests and noninteractive modes have no live session catalog.
         // They fail closed before any provider call, so avoid querying session-bound APIs there.
