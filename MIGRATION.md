@@ -12,7 +12,7 @@ Historical removed Python adapters remain in Git history, not in the current ins
 4. Remove an obsolete router-only skill only after confirming it is the superseded copy. Preserve unrelated skills, credentials, and environments.
 5. Reload or restart Pi and confirm the expected tool names and a single shared skill. If loading fails, restore the previous reviewed copies/links and reload.
 
-The tool names and approval/provider behavior do not change with the repository move. No migration step needs a paid Jev call. The [skill guide](skills/pi-jev/README.md) separately describes migration from the historical direct TypeSafe/Python setup.
+The repository move itself did not change tool names or approval/provider behavior. Starting with v0.2.0, however, the router tool is named `jev_task_router` instead of `jev_route_task`. Update prompts, tool allowlists, and other references to the old name; replace the installed router extension and shared skill together, then reload Pi. The reranker remains `jev_rerank`. No migration step needs a paid Jev call. The [skill guide](skills/pi-jev/README.md) separately describes migration from the historical direct TypeSafe/Python setup.
 
 ## Development and distribution
 
