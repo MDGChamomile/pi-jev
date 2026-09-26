@@ -45,8 +45,8 @@ When `jev_rerank` applies:
 2. Write an English research question. Omit `criteria` for the default relevance standard, which prioritizes direct evidence over background while preserving dates, negation, uncertainty, planned versus completed actions, and contradictory evidence. Supply English criteria when the question needs a more specific standard, such as distinguishing planned, approved, and completed states. Empty or invalid criteria are not treated as omission.
 3. Preserve each excerpt verbatim, including its original language, names, numbers, dates, quotations, negation, and uncertainty. Include enough surrounding context; do not blindly take the beginning of a page.
 4. Never supply local or private material, credentials, session data, internal documents, signed URLs, or authenticated-page content. A public-looking URL does not make attached text public.
-5. Call the tool once. On `not_ranked`, retain the original order and continue without retrying.
-6. Use the result to prioritize reading; do not treat a low score as deletion or the ranking as authority or factual verification.
+5. Call the tool once. On `not_ranked`, retain the original candidates and order without retrying; that order is not a relevance ranking. If the user requested reading only the top-ranked subset, disclose that no ranking was produced rather than treating the first input items as that subset. Use an alternative selection method only within the user's authorization; ask if changing the method would materially change the requested scope. Do not silently expand the reading limit.
+6. On `ok`, use the result to prioritize reading; do not treat a low score as deletion or the ranking as authority or factual verification.
 
 Use the shortest exact excerpts that preserve the context needed for relevance, including plan-versus-execution distinctions. A sufficient public search excerpt can be used; do not infer text from titles, pad to a target length, or read every source in depth just to prepare the call.
 
