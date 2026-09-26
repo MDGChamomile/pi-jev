@@ -1,7 +1,7 @@
 # Pi Jev
 
 [![Offline validation](https://github.com/MDGChamomile/pi-jev/actions/workflows/validation.yml/badge.svg?branch=main)](https://github.com/MDGChamomile/pi-jev/actions/workflows/validation.yml)
-[![Latest source release](https://img.shields.io/github/v/release/MDGChamomile/pi-jev?label=source%20release)](https://github.com/MDGChamomile/pi-jev/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/MDGChamomile/pi-jev?label=release)](https://github.com/MDGChamomile/pi-jev/releases/latest)
 [![License](https://img.shields.io/github/license/MDGChamomile/pi-jev)](LICENSE)
 
 > Consent-gated TypeSafe Jev advice for the [Pi coding agent](https://github.com/earendil-works/pi): choose a task route or rank public web passages without handing over control.
