@@ -373,9 +373,19 @@ async function resolveWhileActive(resolveValue, signal) {
 export function createRunner({ resolveApiKey, run = runDecision, review, now = () => performance.now() }) {
   if (typeof review !== 'function') throw new TypeError('missing_payload_reviewer');
   let active;
+  let calls = 0, requestAttempts = 0, lastResult = 'none', validatedResponseObserved = false;
   return {
     shutdown() { active?.abort(); },
+    getStatus() { return { calls, requestAttempts, inFlight: active !== undefined, lastResult, validatedResponseObserved }; },
     async execute(input, catalog, signal, ctx) {
+      calls++;
+      const result = await execute(input, catalog, signal, ctx);
+      lastResult = result.status === 'ok' ? 'ok' : result.code;
+      if (result.status === 'ok') validatedResponseObserved = true;
+      return result;
+    },
+  };
+  async function execute(input, catalog, signal, ctx) {
       const fallback = code => ({
         status: 'not_routed', code,
         note: 'No Jev routing recommendation was applied. Continue with the normal parent-agent workflow; do not retry automatically.',
@@ -413,6 +423,8 @@ export function createRunner({ resolveApiKey, run = runDecision, review, now = (
         catch { return fallback(combinedSignal.aborted ? 'cancelled' : 'authentication_failed'); }
         if (typeof apiKey !== 'string' || !apiKey.trim()) return fallback('missing_key');
         const startedAt = now();
+        if (combinedSignal.aborted) return fallback('cancelled');
+        requestAttempts++;
         const raw = await run({ apiKey, serialized: prepared.serialized, signal: combinedSignal });
         const elapsedMs = Math.max(0, Math.round(now() - startedAt));
         if (combinedSignal.aborted) return fallback('cancelled');
@@ -427,6 +439,5 @@ export function createRunner({ resolveApiKey, run = runDecision, review, now = (
       } finally {
         active = undefined;
       }
-    },
-  };
+  }
 }

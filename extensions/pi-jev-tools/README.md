@@ -38,7 +38,15 @@ Load only this source extension:
 pi -e ./extensions/pi-jev-tools/index.ts
 ```
 
-No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers only `jev_rerank`, installs nothing, and makes no startup request. Do not add it to a subagent's tool list.
+No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers the `jev_rerank` tool and `/jev-rerank-status` command, installs nothing, and makes no startup request. Do not add it to a subagent's tool list.
+
+## Session status
+
+Run `/jev-rerank-status` to see whether the tool is currently active, calls received by its runner, approved request attempts, whether a call is pending, and the last completed result (`ok` or a fixed failure code). It also reports whether a validated provider response has been observed in this session runtime, not whether the provider is currently reachable.
+
+This command never resolves authentication or sends a request. Request attempts are counted just before transport is invoked after approval and authentication; they do not prove delivery or billing. A decline or missing key adds a call but no request attempt. A rejected concurrent call counts as `busy`; the last result follows completion order while the pending call remains visible.
+
+Only counters, a fixed result code, and flags are kept in memory. No payload, response body, credential, or session history is added to a log. Counters reset on session start, switch, resume, fork, or reload; they are not reconstructed from history or rewound by tree navigation. The router uses a separate `/jev-router-status` command, so either extension can be installed alone. Status notifications require an interactive UI or compatible RPC host.
 
 ## Tool contract
 
@@ -80,6 +88,10 @@ Success returns `status: "ok"`, the requested latest alias and returned Jev-fami
 
 Failure or decline, including preflight validation failure, returns `status: "not_ranked"`, a fixed code, and every recoverable original candidate ID in unchanged order. Codes include `invalid_input`, `invalid_candidate_id`, `invalid_source_url`, `input_too_large`, `declined`, `preview_changed`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
 
+On `not_ranked`, the returned order preserves the input; it does **not** identify the most relevant candidates. If the user requested reading only a top-ranked subset, disclose that no ranking was produced instead of treating the first input items as that subset. Use an alternative selection method only within the user's authorization, and ask if changing the method would materially change the requested scope. Do not silently expand the reading limit or retry Jev.
+
+For example, in a synthetic task with six candidates and a request to read only the two highest-ranked passages, a fallback containing all six IDs in input order does not establish that the first two are best. If the user already allowed parent-selected fallback, choose within that permission and explain the basis; otherwise clarify a material method change before proceeding. Check both cases when reviewing the guidance: preserve all candidates, do not claim a Jev ranking, and retain the two-passage reading limit unless the user changes it. This is a guidance example, not evidence of model behavior or ranking quality.
+
 When supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
 
 ## Boundaries and limitations
@@ -114,6 +126,8 @@ This checks each extension separately and all three source-copy installation com
 Tests use mocked HTTP responses and synthetic keys. They cover request limits and immutability, preflight order-preserving fallback, future Jev-family model names, current-context authentication and cancellation, non-persistent call diagnostics, response validation, stable sorting, abortable review and approval gates, Pi-auth resolution failures, single-call/no-retry behavior, HTTP status mapping, deadline, bounded output, sanitized errors, and noninteractive refusal.
 
 ## Opt-in evaluation
+
+The repository's [offline reranker comparison](../../evaluations/reranker/README.md) provides synthetic Korean fixtures, deliberately mixed mock orders, ranking metrics, and optional preparation/review/request/reading timing fields. Run `npm run evaluate:reranker` from the development repository; nothing is sent externally. This developer-only harness is not part of a standalone source-copy installation and does not establish live quality.
 
 With separate authorization, compare representative public/synthetic tasks with and without reranking. Measure useful-evidence coverage, important evidence demotion, source reads, latency, token use, and actual OpenRouter cost. Record returned model IDs. Do not widen this into automatic calls or private-data workflows merely because offline checks pass.
 

@@ -98,6 +98,8 @@ Pi may retain ordinary tool arguments and results in session history. Successful
 
 ## If Jev is not being used
 
+Use `/jev-router-status` or `/jev-rerank-status` for the installed extension. Each command shows tool activation, in-memory runner calls, approved request attempts, pending state, the last completed result, and whether a validated response has previously been observed. It never checks authentication or contacts a provider. Counts reset on session start/switch/resume/fork/reload and do not establish delivery, billing, or whether the agent considered using Jev.
+
 First distinguish no tool selection from a selected call returning `not_routed` or `not_ranked`. Confirm which extension and skill paths Pi actually loads, whether the tool is active, and the existing fixed failure code if a call failed. Reading the skill alone does not prove a tool was called. A source-copy installation does not change when this checkout changes; follow the migration guide before updating installed copies. Do not send session records to Jev or make a paid call merely to diagnose installation.
 
 ## Detailed guides
@@ -120,6 +122,8 @@ npm run check
 The suite uses mocked HTTP, synthetic keys, isolated Pi loading, TypeScript checks, and skill validation. It makes no provider request and does not establish live compatibility, routing quality, reranking quality, latency, or cost.
 
 ## Evaluation before automation
+
+Start with the [small offline reranker comparison](evaluations/reranker/README.md): `npm run evaluate:reranker` reports ranking gains and harms on synthetic Korean fixtures using explicit handwritten mock orders. It can also compare separately collected results against an original-order or supplied parent-order baseline, with optional whole-task timing and quality observations. It never calls a provider; mock output establishes neither live quality nor net benefit. Missing measurements and cost remain unknown.
 
 The decision-point guidance is an unvalidated selection hypothesis, not evidence of improved model behavior. Review it after the first small representative comparison and before expanding use. First compare old and new guidance with the same model, tools, skills, and public/synthetic tasks; count both missed applicable calls and unnecessary calls. Include varied cases rather than only these example phrasings:
 
