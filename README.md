@@ -12,9 +12,15 @@ Pi Jev provides two optional, independently installable tools for the **parent P
 
 ### See the review flow
 
-![Reranker demo: payload review, separate approval, ranked passages, and the parent's sourced answer](extensions/pi-jev-tools/assets/pi-jev-tools-demo.gif)
+Scripted CLI walkthroughs of the current review-and-approval workflow, using synthetic examples. Dialogue, tool catalogs, scores, model responses, and timing are illustrative—not live session recordings, benchmarks, or evidence of provider compatibility. No external requests were made to create these demos.
 
-*Reranker interaction recording only.* It predates the current OpenRouter transport; it shows the review-and-confirmation pattern, not current provider compatibility or measured quality.
+**Rerank collected passages** — the parent has several excerpts and an unresolved reading order. You review the complete payload and separately approve one request; Jev returns relevance advice, and the parent decides what to read next. Every candidate remains available.
+
+![Pi Jev reranker: collected excerpts, full-payload review, separate OpenRouter approval, a JSON ranking result, and the parent's reading plan](extensions/pi-jev-tools/assets/pi-jev-tools-demo.gif)
+
+**Advise on a task route** — the parent has not yet chosen between direct and delegated investigation. You review the task, constraints, and tool/skill metadata, then separately approve one request. Jev suggests a route; it does not execute or authorize it.
+
+![Pi Jev router: an unresolved workflow choice, task and catalog review, separate OpenRouter approval, an advisory JSON result, and a parent-authored plan without execution](extensions/pi-jev-router/assets/pi-jev-router-demo.gif)
 
 ## Choose a tool
 

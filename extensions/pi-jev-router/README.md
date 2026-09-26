@@ -6,6 +6,14 @@ The shared [`pi-jev` skill](../../skills/pi-jev/README.md) describes when to sel
 
 **Status:** experimental source implementation with offline tests and no live routing evaluation yet. Keep it only if representative comparisons show a net benefit over ordinary parent-agent reasoning.
 
+## In action
+
+A scripted CLI walkthrough shows the parent seeking advice before choosing a direct or delegated investigation. The user reviews the full task, constraints, and tool/skill metadata, then separately approves one OpenRouter request. Jev returns an advisory route; the parent writes a plan without launching an investigation.
+
+![Task and tool/skill catalog review, separate OpenRouter approval, an advisory Jev routing result, and a parent-authored plan with no automatic execution](assets/pi-jev-router-demo.gif)
+
+This is a terminal reconstruction, not a live session recording. The public-sample scenario, tool catalog, response, probabilities, and timing are synthetic. No external request was made. The demo does not establish current provider compatibility or routing quality; advice never grants authorization.
+
 ## What it returns
 
 One approved Jev request evaluates five independent questions over the same state:
@@ -70,7 +78,7 @@ Only counters, a fixed result code, and flags are kept in memory. No payload, re
 
 Success returns `status: "ok"`, the route and full probabilities, mapped tool/skill candidates, optional subagent preset, parallel-investigation probability, token usage, and an advisory limitation note. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals.
 
-Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
+Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_request` (HTTP 400/422), `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
 
 When supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
 
