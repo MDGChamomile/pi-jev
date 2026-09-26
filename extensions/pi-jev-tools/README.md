@@ -6,11 +6,11 @@ An optional `jev_rerank` tool for the **parent Pi agent**. It ranks already coll
 
 ## In action
 
-This recording demonstrates the review-and-confirmation workflow on three public IANA passages:
+A scripted CLI walkthrough shows the parent prioritizing three synthetic documentation excerpts. It reviews the complete immutable payload, asks for separate approval to send one request through OpenRouter, receives a relevance-ranking result, and proposes what to read next. Lower-ranked candidates are retained; source verification remains with the parent.
 
-![Jev's English payload-review and approval dialogs, followed by a reranking result and sourced answer](assets/pi-jev-tools-demo.gif)
+![Full-payload review and separate OpenRouter approval, followed by a Jev relevance-ranking result and the parent's reading plan](assets/pi-jev-tools-demo.gif)
 
-The recording predates the OpenRouter transport now used by the extension, so it is evidence for the interaction pattern rather than current provider compatibility, ranking quality, or latency. No private documents or personal sessions are used.
+This is a terminal reconstruction, not a live session recording. The fictional SDK, example.com URLs, dialogue, scores, response model ID, and timing are illustrative. No sources were fetched and no external request was made. The demo does not establish current provider compatibility, ranking quality, latency, or cost.
 
 Use Jev once after collecting multiple usable public passages, before reading all candidate sources in depth, when reading order remains open. Skip a single sufficient source, evidence that already answers the question, fully reviewed candidates, or passages with inadequate provenance or context. Data and consent boundaries still apply.
 
@@ -86,7 +86,7 @@ Jev receives the question, resolved criteria, candidate IDs, URLs, titles, excer
 
 Success returns `status: "ok"`, the requested latest alias and returned Jev-family model ID, original and ranked IDs, per-ID scores (0–3), confidence, probabilities, and token usage. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals. Unrelated response fields and source text are not returned.
 
-Failure or decline, including preflight validation failure, returns `status: "not_ranked"`, a fixed code, and every recoverable original candidate ID in unchanged order. Codes include `invalid_input`, `invalid_candidate_id`, `invalid_source_url`, `input_too_large`, `declined`, `preview_changed`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
+Failure or decline, including preflight validation failure, returns `status: "not_ranked"`, a fixed code, and every recoverable original candidate ID in unchanged order. Codes include `invalid_request` (HTTP 400/422), `invalid_input`, `invalid_candidate_id`, `invalid_source_url`, `input_too_large`, `declined`, `preview_changed`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
 
 On `not_ranked`, the returned order preserves the input; it does **not** identify the most relevant candidates. If the user requested reading only a top-ranked subset, disclose that no ranking was produced instead of treating the first input items as that subset. Use an alternative selection method only within the user's authorization, and ask if changing the method would materially change the requested scope. Do not silently expand the reading limit or retry Jev.
 
