@@ -39,6 +39,16 @@ The shared [`pi-jev` skill](skills/pi-jev/README.md) teaches the parent agent wh
 - A configured Pi `openrouter` provider. The extensions reuse Pi's resolved authentication and do not read credential files or environment variables themselves.
 - An interactive Pi UI, or an RPC host implementing confirmation dialogs. Noninteractive modes fail closed.
 
+### First-time setup
+
+1. Obtain an OpenRouter API key and ensure the account can pay for the request. In interactive Pi, run `/login`, select OpenRouter, and follow the API-key prompt. Pi also supports `OPENROUTER_API_KEY`; see [Pi provider authentication](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/providers.md). Keep keys out of prompts, tool arguments, and Git.
+2. Install Pi Jev with the command below, then restart Pi or run `/reload`.
+3. Run `/jev-router-status` or `/jev-rerank-status` to confirm the selected extension is loaded. These commands do not contact a provider or verify authentication. An actual call still requires payload review and separate approval.
+
+**Optional tools, not prerequisites:** `pi-subagent` is not required, and no particular global `AGENTS.md` configuration is needed. The router can advise on direct handling and available tools or skills without a subagent. Acting on a delegation recommendation requires a compatible delegation tool; the current preset advice follows the `pi-subagent` preset names described in the [router guide](extensions/pi-jev-router/README.md). The reranker needs public excerpts collected beforehand, through your own web tools or supplied public sources; it does not include search or browser tools.
+
+**Cost:** OpenRouter is currently the only supported connection. The extension limits the price per token, **not the total bill**. Read [consent and cost](#external-transmission-consent-and-cost) before approving a request.
+
 Review the source, then install the single Pi package (both extensions and the shared skill):
 
 ```bash
