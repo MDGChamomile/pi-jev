@@ -6,8 +6,13 @@ import { createPayloadReviewer, createRunner, JevError, LIMITS } from './core.mj
 const reviewPayload = createPayloadReviewer({ Editor, truncateToWidth });
 
 export default function (pi: ExtensionAPI) {
+  const getProvider = () => process.env.PI_JEV_PROVIDER ?? 'openrouter';
   const newRunner = () => createRunner({
-    resolveApiKey: async (ctx: ExtensionContext) => (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
+    getProvider,
+    // Called only after approval; never read the unselected provider's credential.
+    resolveApiKey: async (ctx: ExtensionContext, provider: string) => provider === 'typesafe'
+      ? process.env.TYPESAFE_API_KEY
+      : (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
     review: reviewPayload,
   });
   let runner = newRunner();
@@ -18,7 +23,9 @@ export default function (pi: ExtensionAPI) {
     handler: async (_args, ctx) => {
       if (!ctx.hasUI) return;
       const status = runner.getStatus();
+      const provider = getProvider();
       ctx.ui.notify([
+        `Connection: ${['openrouter', 'typesafe'].includes(provider) ? provider : 'invalid configuration'}`,
         `Jev reranker: loaded / tool ${pi.getActiveTools().includes('jev_rerank') ? 'active' : 'inactive'}`,
         `Calls since session start/reload: ${status.calls}`,
         `Approved request attempts: ${status.requestAttempts} (delivery and billing unknown)`,

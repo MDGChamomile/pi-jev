@@ -15,7 +15,7 @@ This repository develops experimental Pi extensions for advisory TypeSafe Jev ro
 - Preserve consent, full-payload review, authentication, cancellation, single-call/no-retry, bounded-output, and sanitized-fallback behavior.
 - Jev provides advice, not authorization, execution, or source verification.
 - Never send or commit credentials, private session data, authenticated content, signed URLs, or unauthorized data.
-- Live OpenRouter calls require separate explicit authorization for the provider/model, maximum request count, maximum spend, and disclosed data.
+- Live provider calls (OpenRouter or direct TypeSafe) require separate explicit authorization for the provider/model, maximum request count, maximum spend, and disclosed data.
 - Do not install into an active Pi environment as a testing shortcut.
 
 ## Changes and verification

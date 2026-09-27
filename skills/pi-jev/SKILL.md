@@ -2,7 +2,7 @@
 name: pi-jev
 description: Use available TypeSafe Jev tools at two decision points without requiring the user to name Jev. Use jev_task_router before choosing among two or more unresolved, feasible research, comparison, or review workflows, or for explicit routing evaluation. Use jev_rerank after collecting multiple usable public passages, before reading all sources in depth, when reading order remains open. Use the applicable tool once, subject to data and consent boundaries; skip trivial tasks, settled routes, and sufficient evidence.
 license: MIT
-compatibility: Requires at least one companion Jev extension, an interactive Pi or compatible RPC approval UI, and a configured Pi OpenRouter provider.
+compatibility: Requires at least one companion Jev extension, an interactive Pi or compatible RPC approval UI, and authentication for the selected OpenRouter or direct TypeSafe connection.
 ---
 
 # Pi Jev
@@ -21,7 +21,7 @@ Use this workflow to select among the available consent-gated TypeSafe Jev tools
 - Jev advice never grants authorization or overrides safety, privacy, tool, browser, skill, or delegation rules.
 - Never use Jev to decide whether a restricted action is permitted or whether a policy may be bypassed.
 - Prepare semantic instructions in English while faithfully preserving names, numbers, dates, negation, uncertainty, scope, and plan-versus-execution distinctions. Do not use another translation service merely to prepare a payload.
-- Review the complete payload shown by the extension and obtain its separate approval before each paid OpenRouter request. A decline falls back to the normal workflow.
+- Review the complete payload shown by the extension and obtain its separate approval before each paid request to the selected provider. OpenRouter enforces per-token price ceilings but no total-cost cap; direct TypeSafe enforces neither. Never change providers or credentials to bypass a decline or failure. A decline falls back to the normal workflow.
 - Treat probabilities and confidence as advisory model outputs, not proof that a route or ranking is correct.
 
 ## Route tasks

@@ -33,6 +33,7 @@ try {
   }
   run(join(root, 'scripts/copied-discovery.mjs'));
   run(join(root, 'scripts/package-discovery.mjs'));
+  run(join(root, 'scripts/provider-discovery.mjs'));
 } finally {
   await rm(temporary, { recursive: true, force: true });
 }

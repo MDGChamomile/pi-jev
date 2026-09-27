@@ -1,6 +1,6 @@
 # Pi Jev Skill
 
-A shared workflow that lets the parent Pi agent select among available consent-gated TypeSafe Jev tools, called through OpenRouter, without requiring the user to request Jev explicitly.
+A shared workflow that lets the parent Pi agent select among available consent-gated TypeSafe Jev tools, called through OpenRouter or directly through TypeSafe, without requiring the user to request Jev explicitly.
 
 The skill currently covers:
 
@@ -9,7 +9,7 @@ The skill currently covers:
 
 Use the applicable tool once, subject to data and consent boundaries, rather than requiring a second speculative estimate of a large benefit. Skip trivial tasks, user-specified or settled routes, and sufficient or fully reviewed evidence. Several available tools alone do not justify routing.
 
-The skill does not contact a provider. Each extension validates its own input, displays the complete payload, requires separate approval, resolves Pi's existing OpenRouter authentication, performs at most one paid request per invocation, and returns advisory output.
+The skill does not contact a provider. Each extension validates its own input, displays the complete payload, requires separate approval, resolves only the selected provider's credential, performs at most one paid request per invocation, and returns advisory output.
 
 ## Requirements and installation
 
@@ -22,7 +22,7 @@ cp -R extensions/pi-jev-router ~/.pi/agent/extensions/   # optional
 cp -R extensions/pi-jev-tools ~/.pi/agent/extensions/    # optional
 ```
 
-At least one extension is required. Each extension needs a configured Pi `openrouter` provider and a compatible approval UI. No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. The extensions do not install dependencies or read credential files themselves.
+At least one extension and a compatible approval UI are required. OpenRouter is the default connection and uses Pi's `openrouter` authentication. For direct TypeSafe access, securely supply `TYPESAFE_API_KEY` and start Pi with `PI_JEV_PROVIDER=typesafe`; no OpenRouter account is needed. The selection applies to both extensions, not the chat model. Restart after changing the launch environment. See the installed extension guide for setup and cost limitations: direct TypeSafe enforces neither a per-token ceiling nor a total-cost cap. No Python interpreter, TypeSafe SDK, or Jev-specific CLI flag is needed. The extensions do not install dependencies or read credential files themselves; the direct connection reads its environment key only after approval.
 
 This shared skill replaces the former `pi-jev-router` skill. When upgrading a copied installation, review and remove the old directory so both workflows are not discovered:
 
@@ -32,7 +32,7 @@ rm -R ~/.pi/agent/skills/pi-jev-router
 
 ### Migrating from the direct TypeSafe setup
 
-Replace copied extension directories cleanly rather than overlaying them, so removed Python adapters and tests do not linger. Remove the obsolete `--jev-python` and `--jev-router-python` arguments from Pi launchers; the new extensions register neither flag. If no other software uses them, the separate `TYPESAFE_API_KEY`, `typesafe-sdk` environment, and Jev-only virtual environment can also be retired. Do not remove shared credentials or environments without checking their other consumers.
+Replace copied extension directories cleanly rather than overlaying them, so removed Python adapters and tests do not linger. Remove the obsolete `--jev-python` and `--jev-router-python` arguments from Pi launchers; the new extensions register neither flag. If no other software uses them, the `typesafe-sdk` environment and Jev-only virtual environment can also be retired. Keep `TYPESAFE_API_KEY` if using the current direct HTTP connection; it is not needed for the default OpenRouter connection. Do not remove shared credentials or environments without checking their other consumers.
 
 Restart Pi or use `/reload`. The model may load this skill automatically at these decision points, or it can be invoked explicitly:
 

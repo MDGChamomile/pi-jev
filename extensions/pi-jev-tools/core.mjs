@@ -2,6 +2,22 @@ export const LIMITS = Object.freeze({ candidates: 10, excerptChars: 4000, bytes:
 export const DEFAULT_CRITERIA = 'Prioritize evidence that directly addresses the question. Distinguish useful background from resolving evidence. Preserve dates, negation, uncertainty, and planned versus completed actions. Contradictory evidence remains relevant.';
 export const MODEL = '~typesafe/jev-latest';
 export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
+const CONNECTIONS = Object.freeze({
+  openrouter: Object.freeze({
+    model: MODEL, endpoint: ENDPOINT, label: 'OpenRouter (TypeSafe upstream)',
+    modelPattern: /^typesafe\/jev-[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/,
+    cost: 'Enforced price ceilings: $0.042/M input and $0/M output. OpenRouter provides no hard total-cost cap for this moving model alias.',
+  }),
+  typesafe: Object.freeze({
+    model: 'jev-latest', endpoint: 'https://api.typesafe.ai/v1/systemone', label: 'TypeSafe direct',
+    modelPattern: /^jev-[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/,
+    cost: 'No enforced per-token price ceiling or hard total-cost cap: the direct API has no documented price-limit field. Check current TypeSafe account pricing before approving; the model alias can change.',
+  }),
+});
+export function connectionSettings(provider = 'openrouter') {
+  if (typeof provider !== 'string' || !Object.hasOwn(CONNECTIONS, provider)) fail('invalid_provider');
+  return CONNECTIONS[provider];
+}
 export const LEVELS = Object.freeze([
   'The passage provides no information useful for answering the question under the stated evaluation criteria.',
   'The passage concerns the topic but supplies only background, not evidence that resolves the question.',
@@ -33,7 +49,8 @@ function sourceUrl(value) {
       /(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(host)) fail('invalid_source_url');
 }
 
-export function buildRequest(input) {
+export function buildRequest(input, provider = 'openrouter') {
+  const connection = connectionSettings(provider);
   keys(input, ['question', 'candidates'], ['criteria']);
   text(input.question, 4000);
   const criteria = Object.hasOwn(input, 'criteria') ? text(input.criteria, 4000) : DEFAULT_CRITERIA;
@@ -55,23 +72,24 @@ export function buildRequest(input) {
     criteria: [...LEVELS],
   }]));
   const request = {
-    model: MODEL,
-    provider: { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } },
+    model: connection.model,
+    ...(provider === 'openrouter' ? { provider: { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } } } : {}),
     state: { question: input.question, evaluation_criteria: criteria, candidates },
     questions,
   };
   // Bound the actual semantic payload too: generated instructions count toward the budget.
   const serialized = JSON.stringify(request);
   if (Buffer.byteLength(serialized, 'utf8') > LIMITS.bytes) fail('input_too_large');
-  return { request, serialized, originalOrder: candidates.map(c => c.id) };
+  return { request, serialized, provider, originalOrder: candidates.map(c => c.id) };
 }
 
 const finiteRange = (x, min, max) => typeof x === 'number' && Number.isFinite(x) && x >= min && x <= max;
-export function parseResponse(raw, originalOrder) {
+export function parseResponse(raw, originalOrder, provider = 'openrouter') {
+  const connection = connectionSettings(provider);
   let response;
   try { response = JSON.parse(raw); } catch { fail('invalid_response'); }
   if (!plain(response) || typeof response.model !== 'string' ||
-      !/^typesafe\/jev-[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(response.model) ||
+      !connection.modelPattern.test(response.model) ||
       !plain(response.answers) || !plain(response.usage)) fail('invalid_response');
   const expected = originalOrder.map((_, i) => `candidate_${i}`);
   if (Object.keys(response.answers).sort().join('|') !== expected.sort().join('|')) fail('invalid_response');
@@ -94,9 +112,9 @@ export function parseResponse(raw, originalOrder) {
     usage[field] = n;
   }
   const cost = response.usage.cost;
-  if (typeof cost === 'number' && Number.isFinite(cost) && cost >= 0) usage.cost = cost;
+  if (provider === 'openrouter' && typeof cost === 'number' && Number.isFinite(cost) && cost >= 0) usage.cost = cost;
   return {
-    status: 'ok', requestedModel: MODEL, model: response.model,
+    status: 'ok', provider, requestedModel: connection.model, model: response.model,
     originalOrder: [...originalOrder],
     rankedIds: [...scores].sort((a, b) => b.score - a.score).map(s => s.id),
     scores, usage,
@@ -122,7 +140,8 @@ async function boundedText(response) {
   return Buffer.concat(chunks.map(chunk => Buffer.from(chunk))).toString('utf8');
 }
 
-export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMITS.timeoutMs, fetchImpl = fetch }) {
+export async function runDecision({ apiKey, serialized, signal, provider = 'openrouter', timeoutMs = LIMITS.timeoutMs, fetchImpl = fetch }) {
+  const connection = connectionSettings(provider);
   if (typeof apiKey !== 'string' || !apiKey.trim()) fail('missing_key');
   if (signal?.aborted) fail('cancelled');
   const deadline = new AbortController();
@@ -130,7 +149,7 @@ export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMI
   const timer = setTimeout(() => { timedOut = true; deadline.abort(); }, timeoutMs);
   const combinedSignal = AbortSignal.any(signal ? [signal, deadline.signal] : [deadline.signal]);
   try {
-    const response = await fetchImpl(ENDPOINT, {
+    const response = await fetchImpl(connection.endpoint, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: serialized,
@@ -238,7 +257,7 @@ async function resolveWhileActive(resolveValue, signal) {
 }
 
 /** Consent is bound to an immutable serialized request; no history is collected. */
-export function createRunner({ resolveApiKey, run = runDecision, review, now = () => performance.now() }) {
+export function createRunner({ resolveApiKey, getProvider = () => 'openrouter', run = runDecision, review, now = () => performance.now() }) {
   if (typeof review !== 'function') throw new TypeError('missing_payload_reviewer');
   let active;
   let calls = 0, requestAttempts = 0, lastResult = 'none', validatedResponseObserved = false;
@@ -258,7 +277,7 @@ export function createRunner({ resolveApiKey, run = runDecision, review, now = (
       const fallback = (code) => ({ status: 'not_ranked', code, originalOrder: [...originalOrder], rankedIds: [...originalOrder], note: 'No ranking applied. Use the original candidates; do not retry automatically.' });
       if (active !== undefined) return fallback('busy');
       let prepared;
-      try { prepared = buildRequest(input); }
+      try { prepared = buildRequest(input, getProvider()); }
       catch (error) { return fallback(error instanceof JevError ? error.code : 'internal_error'); }
       originalOrder = prepared.originalOrder;
       if (signal?.aborted) return fallback('cancelled');
@@ -280,23 +299,24 @@ export function createRunner({ resolveApiKey, run = runDecision, review, now = (
         if (combinedSignal.aborted) return fallback('cancelled');
         if (reviewed === undefined) return fallback('declined');
         if (reviewed !== preview) return fallback('preview_changed');
-        const ok = await ctx.ui.confirm('Send to TypeSafe Jev through OpenRouter?',
-          `Send the reviewed question, criteria, and ${prepared.originalOrder.length} candidates to ${ENDPOINT}.\nProvider/model: OpenRouter / ${MODEL} (TypeSafe upstream)\nMaximum batch: one paid request; enforced price ceilings are $0.042/M input and $0/M output; no automatic retries; 30-second timeout. Because this moving alias can select a future model with a different context limit, OpenRouter provides no hard total-cost cap for this request.\nPublic web sources only. Decline if the payload includes sessions, internal data, authenticated pages, or secrets.\nCancelling cannot undo a request or charges already incurred.`,
+        const connection = connectionSettings(prepared.provider);
+        const ok = await ctx.ui.confirm(`Send to ${connection.label}?`,
+          `Send the reviewed question, criteria, and ${prepared.originalOrder.length} candidates to ${connection.endpoint}.\nProvider/model: ${connection.label} / ${connection.model}\nMaximum batch: one paid request; no automatic retries or provider switching; 30-second timeout. ${connection.cost}\nPublic web sources only. Decline if the payload includes sessions, internal data, authenticated pages, or secrets.\nCancelling cannot undo a request or charges already incurred.`,
           { signal: combinedSignal });
         if (combinedSignal.aborted) return fallback('cancelled');
         if (!ok) return fallback('declined');
         let apiKey;
-        try { apiKey = await resolveWhileActive(() => resolveApiKey(ctx), combinedSignal); }
+        try { apiKey = await resolveWhileActive(() => resolveApiKey(ctx, prepared.provider), combinedSignal); }
         catch { return fallback(combinedSignal.aborted ? 'cancelled' : 'authentication_failed'); }
         if (typeof apiKey !== 'string' || !apiKey.trim()) return fallback('missing_key');
         const startedAt = now();
         if (combinedSignal.aborted) return fallback('cancelled');
         requestAttempts++;
-        const raw = await run({ apiKey, serialized: prepared.serialized, signal: combinedSignal });
+        const raw = await run({ apiKey, serialized: prepared.serialized, provider: prepared.provider, signal: combinedSignal });
         const elapsedMs = Math.max(0, Math.round(now() - startedAt));
         if (combinedSignal.aborted) return fallback('cancelled');
         return {
-          ...parseResponse(raw, prepared.originalOrder),
+          ...parseResponse(raw, prepared.originalOrder, prepared.provider),
           elapsedMs,
           inputBytes: Buffer.byteLength(prepared.serialized, 'utf8'),
           questionCount: Object.keys(prepared.request.questions).length,

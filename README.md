@@ -6,7 +6,7 @@
 
 > Consent-gated TypeSafe Jev advice for the [Pi coding agent](https://github.com/earendil-works/pi): choose a task route or rank public web passages without handing over control.
 
-Pi Jev provides two optional, independently installable tools for the **parent Pi agent** and one shared skill that helps decide when to use them. Each tool makes at most one approved request through OpenRouter. Jev returns advice, not an executed route, verified evidence, or authorization.
+Pi Jev provides two optional, independently installable tools for the **parent Pi agent** and one shared skill that helps decide when to use them. Each tool makes at most one approved request through OpenRouter (default) or directly to TypeSafe. Jev returns advice, not an executed route, verified evidence, or authorization.
 
 **Status:** an experimental Git-installable Pi package with offline tests, not published to npm. The router has no live routing evaluation yet, and the reranker has not established Korean-language quality or improvements in accuracy, latency, or cost. Keep them only if representative comparisons show a net benefit over ordinary parent-agent reasoning.
 
@@ -36,18 +36,27 @@ The shared [`pi-jev` skill](skills/pi-jev/README.md) teaches the parent agent wh
 ## Requirements and installation
 
 - Node.js 22.22+ and Pi with `ctx.modelRegistry.getProviderAuth()` support. Offline loading and typechecking are pinned to Pi 0.85.0.
-- A configured Pi `openrouter` provider. The extensions reuse Pi's resolved authentication and do not read credential files or environment variables themselves.
+- Authentication for your selected connection: a configured Pi `openrouter` provider (default), or `TYPESAFE_API_KEY` for direct TypeSafe access. Neither extension reads credential files itself.
 - An interactive Pi UI, or an RPC host implementing confirmation dialogs. Noninteractive modes fail closed.
 
 ### First-time setup
 
-1. Obtain an OpenRouter API key and ensure the account can pay for the request. In interactive Pi, run `/login`, select OpenRouter, and follow the API-key prompt. Pi also supports `OPENROUTER_API_KEY`; see [Pi provider authentication](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/providers.md). Keep keys out of prompts, tool arguments, and Git.
+1. Choose and authenticate one connection below, and ensure the selected account can pay for the request. Keep keys out of prompts, tool arguments, and Git.
 2. Install Pi Jev with the command below, then restart Pi or run `/reload`.
 3. Run `/jev-router-status` or `/jev-rerank-status` to confirm the selected extension is loaded. These commands do not contact a provider or verify authentication. An actual call still requires payload review and separate approval.
 
 **Optional tools, not prerequisites:** `pi-subagent` is not required, and no particular global `AGENTS.md` configuration is needed. The router can advise on direct handling and available tools or skills without a subagent. Acting on a delegation recommendation requires a compatible delegation tool; the router uses listed tool descriptions and does not prescribe tool-specific presets or arguments. See the [router guide](extensions/pi-jev-router/README.md). The reranker needs public excerpts collected beforehand, through your own web tools or supplied public sources; it does not include search or browser tools.
 
-**Cost:** OpenRouter is currently the only supported connection. The extension limits the price per token, **not the total bill**. Read [consent and cost](#external-transmission-consent-and-cost) before approving a request.
+### Choose a connection
+
+| Connection | Setup before starting Pi | Credential resolution after approval |
+|---|---|---|
+| OpenRouter (default) | Leave `PI_JEV_PROVIDER` unset, or set it to `openrouter`. In Pi, run `/login` and select OpenRouter; alternatively supply `OPENROUTER_API_KEY`. See [Pi provider authentication](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/providers.md). | Pi's `getProviderAuth('openrouter')`; no separate TypeSafe key needed. |
+| TypeSafe direct | Obtain a key from the [TypeSafe dashboard](https://console.typesafe.ai/keys) and supply it securely as `TYPESAFE_API_KEY`. Start Pi with `PI_JEV_PROVIDER=typesafe`. | The selected extension reads `TYPESAFE_API_KEY`; OpenRouter authentication is not accessed. |
+
+For example, once `TYPESAFE_API_KEY` is already available in your shell, run `PI_JEV_PROVIDER=typesafe pi`. The selection applies to both installed Jev extensions, not to Pi's main chat model. Restart Pi after changing its launch environment. No SDK, custom Pi model provider, or persistent settings change is needed. Unknown or empty selections return `invalid_provider`; missing credentials never trigger automatic provider switching. `/jev-router-status` and `/jev-rerank-status` show the configured connection without reading credentials.
+
+**Cost:** OpenRouter enforces per-token price ceilings, **not a total bill limit**. TypeSafe direct has **neither an enforced per-token ceiling nor a total-cost cap** in this integration. Read [consent and cost](#external-transmission-consent-and-cost) and check your selected provider's pricing before approval.
 
 Review the source, then install the single Pi package (both extensions and the shared skill):
 
@@ -84,7 +93,7 @@ pi -e ./extensions/pi-jev-router/index.ts
 pi -e ./extensions/pi-jev-tools/index.ts
 ```
 
-Git-package and independent source-copy installations are supported; this repository is not published to npm. No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is required at runtime.
+Git-package and independent source-copy installations are supported; this repository is not published to npm. No Python interpreter, TypeSafe SDK, or Jev-specific CLI flag is required at runtime. A TypeSafe key is needed only for the optional direct connection.
 
 ## External transmission, consent, and cost
 
@@ -92,11 +101,15 @@ For every invocation, the selected extension:
 
 1. validates and snapshots the semantic request;
 2. displays the complete immutable JSON payload for review;
-3. requires a separate confirmation naming OpenRouter, TypeSafe, the request limit, price ceilings, deadline, and data risks;
-4. resolves Pi's current OpenRouter authentication only after approval; and
+3. requires a separate confirmation naming the selected provider, endpoint, model, request limit, applicable cost limitations, deadline, and data risks;
+4. resolves only the selected connection's credential after approval; and
 5. sends at most one request, with no automatic retry.
 
-The fixed endpoint is `https://openrouter.ai/api/alpha/decisions`. Requests use the moving `~typesafe/jev-latest` alias, disable provider fallbacks, restrict routing to TypeSafe, set price ceilings of **$0.042/M input tokens** and **$0/M output tokens**, and have a 30-second HTTP deadline. OpenRouter supplies no hard total-cost cap for this moving alias; the approval dialog states that limitation. Taxes, currency conversion, and account-level billing behavior are outside these extensions.
+OpenRouter uses the fixed endpoint `https://openrouter.ai/api/alpha/decisions` and moving `~typesafe/jev-latest` alias. Requests disable provider fallbacks, restrict routing to TypeSafe, and set price ceilings of **$0.042/M input tokens** and **$0/M output tokens**. OpenRouter supplies no hard total-cost cap for this moving alias.
+
+TypeSafe direct uses the fixed endpoint `https://api.typesafe.ai/v1/systemone` and moving `jev-latest` alias, following the [TypeSafe HTTP API](https://docs.typesafe.ai/api). Its body contains only model, state, and questions, not OpenRouter routing or price controls. The direct API documents no price-limit field, so this connection enforces **no per-token ceiling or total-cost cap**. Consult [TypeSafe pricing and model limits](https://docs.typesafe.ai/models); do not assume an advertised rate is an enforced spending limit. OpenRouter's optional USD response cost is preserved when supplied. The direct TypeSafe contract documents no cost field, so direct-call cost remains unknown, not zero.
+
+Both connections have a 30-second HTTP deadline, reject redirects, and never retry or switch providers automatically. The connection is snapshotted with the payload before review; changes cannot redirect an approved request. The approval dialog discloses the selected connection's cost limitations. Taxes, currency conversion, and account-level billing behavior are outside these extensions.
 
 Declining, editing the preview, losing UI availability, or cancelling before transmission returns a sanitized fallback without a provider request. Parent cancellation or session shutdown also stops an authentication wait, releases the invocation lock, and aborts an active HTTP request. Cancellation cannot retract data or charges after a request has been accepted.
 
@@ -135,7 +148,7 @@ With this repository's locked development dependencies already installed, run:
 npm run check
 ```
 
-The suite uses mocked HTTP, synthetic keys, isolated Pi loading, TypeScript checks, and skill validation. It makes no provider request and does not establish live compatibility, routing quality, reranking quality, latency, or cost.
+The suite uses mocked HTTP for both connections, synthetic keys, isolated Pi loading and credential-selection checks, TypeScript checks, and skill validation. It makes no provider request and does not establish live compatibility, routing quality, reranking quality, latency, or cost.
 
 ## Evaluation before automation
 

@@ -1,6 +1,6 @@
 # Pi Jev Tools — experimental public-passage reranking
 
-An optional `jev_rerank` tool for the **parent Pi agent**. It ranks already collected public web passages with TypeSafe Jev through OpenRouter, after full-payload review and explicit confirmation. It does not search, write answers, replace a model, or modify another extension. The shared [`pi-jev` skill](../../skills/pi-jev/README.md) lets the agent select this tool without requiring the user to request Jev explicitly.
+An optional `jev_rerank` tool for the **parent Pi agent**. It ranks already collected public web passages with TypeSafe Jev through OpenRouter (default) or directly through TypeSafe, after full-payload review and explicit confirmation. It does not search, write answers, replace a model, or modify another extension. The shared [`pi-jev` skill](../../skills/pi-jev/README.md) lets the agent select this tool without requiring the user to request Jev explicitly.
 
 **Status:** experimental source implementation with offline tests. It has not established Korean-language quality or improvements in accuracy, latency, or cost. Start small and compare it against the ordinary workflow.
 
@@ -19,8 +19,8 @@ Use Jev once after collecting multiple usable public passages, before reading al
 1. The parent collects public candidates with existing web tools.
 2. It supplies an English question, optional question-specific criteria, and original-language excerpts. Omitted criteria use the documented default relevance standard.
 3. The tool validates the input, then shows the **entire immutable request**. In the interactive TUI it uses a scrollable editor that must be submitted unchanged; in RPC mode the host receives the exact payload in an abortable confirmation. Cancellation or edits stop without sending.
-4. A separate confirmation names OpenRouter, TypeSafe, the requested latest-model alias, request count, per-token price ceilings, absence of a hard total-cost cap, and deadline.
-5. Only after approval does the extension resolve Pi's existing OpenRouter authentication and send one Decisions API request.
+4. A separate confirmation names the selected provider, endpoint, model alias, request count, applicable price limitations, absence of a hard total-cost cap, and deadline.
+5. Only after approval does the extension resolve the selected credential and send one request, without retry or provider switching.
 6. Jev supplies one relevance Score per candidate. Code validates the response and sorts every ID by descending score; ties preserve input order.
 7. The parent reads original sources and writes the final answer.
 
@@ -29,7 +29,9 @@ There is no automatic hook into web results, saved-response access, session/hist
 ## Requirements and use
 
 - Node.js 22.22+ and Pi with `ctx.modelRegistry.getProviderAuth()` support. Offline loading/typechecking was checked with Pi 0.85.0.
-- A configured Pi `openrouter` provider. The extension reuses Pi's resolved provider authentication; it does not read `models.json`, `auth.json`, environment variables, `.env`, or credential files itself.
+- OpenRouter (default): configure Pi's `openrouter` authentication through `/login` or `OPENROUTER_API_KEY`. The extension reuses Pi's resolved authentication.
+- TypeSafe direct (optional): securely supply `TYPESAFE_API_KEY` and start Pi with `PI_JEV_PROVIDER=typesafe`. OpenRouter credentials are not accessed. Get a key from the [TypeSafe dashboard](https://console.typesafe.ai/keys).
+- `PI_JEV_PROVIDER` applies to both Jev extensions, not the chat model. Unset means `openrouter`; only `openrouter` and `typesafe` are accepted. Restart after changing the launch environment. No `.env` or credential file is read by this extension, and the selected key is resolved only after approval.
 - An interactive Pi UI, or an RPC host implementing confirmation dialogs. Print/JSON mode fails closed with `confirmation_unavailable`.
 
 Load only this source extension:
@@ -38,11 +40,11 @@ Load only this source extension:
 pi -e ./extensions/pi-jev-tools/index.ts
 ```
 
-No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers the `jev_rerank` tool and `/jev-rerank-status` command, installs nothing, and makes no startup request. Do not add it to a subagent's tool list.
+No Python interpreter, TypeSafe SDK, or Jev-specific CLI flag is needed. A separate TypeSafe key is needed only for direct access. Loading registers the `jev_rerank` tool and `/jev-rerank-status` command, installs nothing, and makes no startup request. Do not add it to a subagent's tool list.
 
 ## Session status
 
-Run `/jev-rerank-status` to see whether the tool is currently active, calls received by its runner, approved request attempts, whether a call is pending, and the last completed result (`ok` or a fixed failure code). It also reports whether a validated provider response has been observed in this session runtime, not whether the provider is currently reachable.
+Run `/jev-rerank-status` to see the configured connection, whether the tool is currently active, calls received by its runner, approved request attempts, whether a call is pending, and the last completed result (`ok` or a fixed failure code). It also reports whether a validated provider response has been observed in this session runtime, not whether the provider is currently reachable.
 
 This command never resolves authentication or sends a request. Request attempts are counted just before transport is invoked after approval and authentication; they do not prove delivery or billing. A decline or missing key adds a call but no request attempt. A rejected concurrent call counts as `busy`; the last result follows completion order while the pending call remains visible.
 
@@ -72,9 +74,10 @@ The example is synthetic. For real use, supply confirmed public URLs and accurat
 - Candidates: 1–10; unique IDs matching `[A-Za-z0-9_-]{1,64}`; public HTTP(S) URL up to 2,048 characters; title up to 500 characters; excerpt up to 4,000 characters.
 - Use the shortest exact excerpts that preserve enough context for relevance, including negation, uncertainty, names, numbers, dates, quotes, and plan/execution distinctions. A sufficient public search excerpt can be used. Do not infer text from titles, pad excerpts to a target length, or read every source in depth merely to prepare a ranking request. The 1–10 candidate contract remains valid, but skip calls with no reading-priority decision to make.
 - The constructed request, including generated questions, must fit **65,536 UTF-8 bytes**. Nothing is truncated or split into batches.
-- The request uses OpenRouter's `~typesafe/jev-latest` alias, which redirects to the latest Jev-family model. It disables provider fallbacks, restricts routing to TypeSafe, and sets price caps of $0.042/M input tokens and $0/M output tokens.
+- The default connection uses OpenRouter's `~typesafe/jev-latest` alias, which redirects to the latest Jev-family model. It disables provider fallbacks, restricts routing to TypeSafe, and sets price caps of $0.042/M input tokens and $0/M output tokens.
 - One approval still permits only one paid request, but OpenRouter does not provide a hard total-cost cap for a moving model alias. The confirmation therefore discloses this explicitly. If a future Jev version exceeds either per-token price ceiling, the request fails instead of using it. Taxes, currency conversion, and account-level billing behavior are outside this extension.
-- One approval permits one request to `https://openrouter.ai/api/alpha/decisions`, with no retry and a 30-second HTTP deadline. Review time is not part of that deadline.
+- Direct TypeSafe requests use `jev-latest` at `https://api.typesafe.ai/v1/systemone`, with only model, state, and questions in the body. The direct API documents no price-limit field: **no enforced per-token ceiling or total-cost cap** applies. Check [TypeSafe model pricing](https://docs.typesafe.ai/models) before approval. OpenRouter price controls do not carry over.
+- One approval permits one request to the selected fixed endpoint, with no retry, no automatic provider switching, and a 30-second HTTP deadline. Review time is not part of that deadline. Selection is snapshotted before review and cannot change mid-invocation.
 
 When `criteria` is omitted, the extension uses this exact default:
 
@@ -84,23 +87,23 @@ The default is included in the final payload before size validation, full-payloa
 
 Jev receives the question, resolved criteria, candidate IDs, URLs, titles, excerpts, and generated English Score questions. Four fixed levels distinguish no useful evidence, background only, partial evidence, and direct evidence. Contradictory evidence can score highly; source authority and truth are not scored.
 
-Success returns `status: "ok"`, the requested latest alias and returned Jev-family model ID, original and ranked IDs, per-ID scores (0–3), confidence, probabilities, and token usage. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals. Unrelated response fields and source text are not returned.
+Success returns `status: "ok"`, the selected `provider`, the requested latest alias and returned Jev-family model ID, original and ranked IDs, per-ID scores (0–3), confidence, probabilities, and token usage. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals. Unrelated response fields and source text are not returned.
 
-Failure or decline, including preflight validation failure, returns `status: "not_ranked"`, a fixed code, and every recoverable original candidate ID in unchanged order. Codes include `invalid_request` (HTTP 400/422), `invalid_input`, `invalid_candidate_id`, `invalid_source_url`, `input_too_large`, `declined`, `preview_changed`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
+Failure or decline, including preflight validation failure, returns `status: "not_ranked"`, a fixed code, and every recoverable original candidate ID in unchanged order. Codes include `invalid_provider` (unknown or empty connection selection), `invalid_request` (HTTP 400/422), `invalid_input`, `invalid_candidate_id`, `invalid_source_url`, `input_too_large`, `declined`, `preview_changed`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `confirmation_unavailable`, `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, and `invalid_response`. Continue with the original candidates; do not retry automatically.
 
 On `not_ranked`, the returned order preserves the input; it does **not** identify the most relevant candidates. If the user requested reading only a top-ranked subset, disclose that no ranking was produced instead of treating the first input items as that subset. Use an alternative selection method only within the user's authorization, and ask if changing the method would materially change the requested scope. Do not silently expand the reading limit or retry Jev.
 
 For example, in a synthetic task with six candidates and a request to read only the two highest-ranked passages, a fallback containing all six IDs in input order does not establish that the first two are best. If the user already allowed parent-selected fallback, choose within that permission and explain the basis; otherwise clarify a material method change before proceeding. Check both cases when reviewing the guidance: preserve all candidates, do not claim a Jev ranking, and retain the two-passage reading limit unless the user changes it. This is a guidance example, not evidence of model behavior or ranking quality.
 
-When supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
+For OpenRouter, when supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Direct TypeSafe's documented contract has no cost field; direct responses return token counts but omit cost rather than assigning meaning to an undocumented field. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
 
 ## Boundaries and limitations
 
 - **Public web data only**, including the question and criteria. Never send session contents, session-search output, local code, private notes, internal documents, signed URLs, credentials, or authenticated-page excerpts.
 - URL checks reject obvious local/file/IP/credential-bearing sources but do not prove that content is public. The extension does not fetch URLs, verify provenance, or perform DLP.
 - Candidate text is untrusted data, not instructions. Jev is neither a security boundary nor an authorization judge.
-- Authentication is resolved from Pi only after approval and is sent only in the OpenRouter `Authorization` header. It is never accepted as a tool argument or returned in results.
-- The endpoint is fixed and HTTP redirects are rejected. The extension makes no model-list request, runs no shell or child process, creates no cache, and adds no raw request/response log. Pi may retain ordinary tool arguments and results in session history.
+- Only the selected credential is resolved after approval: Pi authentication for OpenRouter, or `TYPESAFE_API_KEY` for direct TypeSafe. It is sent only in that endpoint's `Authorization` header, never accepted in tool input or returned. Missing credentials never cause a switch to another provider.
+- Each connection's endpoint is fixed and HTTP redirects are rejected. The extension makes no model-list request, runs no shell or child process, creates no cache, and adds no raw request/response log. Pi may retain ordinary tool arguments and results in session history.
 - Invisible Unicode format controls are visibly escaped in the review JSON without changing the text sent after approval. HTTP output is limited to 32KiB. Raw provider bodies and exception text are never returned to the model.
 - Only one invocation can be pending per extension instance. Shutdown or parent cancellation dismisses an active payload review, stops waiting for Pi authentication, releases the invocation lock, and aborts the HTTP request. A late authentication result is ignored, but cancellation cannot retract accepted data or charges.
 - Byte limits are not exact tokenizer limits. A request can still exceed provider limits and fail without retry.
@@ -123,16 +126,18 @@ npm run check:pi
 
 This checks each extension separately and all three source-copy installation combinations with exactly one shared skill. It uses no subagent checkout or active Pi configuration. The standalone `tests/pi-check.mjs` also accepts explicit Pi and TypeScript package directories.
 
-Tests use mocked HTTP responses and synthetic keys. They cover request limits and immutability, preflight order-preserving fallback, future Jev-family model names, current-context authentication and cancellation, non-persistent call diagnostics, response validation, stable sorting, abortable review and approval gates, Pi-auth resolution failures, single-call/no-retry behavior, HTTP status mapping, deadline, bounded output, sanitized errors, and noninteractive refusal.
+Tests use mocked HTTP responses and synthetic keys. The root suite also checks both provider wire contracts and isolated Pi credential selection; no live compatibility is established. They cover request limits and immutability, preflight order-preserving fallback, future Jev-family model names, current-context authentication and cancellation, non-persistent call diagnostics, response validation, stable sorting, abortable review and approval gates, Pi-auth resolution failures, single-call/no-retry behavior, HTTP status mapping, deadline, bounded output, sanitized errors, and noninteractive refusal.
 
 ## Opt-in evaluation
 
 The repository's [offline reranker comparison](../../evaluations/reranker/README.md) provides synthetic Korean fixtures, deliberately mixed mock orders, ranking metrics, and optional preparation/review/request/reading timing fields. Run `npm run evaluate:reranker` from the development repository; nothing is sent externally. This developer-only harness is not part of a standalone source-copy installation and does not establish live quality.
 
-With separate authorization, compare representative public/synthetic tasks with and without reranking. Measure useful-evidence coverage, important evidence demotion, source reads, latency, token use, and actual OpenRouter cost. Record returned model IDs. Do not widen this into automatic calls or private-data workflows merely because offline checks pass.
+With separate authorization, compare representative public/synthetic tasks with and without reranking. Measure useful-evidence coverage, important evidence demotion, source reads, latency, token use, and actual selected-provider cost. Record returned model IDs. Do not widen this into automatic calls or private-data workflows merely because offline checks pass.
 
 ## References
 
+- [TypeSafe HTTP API](https://docs.typesafe.ai/api)
+- [TypeSafe API quick start](https://docs.typesafe.ai/introduction/quickstart)
 - [OpenRouter Decisions API](https://openrouter.ai/docs/api/api-reference/decisions/create-decisions)
 - [OpenRouter provider routing](https://openrouter.ai/docs/features/provider-routing)
 - [TypeSafe Score](https://docs.typesafe.ai/primitives/score)

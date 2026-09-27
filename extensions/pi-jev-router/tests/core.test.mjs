@@ -380,10 +380,10 @@ test('approval UI discloses payload categories, provider, cost boundary, and lim
     return preview;
   };
   context.ui.confirm = async (title, message) => {
-    assert.equal(title, 'Send task routing data to TypeSafe Jev through OpenRouter?');
+    assert.equal(title, 'Send task routing data to OpenRouter (TypeSafe upstream)?');
     for (const disclosure of [
       'reviewed task, constraints', '2 tool / 2 skill metadata entries', ENDPOINT,
-      'OpenRouter / ~typesafe/jev-latest', 'one paid request', '$0.042/M input', '$0/M output',
+      'OpenRouter (TypeSafe upstream) / ~typesafe/jev-latest', 'one paid request', '$0.042/M input', '$0/M output',
       'no hard total-cost cap', 'no automatic retries', '30-second timeout',
       'secrets, credentials, session history, private file contents, authenticated-page content',
       'cannot authorize actions', 'cannot undo a request or charges already incurred',
