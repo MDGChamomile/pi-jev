@@ -14,6 +14,10 @@ Historical removed Python adapters remain in Git history, not in the current ins
 
 The repository move itself did not change tool names or approval/provider behavior. Starting with v0.2.0, however, the router tool is named `jev_task_router` instead of `jev_route_task`. Update prompts, tool allowlists, and other references to the old name; replace the installed router extension and shared skill together, then reload Pi. The reranker remains `jev_rerank`. No migration step needs a paid Jev call. The [skill guide](skills/pi-jev/README.md) separately describes migration from the historical direct TypeSafe/Python setup.
 
+## Optional direct TypeSafe connection
+
+Existing installations keep OpenRouter as the default; no credential migration is required. To opt into direct HTTP access, supply `TYPESAFE_API_KEY` securely and start Pi with `PI_JEV_PROVIDER=typesafe`. This does not restore the historical Python adapter or require an SDK. It applies to both Jev extensions and never switches providers automatically. Direct access has no enforced per-token price ceiling or total-cost cap; review [connection setup and cost limitations](README.md#choose-a-connection) before opting in. Do not remove existing credentials used by other software. Successful results now include the selected `provider` (`openrouter` or `typesafe`) and provider-specific requested/returned model IDs.
+
 ## Portable delegation output
 
 The router now uses `delegate` instead of `local_subagent` / `web_subagent` and no longer returns `subagentPreset` or asks a `subagent_preset` question. It evaluates four questions instead of five. Update consumers that inspect these fields, and update the router extension and shared skill together. Read the selected tool's current contract for supported tasks, arguments, and presets; neither a tool name nor an installed skill establishes delegation capability. No specific subagent package is required.

@@ -1,6 +1,22 @@
 export const TOOL_NAME = 'jev_task_router';
 export const MODEL = '~typesafe/jev-latest';
 export const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
+const CONNECTIONS = Object.freeze({
+  openrouter: Object.freeze({
+    model: MODEL, endpoint: ENDPOINT, label: 'OpenRouter (TypeSafe upstream)',
+    modelPattern: /^typesafe\/jev-[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/,
+    cost: 'Enforced price ceilings: $0.042/M input and $0/M output. OpenRouter provides no hard total-cost cap for this moving model alias.',
+  }),
+  typesafe: Object.freeze({
+    model: 'jev-latest', endpoint: 'https://api.typesafe.ai/v1/systemone', label: 'TypeSafe direct',
+    modelPattern: /^jev-[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/,
+    cost: 'No enforced per-token price ceiling or hard total-cost cap: the direct API has no documented price-limit field. Check current TypeSafe account pricing before approving; the model alias can change.',
+  }),
+});
+export function connectionSettings(provider = 'openrouter') {
+  if (typeof provider !== 'string' || !Object.hasOwn(CONNECTIONS, provider)) fail('invalid_provider');
+  return CONNECTIONS[provider];
+}
 export const isJevWorkflowSkill = name => /^(?:skill:)?pi-jev(?:-router)?(?::\d+)?$/.test(name);
 export const runtimeSkillCatalog = commands => commands
   .filter(command => command.source === 'skill' && !isJevWorkflowSkill(command.name))
@@ -85,7 +101,8 @@ function dynamicCriteria(prefix, candidates) {
   ]);
 }
 
-export function buildRequest(input, runtimeCatalog) {
+export function buildRequest(input, runtimeCatalog, provider = 'openrouter') {
+  const connection = connectionSettings(provider);
   keys(input, ['task'], ['constraints']);
   const task = text(input.task, LIMITS.taskChars);
   const constraints = input.constraints === undefined
@@ -133,8 +150,8 @@ export function buildRequest(input, runtimeCatalog) {
     },
   };
   const request = {
-    model: MODEL,
-    provider: { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } },
+    model: connection.model,
+    ...(provider === 'openrouter' ? { provider: { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } } } : {}),
     state: {
       task,
       constraints,
@@ -148,6 +165,7 @@ export function buildRequest(input, runtimeCatalog) {
   return {
     request,
     serialized,
+    provider,
     catalog,
     optionMaps: {
       route: Object.keys(routes),
@@ -184,11 +202,12 @@ function mappedChoice(answer, candidates, prefix) {
 }
 
 export function parseResponse(raw, prepared) {
+  const connection = connectionSettings(prepared.provider);
   let response;
   try { response = JSON.parse(raw); } catch { fail('invalid_response'); }
   const expectedIds = ['route', 'primary_tool', 'specialist_skill', 'parallel_investigation'];
   if (!plain(response) || typeof response.model !== 'string' ||
-      !/^typesafe\/jev-[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(response.model) ||
+      !connection.modelPattern.test(response.model) ||
       !plain(response.answers) || Object.keys(response.answers).sort().join('|') !== expectedIds.sort().join('|') || !plain(response.usage)) fail('invalid_response');
 
   const route = parseChoice(response.answers.route, prepared.optionMaps.route);
@@ -206,11 +225,12 @@ export function parseResponse(raw, prepared) {
     usage[field] = value;
   }
   const cost = response.usage.cost;
-  if (typeof cost === 'number' && Number.isFinite(cost) && cost >= 0) usage.cost = cost;
+  if ((prepared.provider ?? 'openrouter') === 'openrouter' && typeof cost === 'number' && Number.isFinite(cost) && cost >= 0) usage.cost = cost;
 
   return {
     status: 'ok',
-    requestedModel: MODEL,
+    provider: prepared.provider ?? 'openrouter',
+    requestedModel: connection.model,
     model: response.model,
     route,
     primaryTool: mappedChoice(tool, prepared.catalog.tools, 'tool'),
@@ -239,7 +259,8 @@ async function boundedText(response) {
   return Buffer.concat(chunks.map(chunk => Buffer.from(chunk))).toString('utf8');
 }
 
-export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMITS.timeoutMs, fetchImpl = fetch }) {
+export async function runDecision({ apiKey, serialized, signal, provider = 'openrouter', timeoutMs = LIMITS.timeoutMs, fetchImpl = fetch }) {
+  const connection = connectionSettings(provider);
   if (typeof apiKey !== 'string' || !apiKey.trim()) fail('missing_key');
   if (signal?.aborted) fail('cancelled');
   const deadline = new AbortController();
@@ -247,7 +268,7 @@ export async function runDecision({ apiKey, serialized, signal, timeoutMs = LIMI
   const timer = setTimeout(() => { timedOut = true; deadline.abort(); }, timeoutMs);
   const combinedSignal = AbortSignal.any(signal ? [signal, deadline.signal] : [deadline.signal]);
   try {
-    const response = await fetchImpl(ENDPOINT, {
+    const response = await fetchImpl(connection.endpoint, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: serialized,
@@ -348,7 +369,7 @@ async function resolveWhileActive(resolveValue, signal) {
 }
 
 /** Consent is bound to one immutable serialized request; no session history is collected. */
-export function createRunner({ resolveApiKey, run = runDecision, review, now = () => performance.now() }) {
+export function createRunner({ resolveApiKey, getProvider = () => 'openrouter', run = runDecision, review, now = () => performance.now() }) {
   if (typeof review !== 'function') throw new TypeError('missing_payload_reviewer');
   let active;
   let calls = 0, requestAttempts = 0, lastResult = 'none', validatedResponseObserved = false;
@@ -370,7 +391,7 @@ export function createRunner({ resolveApiKey, run = runDecision, review, now = (
       });
       if (active !== undefined) return fallback('busy');
       let prepared;
-      try { prepared = buildRequest(input, catalog); }
+      try { prepared = buildRequest(input, catalog, getProvider()); }
       catch (error) { return fallback(error instanceof JevRouterError ? error.code : 'internal_error'); }
       if (signal?.aborted) return fallback('cancelled');
       if (!ctx.hasUI) return fallback('confirmation_unavailable');
@@ -391,19 +412,20 @@ export function createRunner({ resolveApiKey, run = runDecision, review, now = (
         if (combinedSignal.aborted) return fallback('cancelled');
         if (reviewed === undefined) return fallback('declined');
         if (reviewed !== preview) return fallback('preview_changed');
-        const ok = await ctx.ui.confirm('Send task routing data to TypeSafe Jev through OpenRouter?',
-          `Send the reviewed task, constraints, and ${prepared.catalog.tools.length} tool / ${prepared.catalog.skills.length} skill metadata entries to ${ENDPOINT}.\nProvider/model: OpenRouter / ${MODEL} (TypeSafe upstream)\nMaximum batch: one paid request; enforced price ceilings are $0.042/M input and $0/M output; no automatic retries; 30-second timeout. Because this moving alias can select a future model with a different context limit, OpenRouter provides no hard total-cost cap for this request.\nDo not approve secrets, credentials, session history, private file contents, authenticated-page content, or data you are not authorized to disclose.\nJev returns advice only and cannot authorize actions. Cancelling cannot undo a request or charges already incurred.`,
+        const connection = connectionSettings(prepared.provider);
+        const ok = await ctx.ui.confirm(`Send task routing data to ${connection.label}?`,
+          `Send the reviewed task, constraints, and ${prepared.catalog.tools.length} tool / ${prepared.catalog.skills.length} skill metadata entries to ${connection.endpoint}.\nProvider/model: ${connection.label} / ${connection.model}\nMaximum batch: one paid request; no automatic retries or provider switching; 30-second timeout. ${connection.cost}\nDo not approve secrets, credentials, session history, private file contents, authenticated-page content, or data you are not authorized to disclose.\nJev returns advice only and cannot authorize actions. Cancelling cannot undo a request or charges already incurred.`,
           { signal: combinedSignal });
         if (combinedSignal.aborted) return fallback('cancelled');
         if (!ok) return fallback('declined');
         let apiKey;
-        try { apiKey = await resolveWhileActive(() => resolveApiKey(ctx), combinedSignal); }
+        try { apiKey = await resolveWhileActive(() => resolveApiKey(ctx, prepared.provider), combinedSignal); }
         catch { return fallback(combinedSignal.aborted ? 'cancelled' : 'authentication_failed'); }
         if (typeof apiKey !== 'string' || !apiKey.trim()) return fallback('missing_key');
         const startedAt = now();
         if (combinedSignal.aborted) return fallback('cancelled');
         requestAttempts++;
-        const raw = await run({ apiKey, serialized: prepared.serialized, signal: combinedSignal });
+        const raw = await run({ apiKey, serialized: prepared.serialized, provider: prepared.provider, signal: combinedSignal });
         const elapsedMs = Math.max(0, Math.round(now() - startedAt));
         if (combinedSignal.aborted) return fallback('cancelled');
         return {
