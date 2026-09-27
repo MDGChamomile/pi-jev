@@ -18,7 +18,7 @@ The repository move itself did not change tool names or approval/provider behavi
 
 Keep the development clone separate from the live `~/.pi/agent` environment. Do not install the mutable development path into the live environment.
 
-1. Validate the checkout with `npm run check`, then publish the reviewed changes to the default branch through the repository's review process. A new tag or GitHub Release is not required for an unpinned installation.
+1. Review the published package and its [requirements](README.md#requirements-and-installation). You do not need a development checkout, publishing access, or a release of your own to switch an existing installation.
 2. Inspect existing Jev extension and skill copies, symlinks, and configured paths for local changes. Back up the reviewed resources and relevant configuration outside Pi's resource-discovery directories.
 3. With explicit approval for live changes, retire only the old Jev resource copies/links and configured paths so they cannot load alongside the package. Preserve unrelated resources and credentials.
 4. Run `pi install git:github.com/MDGChamomile/pi-jev`. This installs both extensions and the shared skill as one package. Use `pi config` to preserve any previous selective loading.
@@ -28,6 +28,8 @@ Keep the development clone separate from the live `~/.pi/agent` environment. Do 
 If migration fails, remove the new package declaration with `pi remove git:github.com/MDGChamomile/pi-jev`, restore the backed-up Jev resources/configuration without overwriting unrelated changes, and restart. Do not restore source copies while leaving the package enabled.
 
 ## Development and distribution
+
+Maintainers preparing an update should validate the checkout with `npm run check` and publish reviewed changes through the repository's contribution and release process. An unpinned Git installation follows the remote default branch; a new tag or GitHub Release is not required for that installation to receive published changes. These are maintainer steps, not prerequisites for users migrating to an already published package.
 
 The independent repository release line starts at `0.1.0`, recorded in the private development manifest and lockfile. Git tags and GitHub Releases establish source releases; the private manifest does not publish an npm package.
 
