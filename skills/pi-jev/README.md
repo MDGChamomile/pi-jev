@@ -44,7 +44,7 @@ Read [`SKILL.md`](SKILL.md) for the selection and interpretation workflow. Read 
 
 ## Boundary
 
-Jev output is advice, not authority. Existing authorization, privacy, browser, tool, specialist-skill, and pi-subagent rules still determine what may happen. Failed or declined calls fall back to the normal workflow without automatic retries.
+Jev output is advice, not authority. Existing authorization, privacy, browser, tool, specialist-skill, and delegation rules still determine what may happen. Failed or declined calls fall back to the normal workflow without automatic retries.
 
 ## License
 

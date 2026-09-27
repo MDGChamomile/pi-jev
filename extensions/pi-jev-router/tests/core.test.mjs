@@ -6,7 +6,7 @@ const input = () => ({ task: 'Determine whether this request requires both web a
 const catalog = () => ({
   tools: [
     { name: 'read', description: 'Read local files.' },
-    { name: 'web_search', description: 'Search public web sources.' },
+    { name: 'delegate_work', description: 'Delegate bounded investigation, implementation, or tests to a worker.' },
   ],
   skills: [
     { name: 'pi-subagent', description: 'Run one bounded local or web investigation.' },
@@ -20,8 +20,7 @@ const choice = (selected, options, confidence = 1) => ({
 const response = () => ({
   model: 'typesafe/jev-1.13-20260917',
   answers: {
-    route: choice('web_subagent', ['direct', 'local_subagent', 'web_subagent', 'browser_interaction', 'specialist_skill', 'clarify_with_user', 'no_match']),
-    subagent_preset: choice('analysis_standard', ['lookup_standard', 'analysis_standard', 'review_standard', 'not_applicable']),
+    route: choice('delegate', ['direct', 'delegate', 'browser_interaction', 'specialist_skill', 'clarify_with_user', 'no_match']),
     primary_tool: choice('tool_1', ['none', 'tool_0', 'tool_1']),
     specialist_skill: choice('skill_0', ['none', 'skill_0', 'skill_1']),
     parallel_investigation: { type: 'noul', noul: 0.72 },
@@ -173,7 +172,7 @@ test('request preserves the English task and builds fixed plus runtime-bounded q
   assert.deepEqual(built.request.provider, { allow_fallbacks: false, only: ['typesafe'], max_price: { prompt: 0.042, completion: 0 } });
   assert.equal(built.request.questions.route.type, 'choice');
   assert.deepEqual(Object.keys(built.request.questions.primary_tool.criteria), ['none', 'tool_0', 'tool_1']);
-  assert.equal(built.request.questions.primary_tool.criteria.tool_1.name, 'web_search');
+  assert.equal(built.request.questions.primary_tool.criteria.tool_1.name, 'delegate_work');
   assert.equal(built.request.questions.parallel_investigation.type, 'noul');
   assert.doesNotMatch(JSON.stringify(built.request.questions), /[가-힣]/, 'all generated Jev instructions and criteria stay in English');
   assert.deepEqual(JSON.parse(built.serialized), built.request);
@@ -184,6 +183,48 @@ test('omitted constraints become an explicit neutral state value', () => {
   assert.equal(built.request.state.constraints, 'No additional constraints were supplied.');
   assert.deepEqual(Object.keys(built.request.questions.primary_tool.criteria), ['none']);
   assert.deepEqual(Object.keys(built.request.questions.specialist_skill.criteria), ['none']);
+});
+
+test('plain Pi and skill-only catalogs cannot produce a delegation route', () => {
+  for (const skills of [[], [{ name: 'pi-subagent', description: 'Investigation guidance, not an active tool.' }]]) {
+    const prepared = buildRequest(input(), { tools: [], skills });
+    assert.equal(Object.hasOwn(prepared.request.questions.route.criteria, 'delegate'), false);
+    assert.equal(Object.hasOwn(prepared.request.questions.route.criteria, 'browser_interaction'), false);
+    const raw = response();
+    raw.answers.route = choice('direct', prepared.optionMaps.route);
+    raw.answers.primary_tool = choice('none', prepared.optionMaps.primary_tool);
+    raw.answers.specialist_skill = choice('none', prepared.optionMaps.specialist_skill);
+    raw.answers.parallel_investigation.noul = 0;
+    assert.equal(parseResponse(JSON.stringify(raw), prepared).route.choice, 'direct');
+    raw.answers.route.choice = 'delegate';
+    assert.throws(() => parseResponse(JSON.stringify(raw), prepared), /invalid_response/);
+  }
+});
+
+test('delegation advice uses descriptions without prescribing tool-specific presets', () => {
+  for (const tool of [
+    { name: 'pi_subagent', description: 'Read-only local or public-web investigation; presets lookup-standard, analysis-standard, review-standard. No implementation.' },
+    { name: 'worker', description: 'Delegate implementation and tests using an agent name. No presets.' },
+    { name: 'read', description: 'Read a file. Cannot delegate.' },
+  ]) {
+    const prepared = buildRequest(input(), { tools: [tool], skills: [] });
+    assert.deepEqual(prepared.request.state.available_tools, [tool]);
+    assert.equal(Object.hasOwn(prepared.request.questions, 'subagent_preset'), false);
+    assert.match(prepared.request.questions.route.instructions.focus, /description explicitly supports/);
+    assert.match(prepared.request.questions.route.criteria.delegate.not_for, /Never infer support from a tool name alone/);
+    assert.match(prepared.request.questions.route.criteria.delegate.what, /implementation, or tests/);
+    assert.equal(prepared.request.questions.primary_tool.criteria.tool_0.name, tool.name);
+  }
+});
+
+test('delegation without a selected tool and legacy preset answers fail closed', () => {
+  const prepared = buildRequest(input(), catalog());
+  const missingTool = response();
+  missingTool.answers.primary_tool = choice('none', prepared.optionMaps.primary_tool);
+  assert.throws(() => parseResponse(JSON.stringify(missingTool), prepared), /invalid_response/);
+  const legacy = response();
+  legacy.answers.subagent_preset = choice('analysis_standard', ['analysis_standard']);
+  assert.throws(() => parseResponse(JSON.stringify(legacy), prepared), /invalid_response/);
 });
 
 test('input and runtime catalog limits fail closed without truncation', () => {
@@ -207,9 +248,9 @@ test('response maps opaque options back to runtime names and retains distributio
   current.model = 'typesafe/jev-next-stable';
   const result = parseResponse(JSON.stringify(current), prepared);
   assert.equal(result.model, 'typesafe/jev-next-stable');
-  assert.equal(result.route.choice, 'web_subagent');
-  assert.equal(result.subagentPreset.name, 'analysis-standard');
-  assert.equal(result.primaryTool.name, 'web_search');
+  assert.equal(result.route.choice, 'delegate');
+  assert.equal(Object.hasOwn(result, 'subagentPreset'), false);
+  assert.equal(result.primaryTool.name, 'delegate_work');
   assert.equal(result.specialistSkill.name, 'pi-subagent');
   assert.equal(result.parallelInvestigationProbability, 0.72);
   assert.equal(result.primaryTool.probabilities.find(item => item.name === 'read').probability, 0);
@@ -218,15 +259,13 @@ test('response maps opaque options back to runtime names and retains distributio
 test('no-match, none, low-confidence, and conflicting speculative answers remain advisory data', () => {
   const prepared = buildRequest(input(), catalog());
   const current = response();
-  current.answers.route = choice('no_match', ['direct', 'local_subagent', 'web_subagent', 'browser_interaction', 'specialist_skill', 'clarify_with_user', 'no_match'], 0.2);
-  current.answers.subagent_preset = choice('review_standard', ['lookup_standard', 'analysis_standard', 'review_standard', 'not_applicable'], 0.3);
+  current.answers.route = choice('no_match', ['direct', 'delegate', 'browser_interaction', 'specialist_skill', 'clarify_with_user', 'no_match'], 0.2);
   current.answers.primary_tool = choice('none', ['none', 'tool_0', 'tool_1'], 0.4);
   current.answers.specialist_skill = choice('none', ['none', 'skill_0', 'skill_1'], 0.4);
   current.answers.parallel_investigation.noul = 0.49;
   const result = parseResponse(JSON.stringify(current), prepared);
   assert.equal(result.route.choice, 'no_match');
   assert.equal(result.route.confidence, 0.2);
-  assert.equal(result.subagentPreset.name, 'review-standard');
   assert.equal(result.primaryTool.name, null);
   assert.equal(result.specialistSkill.name, null);
   assert.equal(result.parallelInvestigationProbability, 0.49);
@@ -266,7 +305,7 @@ test('full immutable review and confirmation permit exactly one invocation', asy
   assert.equal(calls, 1);
   assert.equal(result.status, 'ok');
   assert.equal(result.inputBytes, Buffer.byteLength(buildRequest(input(), catalog()).serialized, 'utf8'));
-  assert.equal(result.questionCount, 5);
+  assert.equal(result.questionCount, 4);
   assert.ok(Number.isSafeInteger(result.elapsedMs) && result.elapsedMs >= 0);
 });
 

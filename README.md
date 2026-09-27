@@ -12,7 +12,7 @@ Pi Jev provides two optional, independently installable tools for the **parent P
 
 ### See the review flow
 
-Scripted CLI walkthroughs of the current review-and-approval workflow, using synthetic examples. Dialogue, tool catalogs, scores, model responses, and timing are illustrative—not live session recordings, benchmarks, or evidence of provider compatibility. No external requests were made to create these demos.
+Scripted CLI walkthroughs of the review-and-approval workflow, using synthetic examples. The router demo predates the portable `delegate` route and removal of preset advice; follow the current router guide for output fields. Dialogue, tool catalogs, scores, model responses, and timing are illustrative—not live session recordings, benchmarks, or evidence of provider compatibility. No external requests were made to create these demos.
 
 **Rerank collected passages** — the parent has several excerpts and an unresolved reading order. You review the complete payload and separately approve one request; Jev returns relevance advice, and the parent decides what to read next. Every candidate remains available.
 
@@ -45,7 +45,7 @@ The shared [`pi-jev` skill](skills/pi-jev/README.md) teaches the parent agent wh
 2. Install Pi Jev with the command below, then restart Pi or run `/reload`.
 3. Run `/jev-router-status` or `/jev-rerank-status` to confirm the selected extension is loaded. These commands do not contact a provider or verify authentication. An actual call still requires payload review and separate approval.
 
-**Optional tools, not prerequisites:** `pi-subagent` is not required, and no particular global `AGENTS.md` configuration is needed. The router can advise on direct handling and available tools or skills without a subagent. Acting on a delegation recommendation requires a compatible delegation tool; the current preset advice follows the `pi-subagent` preset names described in the [router guide](extensions/pi-jev-router/README.md). The reranker needs public excerpts collected beforehand, through your own web tools or supplied public sources; it does not include search or browser tools.
+**Optional tools, not prerequisites:** `pi-subagent` is not required, and no particular global `AGENTS.md` configuration is needed. The router can advise on direct handling and available tools or skills without a subagent. Acting on a delegation recommendation requires a compatible delegation tool; the router uses listed tool descriptions and does not prescribe tool-specific presets or arguments. See the [router guide](extensions/pi-jev-router/README.md). The reranker needs public excerpts collected beforehand, through your own web tools or supplied public sources; it does not include search or browser tools.
 
 **Cost:** OpenRouter is currently the only supported connection. The extension limits the price per token, **not the total bill**. Read [consent and cost](#external-transmission-consent-and-cost) before approving a request.
 
@@ -106,7 +106,7 @@ Declining, editing the preview, losing UI availability, or cancelling before tra
 - **Reranking is public-web only.** URL checks reject obvious local or credential-bearing sources but do not prove that content is public. The extension does not fetch URLs or verify provenance.
 - **Router metadata is disclosed.** Its payload includes active tool and discovered skill names and descriptions, which may originate in project resources. Inspect them before approval. The shared Jev workflow skill excludes itself from routing candidates.
 - **Preserve semantics.** Write routing tasks and reranking questions/criteria in English while preserving names, numbers, dates, negation, uncertainty, scope, and plan-versus-execution distinctions. Reranking excerpts remain verbatim in their original language.
-- **Advice is not authority.** Existing authorization, privacy, browser, tool, skill, and pi-subagent rules still apply. Jev probabilities and confidence do not establish correctness.
+- **Advice is not authority.** Existing authorization, privacy, browser, tool, skill, and delegation rules still apply. Jev probabilities and confidence do not establish correctness.
 - **Output is bounded and sanitized.** Review JSON visibly escapes invisible Unicode format controls while preserving the exact parsed request, including supplementary-plane characters. HTTP output is limited to 32KiB, and provider bodies and exception text are reduced to fixed failure codes.
 - **One active invocation per extension.** Late authentication results and late review submissions are ignored after cancellation. There is no cache, shell call, child process, model-list request, or separate raw request/response log.
 

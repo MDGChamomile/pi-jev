@@ -18,7 +18,7 @@ Use this workflow to select among the available consent-gated TypeSafe Jev tools
 
 ## Shared boundaries
 
-- Jev advice never grants authorization or overrides safety, privacy, tool, browser, skill, or pi-subagent rules.
+- Jev advice never grants authorization or overrides safety, privacy, tool, browser, skill, or delegation rules.
 - Never use Jev to decide whether a restricted action is permitted or whether a policy may be bypassed.
 - Prepare semantic instructions in English while faithfully preserving names, numbers, dates, negation, uncertainty, scope, and plan-versus-execution distinctions. Do not use another translation service merely to prepare a payload.
 - Review the complete payload shown by the extension and obtain its separate approval before each paid OpenRouter request. A decline falls back to the normal workflow.
@@ -32,7 +32,7 @@ When `jev_task_router` applies:
 2. Add `constraints` only when material constraints are already established. Never include secrets, credentials, session history, private file contents, internal documents, signed URLs, authenticated-page content, or data the user is not authorized to disclose.
 3. Call the tool at most once for the current task.
 4. On `not_routed`, continue normally without retrying.
-5. On `ok`, inspect the primary route's full probabilities and confidence. Use `subagentPreset` and `parallelInvestigationProbability` only if a subagent route remains applicable. Treat `primaryTool` and `specialistSkill` as candidates, then apply their own instructions and boundaries.
+5. On `ok`, inspect the primary route's full probabilities and confidence. Use `parallelInvestigationProbability` only if compatible investigation delegation remains applicable. For `delegate`, verify that `primaryTool` actually supports the requested work and read its current contract before choosing arguments or presets. No tool-specific presets are returned. Treat `primaryTool` and `specialistSkill` as candidates, then apply their own instructions and boundaries.
 6. Ignore speculative answers for routes that are not used; independent Jev questions can disagree.
 
 For the complete runtime contract and limitations, read the [`pi-jev-router` extension guide](../../extensions/pi-jev-router/README.md).

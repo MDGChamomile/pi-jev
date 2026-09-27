@@ -14,6 +14,10 @@ Historical removed Python adapters remain in Git history, not in the current ins
 
 The repository move itself did not change tool names or approval/provider behavior. Starting with v0.2.0, however, the router tool is named `jev_task_router` instead of `jev_route_task`. Update prompts, tool allowlists, and other references to the old name; replace the installed router extension and shared skill together, then reload Pi. The reranker remains `jev_rerank`. No migration step needs a paid Jev call. The [skill guide](skills/pi-jev/README.md) separately describes migration from the historical direct TypeSafe/Python setup.
 
+## Portable delegation output
+
+The router now uses `delegate` instead of `local_subagent` / `web_subagent` and no longer returns `subagentPreset` or asks a `subagent_preset` question. It evaluates four questions instead of five. Update consumers that inspect these fields, and update the router extension and shared skill together. Read the selected tool's current contract for supported tasks, arguments, and presets; neither a tool name nor an installed skill establishes delegation capability. No specific subagent package is required.
+
 ## Switching to the single Git package
 
 Keep the development clone separate from the live `~/.pi/agent` environment. Do not install the mutable development path into the live environment.
