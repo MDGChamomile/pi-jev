@@ -214,6 +214,8 @@ test('delegation advice uses descriptions without prescribing tool-specific pres
     assert.match(prepared.request.questions.route.criteria.delegate.not_for, /Never infer support from a tool name alone/);
     assert.match(prepared.request.questions.route.criteria.delegate.what, /implementation, or tests/);
     assert.equal(prepared.request.questions.primary_tool.criteria.tool_0.name, tool.name);
+    assert.doesNotMatch(JSON.stringify(prepared.request.questions.parallel_investigation), /subagent/i);
+    assert.match(prepared.request.questions.parallel_investigation.instructions.question, /delegated investigations/);
   }
 });
 

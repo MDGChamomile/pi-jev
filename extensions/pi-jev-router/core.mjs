@@ -123,12 +123,12 @@ export function buildRequest(input, runtimeCatalog) {
     parallel_investigation: {
       type: 'noul',
       instructions: {
-        question: 'Would this task materially benefit from two or more independent subagent investigations rather than one?',
+        question: 'Would this task materially benefit from two or more independent delegated investigations rather than one?',
         focus: 'Answer yes only when a listed tool explicitly supports the needed delegation and the tracks are distinct, can run independently, and their combined value justifies extra calls. Otherwise answer no. Do not count sequential steps or duplicate verification as independent tracks.',
       },
       criteria: {
         true: 'At least two non-overlapping investigation tracks can run independently and materially improve the result.',
-        false: 'Use no subagent, one focused subagent, or sequential work because the tracks overlap or depend on one another.',
+        false: 'Use direct handling, one delegated investigation, or sequential work because delegation is unsupported or the tracks overlap or depend on one another.',
       },
     },
   };
