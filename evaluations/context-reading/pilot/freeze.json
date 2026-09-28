@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "frozenAt": "2026-09-28T08:40:17.019097+00:00",
+  "repetitions": 3,
+  "readerMergeCommit": "52b13be630903b80735c068a894cedc7a08daeeb",
+  "readerCoreSha256": "746301657da92b125129e6543aac6b61f4d5d70c905bc30dcfc31c2c80ba4eff",
+  "evaluatorSha256": "27483f7dc53db8d65699d509446398f403a97743690ce04cba48df73cb370fca",
+  "sha256": {
+    "tasks.json": "3b5e1fd973ce6da0a1a05d67b59635d5ac1214941308c3e351f4b7ecca091d2b",
+    "gold.json": "b4df64a00cd2d4352ad2fa78506440da078b2fe33923d67cd630a9613e536305",
+    "corpus-manifest.json": "5572dd4b2621bca54bc9a7888a641b3790a2229c354f9606350869597d928d19"
+  }
+}

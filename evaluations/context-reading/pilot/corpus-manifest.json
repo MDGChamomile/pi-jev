@@ -1,0 +1,1906 @@
+{
+  "version": 1,
+  "source": "Public GitHub commit/tree metadata verified before git archive export",
+  "repositories": {
+    "subagent": {
+      "url": "https://github.com/MDGChamomile/pi-subagent",
+      "commit": "7aa98ac47bc6786613f5d2085bc0cff2dbe6f4bb",
+      "tree": "b304f8a09b390df7b196ae164b4d8e3a7731c05c",
+      "paths": [
+        "extensions/pi-subagent"
+      ],
+      "files": [
+        {
+          "path": ".github/PULLFROG.md",
+          "bytes": 5715,
+          "sha256": "e5e0772f61d03ee7005ce7d67c51f1c4b5381f8e0c88774fee673bcdd179c248"
+        },
+        {
+          "path": ".github/scripts/test_release_tag.py",
+          "bytes": 2320,
+          "sha256": "b0ad5340382112c7c60488c8499baa982f834c512ad62f72f0d65a6ed435ed01"
+        },
+        {
+          "path": ".github/scripts/test_validate_skills.py",
+          "bytes": 3312,
+          "sha256": "92d80c93376c12069fd0715ea08fdde498097688044967ed70697cd2e3daa3ab"
+        },
+        {
+          "path": ".github/scripts/validate_skills.py",
+          "bytes": 2536,
+          "sha256": "efd8dbfc6c6dccd167fb504906b96490f7aeca58711c85fb2be2785f5d9d2ae8"
+        },
+        {
+          "path": ".github/workflows/npm-publish.yml",
+          "bytes": 2975,
+          "sha256": "c717e8a1a037486593aff14299ca27a709bcb09fa084d514173a000920d918b0"
+        },
+        {
+          "path": ".github/workflows/pi-subagent-canary.yml",
+          "bytes": 1289,
+          "sha256": "f70d8b23051c143e64eebfbcce4235852e096889851ee0165df185d87192140c"
+        },
+        {
+          "path": ".github/workflows/pullfrog.yml",
+          "bytes": 1390,
+          "sha256": "1738538b699aff6a89c855f2179e58fc931952c0a59d2c26f385e3e2fabdf9fc"
+        },
+        {
+          "path": ".github/workflows/validation.yml",
+          "bytes": 1623,
+          "sha256": "747015974ad8d2ac8488e67fbeed487f228b5dc7193775c7dc43899963c586b4"
+        },
+        {
+          "path": ".gitignore",
+          "bytes": 79,
+          "sha256": "b95e41c94e15363589dbfcdc5c7fc92c0fbe20a8d0415d183542b9e255fe554d"
+        },
+        {
+          "path": "AGENTS.md",
+          "bytes": 3460,
+          "sha256": "4576cf81b742fbe14be9d82afc3fe86fdd5db02cba1306a586922df7adf34b82"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "bytes": 3255,
+          "sha256": "7ea85f4d9d89067440e56beffe73136a72ab34ff3c0537f93b990c29c8106c78"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 1069,
+          "sha256": "ba54dd206746dfa4f29a1d517f2e2f872361330277bc36db4004432b37d11acf"
+        },
+        {
+          "path": "MIGRATION.md",
+          "bytes": 2875,
+          "sha256": "aec52d4291bcd3c5313b8df64640507a9b7d11d5b1082d14753d3ef32e3cc77b"
+        },
+        {
+          "path": "PRINCIPLE.md",
+          "bytes": 246,
+          "sha256": "1d13dfbf0af9f2f12b8fc5420803e4e790d07b2bed56ad8df8c41b7906bd26fc"
+        },
+        {
+          "path": "README.md",
+          "bytes": 11043,
+          "sha256": "971eb3be94293cd0fa7655bd064d0e01d7087911b8ff799c2dc72fb977fc9351"
+        },
+        {
+          "path": "extensions/pi-subagent/README.md",
+          "bytes": 28599,
+          "sha256": "f8c8efeadd3efcd58463846abb797d73bfe394a4fba9d70b21a78e1a6a9205ce"
+        },
+        {
+          "path": "extensions/pi-subagent/assets/pi-subagent-architecture.png",
+          "bytes": 169606,
+          "sha256": "d0915ccd2e85bffb3835070d76a2e528bf8721d6d24d463a14b6168fa1faa601"
+        },
+        {
+          "path": "extensions/pi-subagent/assets/pi-subagent-architecture.svg",
+          "bytes": 6397,
+          "sha256": "08859bcb45751c0c572be65179b000acc038f09a746daead50f4be0c4d7681d6"
+        },
+        {
+          "path": "extensions/pi-subagent/assets/pi-subagent-automatic.gif",
+          "bytes": 679458,
+          "sha256": "b2c7d46dc957c1127c63b07d75a8ceddafe21d776dca40a37a8c9d71182c2642"
+        },
+        {
+          "path": "extensions/pi-subagent/assets/pi-subagent-complete.png",
+          "bytes": 26662,
+          "sha256": "b88f46e98e350330452ee02a0935028e3f2d7c90dd0deed71124f36298a1f270"
+        },
+        {
+          "path": "extensions/pi-subagent/assets/pi-subagent-manual.gif",
+          "bytes": 685667,
+          "sha256": "4b9bb3f6c1c5bbd1cbfeaec7fe18368fe873c64faea2fba72c5d2567937b5731"
+        },
+        {
+          "path": "extensions/pi-subagent/assets/pi-subagent-running.png",
+          "bytes": 38464,
+          "sha256": "35b51fe33980b942ba328e41ad8168ff02fed079c04d62cf18507cf759e5f7ec"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/OFFLINE_SCORING.md",
+          "bytes": 7954,
+          "sha256": "aab4452d55fbb38f9d6228070c5d397a03fe764368d6ee5081dd3ecaa5f8d36e"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/README.md",
+          "bytes": 18472,
+          "sha256": "e9e867890ac8e1c83d6a9b90b3df3a95786cb11119c7eed7c5e894169e2f1e85"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/offline_scoring.py",
+          "bytes": 11246,
+          "sha256": "4573e444a83d5e1310406079f1c2912a88c46db6cbcd3d7605abf830bf6fdf50"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/.gitattributes",
+          "bytes": 120,
+          "sha256": "7291daafb65b9c068b4ee58e504cedc7c4c2b9822a505135c20199fb2f8ee8ed"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/.gitignore",
+          "bytes": 399,
+          "sha256": "9209ee5590ad79f8cb8bcc2dd86f0171d664fe128fb142d8ac4bbba0ee6b0f9b"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/COMMAND_SHA256SUMS",
+          "bytes": 7404,
+          "sha256": "7f4ce4658fd848e99960db6b6ba2780ab77b26e34a38182a2130d74b6ebefd9d"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/CONFIGURATION_VALIDATION.json",
+          "bytes": 1155,
+          "sha256": "2531a4f9eb1543694171ae041119741a5e6e02a124c2e533ad9c632b13e1cfd8"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/FROZEN_SHA256",
+          "bytes": 406,
+          "sha256": "a9350776b06d47ef7c5d12310967ef26a48f64d5c6c403030db858b5d941b46f"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/PROMPT_SHA256SUMS",
+          "bytes": 7404,
+          "sha256": "8914648cd7e57eadfab2ffa85b4b1b4515f22af4afac1a6926ffc88866bae087"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/PUBLIC_SHA256SUMS",
+          "bytes": 8804,
+          "sha256": "8709680990f62fe710048058c843debd26b453ba94013eb93d625c263b5d3a9f"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/REPORT.md",
+          "bytes": 5054,
+          "sha256": "e8f68a3bf8fa05d157948cd7057d1752fbf6ad8c05aa2932f3ad293468e01ada"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/SCORING_FREEZE.json",
+          "bytes": 381,
+          "sha256": "bba4904c3105f847597523153f9ae99daa3b9355d1e6e78184f2ed23a1b2b3d3"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-finalization-r1-A.txt",
+          "bytes": 749,
+          "sha256": "7c50f30e0cad79b679ad12d553645ff18dc0fdefd409424e988ac8a934582c74"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-finalization-r1-B.txt",
+          "bytes": 882,
+          "sha256": "0b7c4b993bfc6699322252f48d8d1b505871bb4df00485d868e12bb762926bad"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-finalization-r2-A.txt",
+          "bytes": 749,
+          "sha256": "7c50f30e0cad79b679ad12d553645ff18dc0fdefd409424e988ac8a934582c74"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-finalization-r2-B.txt",
+          "bytes": 882,
+          "sha256": "0b7c4b993bfc6699322252f48d8d1b505871bb4df00485d868e12bb762926bad"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-finalization-r3-A.txt",
+          "bytes": 749,
+          "sha256": "7c50f30e0cad79b679ad12d553645ff18dc0fdefd409424e988ac8a934582c74"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-finalization-r3-B.txt",
+          "bytes": 882,
+          "sha256": "0b7c4b993bfc6699322252f48d8d1b505871bb4df00485d868e12bb762926bad"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-json-collector-r1-A.txt",
+          "bytes": 762,
+          "sha256": "6f8a7cc2cd57d8583bf4a46fcd1590c9212558842d3fdacd46539aafc61042a7"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-json-collector-r1-B.txt",
+          "bytes": 895,
+          "sha256": "e6dec49a4f4dd1358744ac6deeceecd647a899710e844cae27c3c3cf338d6a5b"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-json-collector-r2-A.txt",
+          "bytes": 762,
+          "sha256": "6f8a7cc2cd57d8583bf4a46fcd1590c9212558842d3fdacd46539aafc61042a7"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-json-collector-r2-B.txt",
+          "bytes": 895,
+          "sha256": "e6dec49a4f4dd1358744ac6deeceecd647a899710e844cae27c3c3cf338d6a5b"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-json-collector-r3-A.txt",
+          "bytes": 762,
+          "sha256": "6f8a7cc2cd57d8583bf4a46fcd1590c9212558842d3fdacd46539aafc61042a7"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-json-collector-r3-B.txt",
+          "bytes": 895,
+          "sha256": "e6dec49a4f4dd1358744ac6deeceecd647a899710e844cae27c3c3cf338d6a5b"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-liveness-r1-A.txt",
+          "bytes": 715,
+          "sha256": "f7c56153f95570779ff9ef93e902a04b6f382936dfc0b071e8e8efbdce174d49"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-liveness-r1-B.txt",
+          "bytes": 848,
+          "sha256": "864138a7839d0237e5dd8ef38ffd4c1e182025c3ad4b7de206008781538143e9"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-liveness-r2-A.txt",
+          "bytes": 715,
+          "sha256": "f7c56153f95570779ff9ef93e902a04b6f382936dfc0b071e8e8efbdce174d49"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-liveness-r2-B.txt",
+          "bytes": 848,
+          "sha256": "864138a7839d0237e5dd8ef38ffd4c1e182025c3ad4b7de206008781538143e9"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-liveness-r3-A.txt",
+          "bytes": 715,
+          "sha256": "f7c56153f95570779ff9ef93e902a04b6f382936dfc0b071e8e8efbdce174d49"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-liveness-r3-B.txt",
+          "bytes": 848,
+          "sha256": "864138a7839d0237e5dd8ef38ffd4c1e182025c3ad4b7de206008781538143e9"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-usage-r1-A.txt",
+          "bytes": 765,
+          "sha256": "77139eb64d482a47d2c941dea6197f31fcea2acec503f6ce52f9a0dbca9d5a39"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-usage-r1-B.txt",
+          "bytes": 898,
+          "sha256": "61d4bd9c65eb4ce66a49bd3832b92d9475b0e85e1d3ede4dc3bf25aeaa1b688e"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-usage-r2-A.txt",
+          "bytes": 765,
+          "sha256": "77139eb64d482a47d2c941dea6197f31fcea2acec503f6ce52f9a0dbca9d5a39"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-usage-r2-B.txt",
+          "bytes": 898,
+          "sha256": "61d4bd9c65eb4ce66a49bd3832b92d9475b0e85e1d3ede4dc3bf25aeaa1b688e"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-usage-r3-A.txt",
+          "bytes": 765,
+          "sha256": "77139eb64d482a47d2c941dea6197f31fcea2acec503f6ce52f9a0dbca9d5a39"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/analysis-usage-r3-B.txt",
+          "bytes": 898,
+          "sha256": "61d4bd9c65eb4ce66a49bd3832b92d9475b0e85e1d3ede4dc3bf25aeaa1b688e"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-child-cli-r1-A.txt",
+          "bytes": 764,
+          "sha256": "04e41cb74f06d251dfff6f05eea8a6da2f5449115d3806b08fb0b7a668ee68ed"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-child-cli-r1-B.txt",
+          "bytes": 895,
+          "sha256": "4fc5b59906265f6daeda10a5b4ed97e6cddcaa71f15841dd3984850ae9854849"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-child-cli-r2-A.txt",
+          "bytes": 764,
+          "sha256": "04e41cb74f06d251dfff6f05eea8a6da2f5449115d3806b08fb0b7a668ee68ed"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-child-cli-r2-B.txt",
+          "bytes": 895,
+          "sha256": "4fc5b59906265f6daeda10a5b4ed97e6cddcaa71f15841dd3984850ae9854849"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-child-cli-r3-A.txt",
+          "bytes": 764,
+          "sha256": "04e41cb74f06d251dfff6f05eea8a6da2f5449115d3806b08fb0b7a668ee68ed"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-child-cli-r3-B.txt",
+          "bytes": 895,
+          "sha256": "4fc5b59906265f6daeda10a5b4ed97e6cddcaa71f15841dd3984850ae9854849"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-output-bounds-r1-A.txt",
+          "bytes": 728,
+          "sha256": "e72f7f197f72eb58f8904f053b98679661b428a8b29f7c810f23bfa9c41bce3f"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-output-bounds-r1-B.txt",
+          "bytes": 859,
+          "sha256": "2d2e69b6073aa3e1bcda1a7194fbc66344ea7f1467471d9446c48b2ff95633bc"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-output-bounds-r2-A.txt",
+          "bytes": 728,
+          "sha256": "e72f7f197f72eb58f8904f053b98679661b428a8b29f7c810f23bfa9c41bce3f"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-output-bounds-r2-B.txt",
+          "bytes": 859,
+          "sha256": "2d2e69b6073aa3e1bcda1a7194fbc66344ea7f1467471d9446c48b2ff95633bc"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-output-bounds-r3-A.txt",
+          "bytes": 728,
+          "sha256": "e72f7f197f72eb58f8904f053b98679661b428a8b29f7c810f23bfa9c41bce3f"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-output-bounds-r3-B.txt",
+          "bytes": 859,
+          "sha256": "2d2e69b6073aa3e1bcda1a7194fbc66344ea7f1467471d9446c48b2ff95633bc"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-presets-r1-A.txt",
+          "bytes": 718,
+          "sha256": "f46ce88f801e155886bcde0a24ba86fa7ed8c0241d83671ccc0c000b30833391"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-presets-r1-B.txt",
+          "bytes": 849,
+          "sha256": "7fe588933e3480f79f4610315850dade71ca9a5c4dea2680cf46254d3d21d7db"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-presets-r2-A.txt",
+          "bytes": 718,
+          "sha256": "f46ce88f801e155886bcde0a24ba86fa7ed8c0241d83671ccc0c000b30833391"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-presets-r2-B.txt",
+          "bytes": 849,
+          "sha256": "7fe588933e3480f79f4610315850dade71ca9a5c4dea2680cf46254d3d21d7db"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-presets-r3-A.txt",
+          "bytes": 718,
+          "sha256": "f46ce88f801e155886bcde0a24ba86fa7ed8c0241d83671ccc0c000b30833391"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-presets-r3-B.txt",
+          "bytes": 849,
+          "sha256": "7fe588933e3480f79f4610315850dade71ca9a5c4dea2680cf46254d3d21d7db"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-web-limits-r1-A.txt",
+          "bytes": 735,
+          "sha256": "907a18972d96101598c3a58441c948a5787a78f9e87062286b7b3a075c92714b"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-web-limits-r1-B.txt",
+          "bytes": 866,
+          "sha256": "0f6291a0794367f0b5c270c3f441ce74083ecd6e19efcbcf610faed8e6394956"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-web-limits-r2-A.txt",
+          "bytes": 735,
+          "sha256": "907a18972d96101598c3a58441c948a5787a78f9e87062286b7b3a075c92714b"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-web-limits-r2-B.txt",
+          "bytes": 866,
+          "sha256": "0f6291a0794367f0b5c270c3f441ce74083ecd6e19efcbcf610faed8e6394956"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-web-limits-r3-A.txt",
+          "bytes": 735,
+          "sha256": "907a18972d96101598c3a58441c948a5787a78f9e87062286b7b3a075c92714b"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/lookup-web-limits-r3-B.txt",
+          "bytes": 866,
+          "sha256": "0f6291a0794367f0b5c270c3f441ce74083ecd6e19efcbcf610faed8e6394956"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-failed-usage-r1-A.txt",
+          "bytes": 739,
+          "sha256": "eb9545bdc07874fdde4475ff5b8e7bf6dbc30b8549e7eabd14887e4fca38a842"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-failed-usage-r1-B.txt",
+          "bytes": 870,
+          "sha256": "bbd572ad7a0dbe5b9a69eb1801e2cb43a33d70d4a94e8998ac309bda0aeae616"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-failed-usage-r2-A.txt",
+          "bytes": 739,
+          "sha256": "eb9545bdc07874fdde4475ff5b8e7bf6dbc30b8549e7eabd14887e4fca38a842"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-failed-usage-r2-B.txt",
+          "bytes": 870,
+          "sha256": "bbd572ad7a0dbe5b9a69eb1801e2cb43a33d70d4a94e8998ac309bda0aeae616"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-failed-usage-r3-A.txt",
+          "bytes": 739,
+          "sha256": "eb9545bdc07874fdde4475ff5b8e7bf6dbc30b8549e7eabd14887e4fca38a842"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-failed-usage-r3-B.txt",
+          "bytes": 870,
+          "sha256": "bbd572ad7a0dbe5b9a69eb1801e2cb43a33d70d4a94e8998ac309bda0aeae616"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-final-eligibility-r1-A.txt",
+          "bytes": 742,
+          "sha256": "4c9ab1c221d0df10d6702360da762c03b2b0327985e15afb9817d6ce9243dd74"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-final-eligibility-r1-B.txt",
+          "bytes": 873,
+          "sha256": "72d6ea9d292df3f15f7fbdfed1ec9d9dddf54df1c9027bc54a04335c564df007"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-final-eligibility-r2-A.txt",
+          "bytes": 742,
+          "sha256": "4c9ab1c221d0df10d6702360da762c03b2b0327985e15afb9817d6ce9243dd74"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-final-eligibility-r2-B.txt",
+          "bytes": 873,
+          "sha256": "72d6ea9d292df3f15f7fbdfed1ec9d9dddf54df1c9027bc54a04335c564df007"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-final-eligibility-r3-A.txt",
+          "bytes": 742,
+          "sha256": "4c9ab1c221d0df10d6702360da762c03b2b0327985e15afb9817d6ce9243dd74"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-final-eligibility-r3-B.txt",
+          "bytes": 873,
+          "sha256": "72d6ea9d292df3f15f7fbdfed1ec9d9dddf54df1c9027bc54a04335c564df007"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-gate-parallel-r1-A.txt",
+          "bytes": 729,
+          "sha256": "876bd1b2ead5f3d0fc8412ad52ed37574c5e58e8f7959f7d69e16940bbc65795"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-gate-parallel-r1-B.txt",
+          "bytes": 860,
+          "sha256": "a3d5b7ba7841651a690dcde381cf5c00d94ebbfb0329949896f4c373d5c8ddb0"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-gate-parallel-r2-A.txt",
+          "bytes": 729,
+          "sha256": "876bd1b2ead5f3d0fc8412ad52ed37574c5e58e8f7959f7d69e16940bbc65795"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-gate-parallel-r2-B.txt",
+          "bytes": 860,
+          "sha256": "a3d5b7ba7841651a690dcde381cf5c00d94ebbfb0329949896f4c373d5c8ddb0"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-gate-parallel-r3-A.txt",
+          "bytes": 729,
+          "sha256": "876bd1b2ead5f3d0fc8412ad52ed37574c5e58e8f7959f7d69e16940bbc65795"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-gate-parallel-r3-B.txt",
+          "bytes": 860,
+          "sha256": "a3d5b7ba7841651a690dcde381cf5c00d94ebbfb0329949896f4c373d5c8ddb0"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-liveness-error-r1-A.txt",
+          "bytes": 726,
+          "sha256": "52c723897dcfc5c6f42383b509c4785acf2a2545ccdf05843968a6e42e4c4394"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-liveness-error-r1-B.txt",
+          "bytes": 857,
+          "sha256": "3e1d380bd73356fc0e4d6d8f7223986a788fa7f5bb413d0507c6f6499466473d"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-liveness-error-r2-A.txt",
+          "bytes": 726,
+          "sha256": "52c723897dcfc5c6f42383b509c4785acf2a2545ccdf05843968a6e42e4c4394"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-liveness-error-r2-B.txt",
+          "bytes": 857,
+          "sha256": "3e1d380bd73356fc0e4d6d8f7223986a788fa7f5bb413d0507c6f6499466473d"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-liveness-error-r3-A.txt",
+          "bytes": 726,
+          "sha256": "52c723897dcfc5c6f42383b509c4785acf2a2545ccdf05843968a6e42e4c4394"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/prompts/review-liveness-error-r3-B.txt",
+          "bytes": 857,
+          "sha256": "3e1d380bd73356fc0e4d6d8f7223986a788fa7f5bb413d0507c6f6499466473d"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/protocol.json",
+          "bytes": 1142,
+          "sha256": "ae9bc824a5b1f50766c35e3d06e45adcdba23f5e61f674cb0f4f3177e4d0af8d"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/run-template.sh",
+          "bytes": 1059,
+          "sha256": "cb2c0113bb1e6eb2b3c28d0679c832cbef630d0dad25efe2a34e843b03698f56"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/schedule.json",
+          "bytes": 9638,
+          "sha256": "bc3a288438095003cdeeed2e9684ed600885a004f4be482cc1ca2f668e2afa98"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/score_pilot.py",
+          "bytes": 14551,
+          "sha256": "99294b0e064e2fcbef137b0e56d19ddd31c3b8eae1365808d86ba29c3bc0e890"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/scores.jsonl",
+          "bytes": 116952,
+          "sha256": "5c49712e14bd5f88c27f98e9865b7a9f495250df0be0e890f4c6fa0d83b8bdb1"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/summarize_pilot.py",
+          "bytes": 4715,
+          "sha256": "a5e3c5fe1b194b75589e3065b7e72934f19fd398ecab374c082d4c3c956919a3"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/summary.json",
+          "bytes": 10979,
+          "sha256": "8d352c39e047b3350b3f828f66eb559ce62da088b6f042b32df0c8f1ec0599c8"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/tasks.json",
+          "bytes": 24807,
+          "sha256": "30df9e500443838e28e06556367f9356118a2633b45869cd430aff5a0ccbe63b"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-01-production-12-task/validate_configuration.py",
+          "bytes": 2890,
+          "sha256": "75bd8785993f9dda240857bff41441cbe765cf9b81ff7d75aa32166ceabb6c15"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-05-astra-routing/REPORT.md",
+          "bytes": 10867,
+          "sha256": "80639696a825dc24d8deef32b903c2f5e51e79fbc9dbb6cf0097bfa03357610e"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-05-astra-routing/measurement-audit.json",
+          "bytes": 16106,
+          "sha256": "80b2c4c9cfbbdab2ca4da90fc495ebd7cea0690e3c058f1e296ec80cb7b3a060"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-05-astra-routing/protocol.json",
+          "bytes": 4990,
+          "sha256": "1d6e115ffaf3be87dcf96d32a07f1e4d08315e9fa1f31913dbefd7d26cc10501"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-05-astra-routing/results/runs.jsonl",
+          "bytes": 105113,
+          "sha256": "fd38c16d2085b0d3dab302588a2e1b2db51ee346c1fda8cf43af4c44f471152f"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-05-astra-routing/results/summary.json",
+          "bytes": 7525,
+          "sha256": "ebcb6707189ae4ee50e5df47b50e0ba7cfde5f5ef37f86e668eb67d4a8544fc0"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-05-astra-routing/runtime-drift.json",
+          "bytes": 1515,
+          "sha256": "bc7cdf73bf144b4f0e268f1017b8750f0a85ebb10ed3bd3e4d8ab120d7e8d243"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-05-astra-routing/tasks.json",
+          "bytes": 11345,
+          "sha256": "736da89455dc2526d774ed6433a946a8ebdfa5e3a84d14538bc855d04ee62727"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/pilots/2026-09-05-astra-routing/verification.json",
+          "bytes": 30385,
+          "sha256": "623dd3628001e739de71f88b64edb2cc56a51305b847a31f7f3da71848e40874"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/preregistration.draft.json",
+          "bytes": 2990,
+          "sha256": "8f7e8cdea3c566d43d72e4e9521a81aea83aa2e29feb1d5a207734ea52d42fd1"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/schemas/run-record.schema.json",
+          "bytes": 8102,
+          "sha256": "2fff7f3df9ce9382f80e8b9a38882cdf5a192dc39834fc25fd9fa1cb75bb8224"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/schemas/score-record.schema.json",
+          "bytes": 3394,
+          "sha256": "f0993da51861b94a7a7f51fa8660a4cbb3500bf701f6e9f82d9d62a633d0923a"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/schemas/task.schema.json",
+          "bytes": 7930,
+          "sha256": "d1a8913188c13950ad990f03c77e4db4ff5d2ac3216b7d8663cd9153217c19c3"
+        },
+        {
+          "path": "extensions/pi-subagent/benchmark-v2/tests/test_offline_scoring.py",
+          "bytes": 10574,
+          "sha256": "7ef37887312198c92f6bfeffc57e2dd4863d891ba740c2fda395f186e8824aa0"
+        },
+        {
+          "path": "extensions/pi-subagent/child-guard.test.ts",
+          "bytes": 32836,
+          "sha256": "d947035bfef2c831547c491eb65319c4b66ae8a2ec5717c9c0ed10219a36669c"
+        },
+        {
+          "path": "extensions/pi-subagent/child-guard.ts",
+          "bytes": 24338,
+          "sha256": "299810f8c1849463dae99c1cf2f41339a07bb52fdff0cfe19dae702ed032ea0a"
+        },
+        {
+          "path": "extensions/pi-subagent/child-retry.test.ts",
+          "bytes": 6730,
+          "sha256": "c6bdb46fb9410e54b2982efac0571ba893799874f0b2bf06b0bc3b4b15b17f7a"
+        },
+        {
+          "path": "extensions/pi-subagent/config.test.ts",
+          "bytes": 5796,
+          "sha256": "e24d8837173d6f627b58b2807273cddd7f30fe00fa4ddfce0dca501ac7051a71"
+        },
+        {
+          "path": "extensions/pi-subagent/config.ts",
+          "bytes": 4641,
+          "sha256": "97e6f4ea19d7ba19e30f1d319268710e276a469fcd7a4d0e7ffa8f174a7461aa"
+        },
+        {
+          "path": "extensions/pi-subagent/fixtures/abrupt-parent.mjs",
+          "bytes": 1264,
+          "sha256": "01aba475949f2a6c22c4107ae93807264820072ded226978d9a1b15bbf90f7cf"
+        },
+        {
+          "path": "extensions/pi-subagent/fixtures/fake-child.mjs",
+          "bytes": 7726,
+          "sha256": "d77dca7815dd56d7c9b5ba1f66cc63973ea90ad1b111fed32db0f0cae3b18c12"
+        },
+        {
+          "path": "extensions/pi-subagent/fixtures/selection-guard.mjs",
+          "bytes": 2043,
+          "sha256": "06d80e296323fa7752d6ca7f4989f54c267ecc150ed74fc5f340f606fa8e43cc"
+        },
+        {
+          "path": "extensions/pi-subagent/index.test.ts",
+          "bytes": 9781,
+          "sha256": "52a5dc99f50f0fb4cb16a305a5339868640c6a5fc69a68f39972eff5b99b742a"
+        },
+        {
+          "path": "extensions/pi-subagent/index.ts",
+          "bytes": 9344,
+          "sha256": "c837a062dc5bbd172474aedc4f98f08a629da29f277aab22bab9ec1f849d5ba5"
+        },
+        {
+          "path": "extensions/pi-subagent/integration.test.ts",
+          "bytes": 20708,
+          "sha256": "6bf20a9e10c039957e3f386183a16de7be9d509319755e717ce11c0e34025e55"
+        },
+        {
+          "path": "extensions/pi-subagent/package-lock.json",
+          "bytes": 156689,
+          "sha256": "2559aa7577f87d51d7269706115d87c2ff7db0c17c462eea2741e335416cb2ce"
+        },
+        {
+          "path": "extensions/pi-subagent/package.json",
+          "bytes": 958,
+          "sha256": "dd624cda550ed294796302d00c183b12afea8dee1ad4cf46de90be576869db42"
+        },
+        {
+          "path": "extensions/pi-subagent/parent-liveness.ts",
+          "bytes": 1853,
+          "sha256": "cc35818bf9d11cc1199e3a98113342fcb5dadda1c1fed27fb39fe8787620874b"
+        },
+        {
+          "path": "extensions/pi-subagent/pi-event-contract.test.ts",
+          "bytes": 5466,
+          "sha256": "3b244e8fecf44fd03aaf5512f22d4f2d3519ddcfe053cdc46c5b84601fe16212"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/context_isolation_eval.py",
+          "bytes": 23355,
+          "sha256": "908880c686b57b7ab82a9e413a82d10002ae841a136205136c2bb1dc5190c5aa"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/context_isolation_eval_test.py",
+          "bytes": 10926,
+          "sha256": "4967945a53594a551c81c98c4ca9c2fefc489a7f58fc5510c842361c6bf680c8"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/eval_runtime.py",
+          "bytes": 4387,
+          "sha256": "668718613d39b76dbb921f90256961cb5b81178ac3cb666d27a9e523fdc9ea50"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/model_selection_eval.py",
+          "bytes": 13923,
+          "sha256": "a234783ddcded19ac2e002003f70f86de3207db295c2c41378ce94c3fdbb0304"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/model_selection_eval_test.py",
+          "bytes": 3148,
+          "sha256": "7072ae591288f0239ca81e06b504cebe30b0f26cae0530c2f8278096eab11c5c"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/model_trial.ts",
+          "bytes": 2096,
+          "sha256": "6b58e305b5b75913ebaefca1db59fa70e0d0f30224c27ed7bda6ac6dd90495ae"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/observe-runtime.ts",
+          "bytes": 1725,
+          "sha256": "29168b5181e2bea7f796604840b730c0ac7d437da7de6b6c435c0ded030c3701"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/package-discovery.mjs",
+          "bytes": 1952,
+          "sha256": "64221a85a1651149253030e3f9f806ee92f92f877fa5462dc07b0187d13c54da"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/pi-sdk-test-loader.mjs",
+          "bytes": 698,
+          "sha256": "cc960d0905482a0b6e3e18811cc39f88bc4f5642a5c36da8233129202d4325b8"
+        },
+        {
+          "path": "extensions/pi-subagent/scripts/web-smoke-parent.ts",
+          "bytes": 608,
+          "sha256": "35bcb9b009e8942bd8ebf1d27111eab331c94f3dea0e8c113f8961c5e56ed190"
+        },
+        {
+          "path": "extensions/pi-subagent/selection-guard.test.ts",
+          "bytes": 1184,
+          "sha256": "3c0e16216e11eed570aad74765509d841f0f1d5e5f3b5170f6c5b42568fea057"
+        },
+        {
+          "path": "extensions/pi-subagent/settings-command.test.ts",
+          "bytes": 9457,
+          "sha256": "8931cec0cd533b6ef4257b24b9da10f933320c67e76bd47b6a4867201aa06ba5"
+        },
+        {
+          "path": "extensions/pi-subagent/settings-command.ts",
+          "bytes": 5735,
+          "sha256": "51eb1197a1b39f7c6f295ac1dd62477d66d8b202778dd5d8c8480c752ab5b648"
+        },
+        {
+          "path": "extensions/pi-subagent/shared.test.ts",
+          "bytes": 23811,
+          "sha256": "0e16afc9b9b20d8b8854fe4dc6bd48ac07b588548d248c15a238eb9ad79a323d"
+        },
+        {
+          "path": "extensions/pi-subagent/shared.ts",
+          "bytes": 20322,
+          "sha256": "83eb882e1d8b3cbc7a9ef571786e0e0c9b9afb3b2b7bc82e979594ffe9c6c13b"
+        },
+        {
+          "path": "extensions/pi-subagent/subprocess.test.ts",
+          "bytes": 15232,
+          "sha256": "74c1230346364cee7c620a3b01760ff639900ba73ef38ca1452272d7aab5d8d4"
+        },
+        {
+          "path": "extensions/pi-subagent/subprocess.ts",
+          "bytes": 25916,
+          "sha256": "1b574d49a9a18c4213ec020122ab26c60ba7ee2fdfad78e05206d09803d11341"
+        },
+        {
+          "path": "extensions/pi-subagent/tsconfig.json",
+          "bytes": 284,
+          "sha256": "6c74bd542b7f57a2a248b43c968d67e7253277e69f3d5c30e61fe0c946908b24"
+        },
+        {
+          "path": "extensions/pi-subagent/verification/2026-09-15-astra-medium.json",
+          "bytes": 12189,
+          "sha256": "8ac0066e424533e160d6775903c77b3f53a58280f382b071a5fdc4131f3844b7"
+        },
+        {
+          "path": "extensions/pi-subagent/web-smoke-parent.test.ts",
+          "bytes": 1148,
+          "sha256": "3e2de6b47fca219024502c907a2f92702579ec506083c2b0f836656fae3321ad"
+        },
+        {
+          "path": "extensions/pi-subagent/web-smoke-registry.test.ts",
+          "bytes": 3990,
+          "sha256": "dc68492460bb31e72e9c5ab6ef98bdff5ce927e0161529d26e790bdddbbcbe54"
+        },
+        {
+          "path": "packaging/pi-subagent/.gitignore",
+          "bytes": 6,
+          "sha256": "ed19d3c9c8a5e34d0179e0b1a9c2907d2e657738733e4a432a8cf81c76ce56f1"
+        },
+        {
+          "path": "packaging/pi-subagent/DEVELOPMENT.md",
+          "bytes": 6802,
+          "sha256": "3e418f7ccf40b60476b424ac483016d9062061ac7cb3d0eaf1b92a347e612866"
+        },
+        {
+          "path": "packaging/pi-subagent/README.md",
+          "bytes": 11163,
+          "sha256": "703e579fadddb766f4cbef7a19ada9b2b5ecd7023d6f032cdb00b68890b9bc56"
+        },
+        {
+          "path": "packaging/pi-subagent/RELEASE_NOTES.md",
+          "bytes": 3098,
+          "sha256": "15e7730353e37597657fc7d56a72b9de5b05042733df9fb94e3524c6cb4709f7"
+        },
+        {
+          "path": "packaging/pi-subagent/build.mjs",
+          "bytes": 3347,
+          "sha256": "438c4e72ac71e586448ae039f71fa83b8da7021705715da94ed0fe251a7ce568"
+        },
+        {
+          "path": "packaging/pi-subagent/check.mjs",
+          "bytes": 10541,
+          "sha256": "65342a29a1a680e207fd9f344c4f414304119e54913eea5e7d044405cd36442a"
+        },
+        {
+          "path": "packaging/pi-subagent/index.ts",
+          "bytes": 142,
+          "sha256": "c6b8273470c96fe08a7d369cbd4166d62eee33e174cd2305320bda844df86d87"
+        },
+        {
+          "path": "packaging/pi-subagent/manifest.json",
+          "bytes": 1086,
+          "sha256": "6fb7ef8610c4059778a20cdc5d22bcca43416078e54ed84ec41e9552604a87a8"
+        },
+        {
+          "path": "skills/pi-subagent/README.md",
+          "bytes": 4636,
+          "sha256": "38cd6a4c53699d13848ccd4d962b093d97fe2b4efca15518946e4d351bb3adbb"
+        },
+        {
+          "path": "skills/pi-subagent/SKILL.md",
+          "bytes": 5144,
+          "sha256": "131c2f27d97cdd4ab97c1f8732fed3764a0ac6f9f8f580d2e8ad4e88fd160098"
+        }
+      ]
+    },
+    "browser": {
+      "url": "https://github.com/fitchmultz/pi-agent-browser-native",
+      "commit": "2a872baf6a8e920120fbb49c3cfcb80142b2a483",
+      "tree": "809b0f2820eef26b92854116dd48cd0dca263414",
+      "paths": [
+        "extensions/agent-browser"
+      ],
+      "files": [
+        {
+          "path": ".gitignore",
+          "bytes": 207,
+          "sha256": "9060fbbcd51b330d588632698a26965f568a1a2dfb39a0133dd88c55e0e4d40a"
+        },
+        {
+          "path": ".pi-fleet-tested-version",
+          "bytes": 7,
+          "sha256": "fe1b8209d81db1e7bc3b2f44a5111d5a979dc072c662f4f5f05d0e6bc3764cf5"
+        },
+        {
+          "path": "AGENTS.md",
+          "bytes": 74958,
+          "sha256": "72be9ab62c50ac2cb7cd12310b0778e7e597c0500772fbaacb7c044c4839f740"
+        },
+        {
+          "path": "CHANGELOG.md",
+          "bytes": 163728,
+          "sha256": "6d163ba0ca021e10b11cf3ef0d7cf4d48066a5443ecd8e663dd05ec63265a9c8"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 1068,
+          "sha256": "a69cb493aff5f26dce3939d4b5716f66d3e62bbac7a287de69fdfe177804a0c4"
+        },
+        {
+          "path": "README.md",
+          "bytes": 102022,
+          "sha256": "14e3d385477d0b1e30eaf22cc54ec307de41c5dfa732515fe23d3595341cf3fa"
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "bytes": 63542,
+          "sha256": "97d619ae2ec0f1e2d785d93836e8601cc9325f8aa45e98f9185096cfc4543bcb"
+        },
+        {
+          "path": "docs/COMMAND_REFERENCE.md",
+          "bytes": 191835,
+          "sha256": "debe52a3cde425e7b154ac31a05d723081041460e9de5b3f5f002ae173cb942a"
+        },
+        {
+          "path": "docs/ELECTRON.md",
+          "bytes": 32300,
+          "sha256": "fa57f6c852ed19086f0d0bf8b50e46dbefeea9241b1c2f818c1b34aef1255175"
+        },
+        {
+          "path": "docs/RELEASE.md",
+          "bytes": 44470,
+          "sha256": "4e73807eba99956dba29cfb51f3dab1337be9355ae52596c444cd2183ee0c2b5"
+        },
+        {
+          "path": "docs/REQUIREMENTS.md",
+          "bytes": 21793,
+          "sha256": "2213d3e8c4f137fe00d259819df3fde9c81aa7a476dbf4fe47d066bcd33a2476"
+        },
+        {
+          "path": "docs/SOURCE_OF_TRUTH.md",
+          "bytes": 2651,
+          "sha256": "a88f80f816923cc038f1887bd1b05c5dfe59d48cda15b69bbd34fd20ad5fa66b"
+        },
+        {
+          "path": "docs/SUPPORT_MATRIX.md",
+          "bytes": 44098,
+          "sha256": "b48b323aec671c7470c98282fb12b30f0170cc3b7d20f62fd5f1a2c516130326"
+        },
+        {
+          "path": "docs/TOOL_CONTRACT.md",
+          "bytes": 220552,
+          "sha256": "e58ad2a5ba38ac07fd9d40d2a02bdf441e74dfa1d3da4220c47815ceed0ffcff"
+        },
+        {
+          "path": "docs/platform-smoke.md",
+          "bytes": 10387,
+          "sha256": "d8c5d1ce87e190908cf97e3039ddafe121d0538542a56ff513c7d0dcf1e7d29e"
+        },
+        {
+          "path": "docs/support-notes.md",
+          "bytes": 9115,
+          "sha256": "a2abd5b2f25ca9baa1790737065b79064941c2ecdab58f2420b5bbf52c8fb0a9"
+        },
+        {
+          "path": "extensions/agent-browser/index.ts",
+          "bytes": 98246,
+          "sha256": "d9fc10c49371fceaee6f67f0cae5120af08d5dc36f4b0ba5910d56120541e45c"
+        },
+        {
+          "path": "extensions/agent-browser/lib/argv-descriptor.ts",
+          "bytes": 4367,
+          "sha256": "71741f543399025ba226156882ccb4259e5b6587b297a04dffcbfc93e0c1bff0"
+        },
+        {
+          "path": "extensions/agent-browser/lib/argv-grammar.ts",
+          "bytes": 10685,
+          "sha256": "9228ccb94d6f273f60b6fe27e53c29e769e930ead5dbe5e92bf9bc916ab6bbf2"
+        },
+        {
+          "path": "extensions/agent-browser/lib/bash-guard.ts",
+          "bytes": 5688,
+          "sha256": "8004bc19bcc15a4851e65ed02a1bb8c883d0602529bfdd266ec5d67f85ce44f9"
+        },
+        {
+          "path": "extensions/agent-browser/lib/batch-lifecycle.ts",
+          "bytes": 3208,
+          "sha256": "4698168bbe5d2815903be5acc7d047967e0aef457ccddce632aa478368f51adb"
+        },
+        {
+          "path": "extensions/agent-browser/lib/command-policy.ts",
+          "bytes": 4666,
+          "sha256": "77e32e30ea1be62f8ec062267c4604cd27678fddb4e17060efa8c2f83c958630"
+        },
+        {
+          "path": "extensions/agent-browser/lib/command-taxonomy.ts",
+          "bytes": 11490,
+          "sha256": "f6331bb05398df23116843540229e8dacd7cbcc5b75b8b2b71f84f2b2e0db9fa"
+        },
+        {
+          "path": "extensions/agent-browser/lib/config-policy.js",
+          "bytes": 24689,
+          "sha256": "7c941a339cbaced41426e158777f1909e0c230b05694eac2e778b1bf66d3bfd3"
+        },
+        {
+          "path": "extensions/agent-browser/lib/config.ts",
+          "bytes": 6301,
+          "sha256": "5ef845501d1ad3873a35e7512a77079f5ed364cd0161683ec323d51f51a57499"
+        },
+        {
+          "path": "extensions/agent-browser/lib/electron/cdp.ts",
+          "bytes": 2282,
+          "sha256": "f8baf8660dc8a05fae14f54822719a64f039eac9259438582515feb3bc8f0373"
+        },
+        {
+          "path": "extensions/agent-browser/lib/electron/cleanup.ts",
+          "bytes": 10098,
+          "sha256": "18282696080475392b0b4d46e1f7a1951ad1f2ca3c2913f28c02fb809671c50e"
+        },
+        {
+          "path": "extensions/agent-browser/lib/electron/discovery.ts",
+          "bytes": 25809,
+          "sha256": "3de6bd17f4de3406636c4af011c4ed04e758c785491d1bde0cfeb92f2f35ac44"
+        },
+        {
+          "path": "extensions/agent-browser/lib/electron/launch.ts",
+          "bytes": 18179,
+          "sha256": "e1ee5c4822ee2a209dbffa227373aeaaecf1244c866f0f0c39b5834969ae4419"
+        },
+        {
+          "path": "extensions/agent-browser/lib/executable-path.ts",
+          "bytes": 742,
+          "sha256": "690ea12cd9823d5fa5e5273eb2eb7ba3f435fbfeb557b5638afe6de80a610161"
+        },
+        {
+          "path": "extensions/agent-browser/lib/fs-utils.ts",
+          "bytes": 348,
+          "sha256": "80c82b9fa88feb03fe6e750f36086debc24bd36c1fbce9af08ea505cf7be3cb5"
+        },
+        {
+          "path": "extensions/agent-browser/lib/input-modes/electron.ts",
+          "bytes": 7888,
+          "sha256": "b1373cc68c2508effca41835bc5582b26df7c857dd6165853887fc9700e77e88"
+        },
+        {
+          "path": "extensions/agent-browser/lib/input-modes/job.ts",
+          "bytes": 28838,
+          "sha256": "517c3e3987bcbaa2d76b6e6db9320e4971537dfb672f633be390b00375201b9f"
+        },
+        {
+          "path": "extensions/agent-browser/lib/input-modes/lookups.ts",
+          "bytes": 23398,
+          "sha256": "a6b240850c72ee93637b57902e4d019fca13bc400b4dba24a7cbb9c1d1ef8e1d"
+        },
+        {
+          "path": "extensions/agent-browser/lib/input-modes/params.ts",
+          "bytes": 10460,
+          "sha256": "3e72bdb5bacbf390fe498c94435572da2f9a191ef713f6831b6e091121755335"
+        },
+        {
+          "path": "extensions/agent-browser/lib/input-modes/script.ts",
+          "bytes": 20861,
+          "sha256": "16f1688bac7d15a63dfc5ec91a72f4a1a2a7d0359bf8b23217f3cfcad704f9f2"
+        },
+        {
+          "path": "extensions/agent-browser/lib/input-modes/semantic-action.ts",
+          "bytes": 8705,
+          "sha256": "c73053a3e4f06ffb49306192de646726df86dcfeaab92cfca99420652f32ea10"
+        },
+        {
+          "path": "extensions/agent-browser/lib/input-modes/shared.ts",
+          "bytes": 1900,
+          "sha256": "14aee78919d8f861830023491dabcbfc0a73293e15f15989eab42d8d98c8ddaa"
+        },
+        {
+          "path": "extensions/agent-browser/lib/input-modes/types.ts",
+          "bytes": 6002,
+          "sha256": "811eab8d77df9a45ece3e3d12899bda639b9ff1ef95dfa9ff8c78b51df8d38a8"
+        },
+        {
+          "path": "extensions/agent-browser/lib/json-schema.ts",
+          "bytes": 2473,
+          "sha256": "db2883ef021b7345327167fa67d9ab3f299bd6dd39e9f7d0e4eb7fea1f4da34e"
+        },
+        {
+          "path": "extensions/agent-browser/lib/launch-scoped-flags.ts",
+          "bytes": 5904,
+          "sha256": "91ae516f2823355a88760d23c3771d41e792d368ee9fe17ca54e37e0318c1027"
+        },
+        {
+          "path": "extensions/agent-browser/lib/managed-session-policy-lock.ts",
+          "bytes": 11158,
+          "sha256": "45c464cb2cba40a0ac3826f4e9498ec25c7a246544ed296a612acd92ad5f9dba"
+        },
+        {
+          "path": "extensions/agent-browser/lib/managed-session-restore.ts",
+          "bytes": 19974,
+          "sha256": "fa163eb1fba3d245adef7d44e09322610400586adf1587c6f09a793127c6feaa"
+        },
+        {
+          "path": "extensions/agent-browser/lib/managed-session-snapshots.ts",
+          "bytes": 13710,
+          "sha256": "bacdfb1cee2c9200acada999f305619ac01e24372bfc52de86b637d3e15883e2"
+        },
+        {
+          "path": "extensions/agent-browser/lib/managed-session-storage.ts",
+          "bytes": 13272,
+          "sha256": "589d3f76e3464147b676bf2ada26a6dd27ab264298b13c6fe14f60cec2783452"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/batch-stdin.ts",
+          "bytes": 4387,
+          "sha256": "333cabcb6b2f3d1bbd5f277cbd7ac06f3bd3f619d24a08803c602d4c09218744"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/artifact-paths.ts",
+          "bytes": 5244,
+          "sha256": "62d8061d18357d763e07968ea23674938709782b5a781abb860d60a2b33750dc"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/click-dispatch.ts",
+          "bytes": 16374,
+          "sha256": "f3db653cf88294cf0b91b0ca0f73f9fe3f5a5f11a017833898a3e8457ef711fa"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/diagnostics.ts",
+          "bytes": 67126,
+          "sha256": "e8991d1ad31eb6b4c516bcd1f867188d5ad51f76963dbc8c0edf576eab882da2"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/final-result.ts",
+          "bytes": 49118,
+          "sha256": "4fe21efc8936455733afd3dce6861df9fcf0f2981d2f0fe896521154c043fa25"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/index.ts",
+          "bytes": 3676,
+          "sha256": "9942f60d1eb24eb1c75a43ec216567d49ccf20dcd46949fe61222e98ba192e4a"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/managed-session-daemon-policy.ts",
+          "bytes": 10493,
+          "sha256": "2548cb0d90038dc31cf8a4000f5502ab0f8e29cf1cd83f229553bbe32f97d041"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/prepare/direct-anchor-download.ts",
+          "bytes": 8779,
+          "sha256": "992513f5bb9a2c6d815807d9ef4ed29c9048ead0ba33c78275559ace6e3e8e2b"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/prepare/network-page-filter.ts",
+          "bytes": 6022,
+          "sha256": "be5d37565a483c15481fc9793bab1d9a0a9db423bbb5a9cba6a169e5d3d3ed9d"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/prepare/scroll-shims.ts",
+          "bytes": 10987,
+          "sha256": "60b2eb399b2a40e9503a92ba25f5ccf41941a2e146680ae6ab2ec939fd522a04"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/prepare/snapshot-filter.ts",
+          "bytes": 17880,
+          "sha256": "f40909da0eb37646f200e2abaf82c14c5300187f6bb7d3c7192cb6c951855229"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/prepare/wait-timeouts.ts",
+          "bytes": 5052,
+          "sha256": "9e8a146e518debad584eaaaac2f354c105b5df098deacfb41d1c84cfa367a40e"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/prepare.ts",
+          "bytes": 58526,
+          "sha256": "c88fa7a2af0eaacc8c29bb879318096f560d7fc3e2b3ff1aaacb3a11fa09152f"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/process-output.ts",
+          "bytes": 68159,
+          "sha256": "6a5db984462c6c121bc669d05f90e621626256e41fd47e4eedfa295991e50b15"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/prompt-guards.ts",
+          "bytes": 2590,
+          "sha256": "e04254eab9160ea9ac22d3f1ca628f5d7793251ad26ce5f19bdd99ec72336523"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/session-state.ts",
+          "bytes": 43286,
+          "sha256": "dc49685524b92f152e98f87c8c1be7e8ae7869fd915f4f4e77eb2d0770d12eac"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/browser-run/types.ts",
+          "bytes": 19909,
+          "sha256": "344c4c1790ce609e5e6bb0b8c7564dc9f6865b761077043c129789e9f5ea3f81"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/electron-host/index.ts",
+          "bytes": 50081,
+          "sha256": "3e3dc1085a50867687184072fba38bcf055e92949b36a59f6485b282873eb324"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/input-plan.ts",
+          "bytes": 16606,
+          "sha256": "8413839a649ae94e55cd78128ae866c02fa0f7c7315069cab5d28b8e346f6c32"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/output-file.ts",
+          "bytes": 7814,
+          "sha256": "8e477a37ab95311afb7d0b3c73892d77d0710abca364af6d1f80b1de4879ee86"
+        },
+        {
+          "path": "extensions/agent-browser/lib/orchestration/script-mode.ts",
+          "bytes": 15616,
+          "sha256": "cebae4a08ad2ec58da3ca5b3dc90048652306eea2eb2d0440d2922765a8b27da"
+        },
+        {
+          "path": "extensions/agent-browser/lib/page-target-validation.ts",
+          "bytes": 14486,
+          "sha256": "3f7fbadddd2ecf0acf4e1e439e9f81eaf7dbe755fde8c8e71cb9dd1eac35957b"
+        },
+        {
+          "path": "extensions/agent-browser/lib/parsing.ts",
+          "bytes": 520,
+          "sha256": "b1716aedf800809e360e7e7078d5cd6e66dcf49510ee7e9b348fdebf8b647a4d"
+        },
+        {
+          "path": "extensions/agent-browser/lib/pi-tool-rendering.ts",
+          "bytes": 12790,
+          "sha256": "cc40ede3107a6bc5a18a3959f92d038347928cf39bc0067db48e9914880f972f"
+        },
+        {
+          "path": "extensions/agent-browser/lib/playbook.ts",
+          "bytes": 39132,
+          "sha256": "e58965ad158b346832b86c32589b5afab25aa54530726b345b2b4f5090639e60"
+        },
+        {
+          "path": "extensions/agent-browser/lib/process-environment.ts",
+          "bytes": 759,
+          "sha256": "037d43a8533813f91caa9c8098275e81dfeb7c405fa1510c1934907093e57fbb"
+        },
+        {
+          "path": "extensions/agent-browser/lib/process-identity.ts",
+          "bytes": 3572,
+          "sha256": "65cac2cfda6482b3cfe7c3d7d61664094318a14cd39f4fa54433cf04d4609eda"
+        },
+        {
+          "path": "extensions/agent-browser/lib/process.ts",
+          "bytes": 29252,
+          "sha256": "3e282f99b3c336730354188b2e4de8fb83f2f452525724040d50372af83a1711"
+        },
+        {
+          "path": "extensions/agent-browser/lib/prompt-policy.ts",
+          "bytes": 13538,
+          "sha256": "c989086866040475b7466715e0075b95dd4d68b34a7dbea5400b6a0b410e4e80"
+        },
+        {
+          "path": "extensions/agent-browser/lib/recording-reservations.ts",
+          "bytes": 5313,
+          "sha256": "178b68e9a6e6a8708f8fe615320a8aca686f88336fc5b98223790dd140479c4b"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/action-recommendations.ts",
+          "bytes": 13417,
+          "sha256": "e0bb56e25476cefb1fb5f7e38c25837aab1d3480c6624d93b3eba5c412cc78cb"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/artifact-manifest.ts",
+          "bytes": 8622,
+          "sha256": "ab1d67ea05af716af11a602aa814a343ad663333a1bcdda52d67518d50528c1a"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/categories.ts",
+          "bytes": 6520,
+          "sha256": "c75b27880726504bc075ef7c9fa35d22979d03c5fdacc0b210f47df7031e2805"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/confirmation.ts",
+          "bytes": 2216,
+          "sha256": "12e18b691af8b23706a81814ea47387e15b884799a484c959fd3370a3c828795"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/contracts.ts",
+          "bytes": 6704,
+          "sha256": "7b6e91b95f4d53c597038d1cbfe92868a3b61b96f3fc0b2dd0760399af392702"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/editable-ref-evidence.ts",
+          "bytes": 2419,
+          "sha256": "ee22388e58f1d3dc3083d1d4d60824ca5d12e7ffe484e6454e0df90a1dc9f18d"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/envelope.ts",
+          "bytes": 8301,
+          "sha256": "66f9dc8e2741cac2673aaec635955e89bc454da7ac63420086bcf24cb61c98d1"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/network-routes.ts",
+          "bytes": 4199,
+          "sha256": "2196f63d587777216ec7b9a50b52daffa2599a2fb4e185220c84c6268d9893be"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/network.ts",
+          "bytes": 3711,
+          "sha256": "5b3a7c8f09868169a487b554e392a17178cf70ad849f9ce62eb3a3336a4621ac"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/next-actions.ts",
+          "bytes": 4722,
+          "sha256": "a9304a0dd5f1320acffdd6fc9f803b487b48fd7d5aa7bc40c58eb98d66e57970"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/artifacts.ts",
+          "bytes": 25907,
+          "sha256": "7c996edba406cba6e87a02fe8811bfac43a5a4a1e6e62bfb58cda249e357a8e4"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/batch.ts",
+          "bytes": 24516,
+          "sha256": "a7edfc84259cd40d77d29b947e29d0d05c04de1e5bed09bc2b5123b2acc16905"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/browser-profile-recovery.ts",
+          "bytes": 3082,
+          "sha256": "b5e1f7bc4eff2d664ab4643018d336cb7bb8d2da4c9371c76d38499c13acef85"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/common.ts",
+          "bytes": 3360,
+          "sha256": "cd9f60e0a10375663071ab44ae6c11889b835e404e859f201701d2665eb9d8bc"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/content.ts",
+          "bytes": 1199,
+          "sha256": "4c60ae8e2bcc9a84213fdff8166641c5e2339ea53314c5832fedffe7f11af666"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/diagnostics.ts",
+          "bytes": 50796,
+          "sha256": "69788645e4a5d59c63b758feb92e507ddc87c01a8fde3100605ee7cbb4d91f47"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/errors.ts",
+          "bytes": 12831,
+          "sha256": "a5c989240b0a2f4b335eaa503230fa76235d0eb9d5d7e189054de9ffda871dcc"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/large-output.ts",
+          "bytes": 7617,
+          "sha256": "8c6847b24de5398a99eea89c37e66cb6741838de5eda56a2591e5a1986928f9f"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/navigation.ts",
+          "bytes": 8263,
+          "sha256": "e42c1703cbcb360801d9f0a27c2435f665641bb0d3ca8d9d42d7c59a128359f1"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/registry.ts",
+          "bytes": 13480,
+          "sha256": "3a530750127f88168ca77043fc2426e1eba7a3f86886c77dae59b0781b60d854"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/semantic-action.ts",
+          "bytes": 4686,
+          "sha256": "9ade7c9b20a02e2847de2e55e8bdc7cccb233f7e4288fcd2e6fd98150cd0d1ae"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation/skills.ts",
+          "bytes": 4880,
+          "sha256": "0dbb261203d4d4ab7032168167e94d3bd3570c74cdc1f298f9b09714d6f0e77e"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/presentation.ts",
+          "bytes": 14285,
+          "sha256": "a2c9c4e6c591244e5510ef68d0174447c37fc818f3a40b573929a8227e22ee18"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/recovery-actions.ts",
+          "bytes": 5998,
+          "sha256": "4f47ea087484e273b329c4aee22a82ce7ba47d523f070f4399b25603fbd936d3"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/recovery-next-actions.ts",
+          "bytes": 2740,
+          "sha256": "217ac7ffff098b4670ae95a67caf2b7ec51343885d8777b6abbe43323abe1ce4"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/selector-recovery.ts",
+          "bytes": 16059,
+          "sha256": "a07c01f26e045aefa9e094104158c514acc29267b500012b7f31fc7c23655a4e"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/snapshot-high-value-controls.ts",
+          "bytes": 9324,
+          "sha256": "b270008431f64df1a74ae274c8bddfb33fd081c5b1616cff227d3c936315b472"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/snapshot-refs.ts",
+          "bytes": 3625,
+          "sha256": "29dc54068cfd024cd092d42a63d630bc8202e17eea1fd2196f4af763c26b5b3b"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/snapshot-segments.ts",
+          "bytes": 11267,
+          "sha256": "58d3ae58040f48d7fe78082a5379a95d9a1a63ad89ee6495d232a6b5b23ab602"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/snapshot-spill.ts",
+          "bytes": 2346,
+          "sha256": "0eb47233a61f203cc66bb035eb5f2ad6afdf3ff98e8aa89a7fab142d25305f06"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/snapshot.ts",
+          "bytes": 13036,
+          "sha256": "cf1f5aac286bbb643f720b78eea60cbdba8fb26c590a4a6e59fb7f3ab5bfa124"
+        },
+        {
+          "path": "extensions/agent-browser/lib/results/text.ts",
+          "bytes": 1034,
+          "sha256": "e02747d33fe8a59e35b0117483349589bf7b3c469edc93cb0b6d726630ab8a1e"
+        },
+        {
+          "path": "extensions/agent-browser/lib/runtime.ts",
+          "bytes": 49901,
+          "sha256": "c5ac18a007cc540a4760f53e359124ce07e0756ef62a10799cf6b4274ea08114"
+        },
+        {
+          "path": "extensions/agent-browser/lib/session-page-state.ts",
+          "bytes": 25783,
+          "sha256": "bebde45d72be9abb68333649c7327f633dcff3a5dd9692f6a3658463e8e00b6f"
+        },
+        {
+          "path": "extensions/agent-browser/lib/string-enum-schema.ts",
+          "bytes": 380,
+          "sha256": "03e7996459bc248ed4d50967c6a3dd8db98691d7d55c3a589723449d4dd1b1bd"
+        },
+        {
+          "path": "extensions/agent-browser/lib/temp.ts",
+          "bytes": 22303,
+          "sha256": "428d6f92372e67e9f5341156c603d7e9734fbae19560b615cba2294ff6e54077"
+        },
+        {
+          "path": "extensions/agent-browser/lib/upstream-version.ts",
+          "bytes": 1335,
+          "sha256": "ed99031a7a091aafd2438620d7db9ca09a5ab5c60da27a5827bc35179c8eabb7"
+        },
+        {
+          "path": "extensions/agent-browser/lib/web-search.ts",
+          "bytes": 30022,
+          "sha256": "95cf895059a5b0fc86241ae5dbd46dc9a2a0b44a44e1a175b7b23bd1b1424dd5"
+        },
+        {
+          "path": "extensions/agent-browser/script-worker.ts",
+          "bytes": 7381,
+          "sha256": "c0b12483732186260b25519045ea4917d93bc03d9cc8f0468f86baabe011a52c"
+        },
+        {
+          "path": "package-lock.json",
+          "bytes": 148351,
+          "sha256": "cc677abf0ca61db90ee5e474e674a2628f14a28e391cf8e705b104323b24f932"
+        },
+        {
+          "path": "package.json",
+          "bytes": 3922,
+          "sha256": "867a9c0ed73c295918e5c03482e643146b53acf234103fcb8f77dde095fa91fd"
+        },
+        {
+          "path": "platform-smoke.config.mjs",
+          "bytes": 1286,
+          "sha256": "a23ba91cecc25285a3031ecc508db9b4fcd8e7e2448654ce859b6537b3ce9793"
+        },
+        {
+          "path": "scripts/agent-browser-capability-baseline.mjs",
+          "bytes": 34249,
+          "sha256": "4271bcc67c58d321a73416d9daf4cf4a76a70ecb40b0d59e4451918a3615eb95"
+        },
+        {
+          "path": "scripts/agent-browser-target.mjs",
+          "bytes": 1015,
+          "sha256": "5e810d84c865cd710248102e613ef4c40320674f914e449d698c5b9a1aa57f99"
+        },
+        {
+          "path": "scripts/build.mjs",
+          "bytes": 1735,
+          "sha256": "9c3b7ef61556b9c8d2256359b2aa7287f1587d72c39a03129dcbe11a0b1597b9"
+        },
+        {
+          "path": "scripts/check-command-reference-baseline.mjs",
+          "bytes": 7717,
+          "sha256": "8e5cd65138d9e387a8aa097124d78836193f4f16dacb868c2cd2bf7c60385a57"
+        },
+        {
+          "path": "scripts/check-playbook-drift.ts",
+          "bytes": 5578,
+          "sha256": "d647673765d3fa652c3f13a555fe4c413eab714ea7da298fbcefaddc34c1c771"
+        },
+        {
+          "path": "scripts/config.mjs",
+          "bytes": 15528,
+          "sha256": "cdcff9c5a8640a2a9a3523c0becf6e50b88a4ba6be0e243d18d733bd9435d14c"
+        },
+        {
+          "path": "scripts/doctor.mjs",
+          "bytes": 18384,
+          "sha256": "37d7baf613d8db4cee034b1fea863ee51f1379d9a1de5ef71317c9900143103c"
+        },
+        {
+          "path": "scripts/platform-smoke/artifacts.mjs",
+          "bytes": 3307,
+          "sha256": "fb33bd01d148974881813d4ed5804c64d62646d69fe282aae731c5ed5e36a1c0"
+        },
+        {
+          "path": "scripts/platform-smoke/browser-dogfood-windows.ps1",
+          "bytes": 7316,
+          "sha256": "f3a14ca5f1c77bf91374b92685a5a96b2ef5485cd3f478eb4a3f7d71b80b4635"
+        },
+        {
+          "path": "scripts/platform-smoke/build-ubuntu-image.mjs",
+          "bytes": 652,
+          "sha256": "599053f8809b380f68e984668d3695df3a4ba0f4a78807f30197d17335138fed"
+        },
+        {
+          "path": "scripts/platform-smoke/crabbox-runner.mjs",
+          "bytes": 6564,
+          "sha256": "e24bfa448e242226b952314078bb35085e3198ed12457a2e6b02301cb886df3f"
+        },
+        {
+          "path": "scripts/platform-smoke/doctor.mjs",
+          "bytes": 17349,
+          "sha256": "92f73a5c5d80f6e2b10b1a2a89ce263966eff162876fd613f75df4df23f45f77"
+        },
+        {
+          "path": "scripts/platform-smoke/linux-image/Dockerfile",
+          "bytes": 850,
+          "sha256": "8f18a2a749226abbf1cd6a778f0844c6a62f712ad59479365a70d508d47f7340"
+        },
+        {
+          "path": "scripts/platform-smoke/platform-build-windows.ps1",
+          "bytes": 4212,
+          "sha256": "775cae11021d7dcc93ef151d98e0002af7fd8725141dae0a584ad5d4f4b54ecc"
+        },
+        {
+          "path": "scripts/platform-smoke/targets.mjs",
+          "bytes": 30910,
+          "sha256": "726ef5120d9dd8dd2cceb50a0c5c49b05c3f026ca151d5628a681acb48b96445"
+        },
+        {
+          "path": "scripts/platform-smoke.mjs",
+          "bytes": 6292,
+          "sha256": "a66bae5f1042519313a5bbde6d7aa5dfe5bad1f5cf855062b395f9c88db823f4"
+        },
+        {
+          "path": "scripts/prepare.mjs",
+          "bytes": 2111,
+          "sha256": "5e5fc1e03f84de36f32cb3f460672b551cf89d9d9ff519b62afd19c579f6d2e5"
+        },
+        {
+          "path": "scripts/profile-startup.mjs",
+          "bytes": 8135,
+          "sha256": "efa54425b5d13d1c8f2d77e0dbcc4784ba4dd9c42cfef748a00f225c1a728a19"
+        },
+        {
+          "path": "scripts/project.mjs",
+          "bytes": 15147,
+          "sha256": "9a1df380fb03b3286b7ea1a749c3c3a3b330993ba275c0acf0a8d85fa62e2439"
+        },
+        {
+          "path": "scripts/publish-contract.mjs",
+          "bytes": 3679,
+          "sha256": "19e26bc0c823d4145d49e64d72fc4628d9eba95d2be617ff18553c1d93feec49"
+        },
+        {
+          "path": "scripts/verify-agent-browser-dogfood.ts",
+          "bytes": 12874,
+          "sha256": "7d2ac0f9eb333c198dd5596d78e1f0e9cce53bfbaab0b3f8cbc1bce30648d08b"
+        },
+        {
+          "path": "scripts/verify-command-reference.mjs",
+          "bytes": 5445,
+          "sha256": "ff9568b5a572e16c882facd99868a0ae24bb520164c86b4944d842c9391ff4ae"
+        },
+        {
+          "path": "scripts/verify-lifecycle.mjs",
+          "bytes": 30996,
+          "sha256": "6f7c469f8da7e82eee618dad65a6da7fa477a2e3e185db8d00fb74fb12077cae"
+        },
+        {
+          "path": "scripts/verify-package.mjs",
+          "bytes": 21147,
+          "sha256": "72e44b4f6791ed002b759595c6e205e3c93f62bdf4c246aff9fa8b04a511edbc"
+        },
+        {
+          "path": "test/agent-browser.argv-descriptor.test.ts",
+          "bytes": 4031,
+          "sha256": "42c0bd8c4ebac7f9e75f6ee35c89fdbbb611caeac2bef4a6e58c00a1b718291d"
+        },
+        {
+          "path": "test/agent-browser.command-taxonomy.test.ts",
+          "bytes": 4231,
+          "sha256": "2632a0e1864a45d3c1d2ffd5a27fd3dc2fa10341b7126d7038825552bda4307e"
+        },
+        {
+          "path": "test/agent-browser.config-cli.test.ts",
+          "bytes": 12888,
+          "sha256": "13c9d1eddf5c69dd858b460efb3698a28809868aee04b713675111d62a431f6a"
+        },
+        {
+          "path": "test/agent-browser.config.test.ts",
+          "bytes": 13303,
+          "sha256": "ea6ef0af88ceaf019c68f7aa525f48cabf21c8914c90d5ee5acf70e6c02724b5"
+        },
+        {
+          "path": "test/agent-browser.extension-artifacts-fallbacks.test.ts",
+          "bytes": 26547,
+          "sha256": "d7e9b7cdd22276a3291a17bc54d98358d193e80d70a5c25963c43075199adbdf"
+        },
+        {
+          "path": "test/agent-browser.extension-click-dispatch.test.ts",
+          "bytes": 20739,
+          "sha256": "8f8aa718dff420976dffdbe375a5af091fc9fdde3c635386057db432c44da531"
+        },
+        {
+          "path": "test/agent-browser.extension-clipboard-permissions.test.ts",
+          "bytes": 6733,
+          "sha256": "fc416f525631fc45e45430002318d0897a44e3c306dff74618b3f3995bb003f6"
+        },
+        {
+          "path": "test/agent-browser.extension-electron-discovery.test.ts",
+          "bytes": 29777,
+          "sha256": "5778a44ee3f7356c0f9f57606f2c6bb0aa81aeb8774c4796be4ec89a01e503d2"
+        },
+        {
+          "path": "test/agent-browser.extension-electron-lifecycle.test.ts",
+          "bytes": 75741,
+          "sha256": "ca7f57f6a4ba98e231cdc0bf1c35c0f1f0b5880e5ebd6dc833a77e1e2d9059f5"
+        },
+        {
+          "path": "test/agent-browser.extension-errors-artifacts.test.ts",
+          "bytes": 143226,
+          "sha256": "5192258c4686d23ab342e367eefd9e7dff7a787854e2cec8ce63070b02701d36"
+        },
+        {
+          "path": "test/agent-browser.extension-input-modes.test.ts",
+          "bytes": 74856,
+          "sha256": "a1de824ddabd948682a1c58cd2a42a4b371b8a6d8f0f4fef636bb95d5773bc10"
+        },
+        {
+          "path": "test/agent-browser.extension-passthrough-validation.test.ts",
+          "bytes": 78995,
+          "sha256": "022209171ba7601e3942c43c48b17e3d62ddd178a9762ec8ac1fe1d49eba7411"
+        },
+        {
+          "path": "test/agent-browser.extension-prompt-guards.test.ts",
+          "bytes": 10571,
+          "sha256": "5258bf637e49670d51067170ddf90f499763ebe53951e66f3b35df28406f27f5"
+        },
+        {
+          "path": "test/agent-browser.extension-ref-guards.test.ts",
+          "bytes": 146598,
+          "sha256": "751156c94ec3c68f6d072e8ef7c07c286d91482d444d5592e207f529b2e75673"
+        },
+        {
+          "path": "test/agent-browser.extension-security-redaction.test.ts",
+          "bytes": 17320,
+          "sha256": "089dbfb2224131c2e40e261238ac33aee7a1f81fbb01a52ef20fc4303f420ebc"
+        },
+        {
+          "path": "test/agent-browser.extension-semantic-recovery.test.ts",
+          "bytes": 32044,
+          "sha256": "387d5033c7d1108b8c9f1e2ccb21a717341862f30da5375bd6e73e3415b31b6a"
+        },
+        {
+          "path": "test/agent-browser.extension-semantic-success.test.ts",
+          "bytes": 5125,
+          "sha256": "e201ec0ea76510ca6dd76a039cfb441dcd040bddfcb9a5b521a6eac8492b9608"
+        },
+        {
+          "path": "test/agent-browser.extension-source-lookup.test.ts",
+          "bytes": 19716,
+          "sha256": "dfca793d51f70e12d3b801748816f5d70637687e09eda077f22528102b19ff75"
+        },
+        {
+          "path": "test/agent-browser.extension-tab-recovery.test.ts",
+          "bytes": 44980,
+          "sha256": "4dc18c55794e02bb7b112b6535b948cf650f8dbd00074179ad448bf87127293a"
+        },
+        {
+          "path": "test/agent-browser.extension-tabs.test.ts",
+          "bytes": 29243,
+          "sha256": "e9d0a2a6d16ef1a2ec9c2470776707add4c692f67f7d44393770b6f0ae9ad466"
+        },
+        {
+          "path": "test/agent-browser.extension-validation.test.ts",
+          "bytes": 136523,
+          "sha256": "e62de1212e7981fbce56f4605bd91868a8618bbb91f6e266e3de8c44c4562860"
+        },
+        {
+          "path": "test/agent-browser.import-boundaries.test.ts",
+          "bytes": 2589,
+          "sha256": "db6dbe928081dc3d9aeb481c1d20d4d79411353a1d133a8036e021bd73e256f3"
+        },
+        {
+          "path": "test/agent-browser.managed-session-daemon-policy.test.ts",
+          "bytes": 2387,
+          "sha256": "fd7d6d7b97e86860727d48d2cfb9b60095f77bc7d8e1f9e6ddc66b8c175f8a0f"
+        },
+        {
+          "path": "test/agent-browser.managed-session-policy-lock.test.ts",
+          "bytes": 8909,
+          "sha256": "b2f28cf69cb7f829b62c9397cf91d90125a6986879e56d3af03318fedc159323"
+        },
+        {
+          "path": "test/agent-browser.managed-session-restore.test.ts",
+          "bytes": 61549,
+          "sha256": "0f1662153c869d2ab1a9ec2dabebe68735339d67e3e69018e45e65ab56ca3a70"
+        },
+        {
+          "path": "test/agent-browser.page-target-validation.test.ts",
+          "bytes": 7728,
+          "sha256": "2a5d2b087f00891ed5f1860160b8508c2ceaa11a4d3c527c2aec64dfa1931c27"
+        },
+        {
+          "path": "test/agent-browser.pi-pipeline.test.ts",
+          "bytes": 11848,
+          "sha256": "89017392eb1c49ca82e443de658c70d2ece260c7a4b5bb9221d0f6a9fd72c43a"
+        },
+        {
+          "path": "test/agent-browser.presentation-artifacts-batch.test.ts",
+          "bytes": 51940,
+          "sha256": "47217d0698ca7d8b16355b0c21ff35bf03674b718f737505f43bab8fe69d1d3a"
+        },
+        {
+          "path": "test/agent-browser.presentation-diagnostics.test.ts",
+          "bytes": 48146,
+          "sha256": "08926acf18171cbfddb7289ac48d8878319819be2344c65a8d946713790af271"
+        },
+        {
+          "path": "test/agent-browser.presentation-semantic-action.test.ts",
+          "bytes": 4525,
+          "sha256": "ea8cae0374badd5c3d370204d91ec895a31c7ef6ec3cb9dda6fee01e67cc9684"
+        },
+        {
+          "path": "test/agent-browser.presentation-skills-recovery.test.ts",
+          "bytes": 17749,
+          "sha256": "af1cbbf2db9ab799d95185a3df59cd2ebc988f03f5712ab9c8d5ff965426b059"
+        },
+        {
+          "path": "test/agent-browser.presentation.test.ts",
+          "bytes": 20036,
+          "sha256": "c64e8e4275009aa6b097471bb2b7df48f2b3dc666ae09b76ae17f330dbe912fd"
+        },
+        {
+          "path": "test/agent-browser.process.test.ts",
+          "bytes": 60311,
+          "sha256": "e938e13db7a15f20ca32fa397fff158330ac456c0bbb431ec38647e516277ba0"
+        },
+        {
+          "path": "test/agent-browser.prompt-policy.test.ts",
+          "bytes": 18565,
+          "sha256": "1f1d110c18f6455b2123868a36098f7aed50562dad9ac822f363c4cad5017e3d"
+        },
+        {
+          "path": "test/agent-browser.real-upstream-contract.test.ts",
+          "bytes": 64767,
+          "sha256": "82ea3affbc20a9ffbcc3a6d83d9d88eff61e5b6b5420173568b6b7001dbc56f1"
+        },
+        {
+          "path": "test/agent-browser.recording-reservations.test.ts",
+          "bytes": 7424,
+          "sha256": "13628b2cacfafa3b8d2138e7a603f9cd2b3ac0fb34dae2db7b53fb27f50cabf3"
+        },
+        {
+          "path": "test/agent-browser.results.test.ts",
+          "bytes": 45484,
+          "sha256": "40b71e6bd97110dfb680372e28a8ffce73db73df1d75694c3c9b4875cc7610b6"
+        },
+        {
+          "path": "test/agent-browser.resume-state.test.ts",
+          "bytes": 131189,
+          "sha256": "aaa62f2aa0729160f0123472c04a4ff1ec5002ccbcbd80e7349934b2230930d9"
+        },
+        {
+          "path": "test/agent-browser.runtime.test.ts",
+          "bytes": 81180,
+          "sha256": "7b3a51f9ad5c6876a9ea6868356249150b8a0bd4b4bcefb16fea86d5635b12b6"
+        },
+        {
+          "path": "test/agent-browser.schema.test.ts",
+          "bytes": 2352,
+          "sha256": "24cabf22b28ac1c5086593ee227e542bc2f216391390f5c5276eaa5c008e3f59"
+        },
+        {
+          "path": "test/agent-browser.script.test.ts",
+          "bytes": 45060,
+          "sha256": "1f191e53153fb5988970ce580e62eb5a9120459902978ae98cdeb353190a76a6"
+        },
+        {
+          "path": "test/agent-browser.selector-recovery.test.ts",
+          "bytes": 7981,
+          "sha256": "44f4350771ef644076af00d55d2698353e24a8160eac72586a3c26f9161719bc"
+        },
+        {
+          "path": "test/agent-browser.session-page-state.test.ts",
+          "bytes": 22075,
+          "sha256": "6b5bb4899e5fe28fde73390f6e93d6019de991c3838dd9e340ced1e9042905fb"
+        },
+        {
+          "path": "test/agent-browser.snapshot-presentation.test.ts",
+          "bytes": 34290,
+          "sha256": "bcdb277c1e6b11df868ef5d6973dca943bebe00c4ea352bc9ee3409f060d22f6"
+        },
+        {
+          "path": "test/agent-browser.startup.test.ts",
+          "bytes": 3144,
+          "sha256": "f4a35e1e2d3e3beac46d69a032d597a25208bec9dea2c1126230a9514cd09016"
+        },
+        {
+          "path": "test/agent-browser.temp.test.ts",
+          "bytes": 11865,
+          "sha256": "7e9b38d308511a7c8ef255430446a41ff55f1e134af010ffac858fbe93faeeef"
+        },
+        {
+          "path": "test/agent-browser.upstream-version.test.ts",
+          "bytes": 3429,
+          "sha256": "a1c0934239dca7403eeda6730249c9531383bd1a1706d623f003f07117c052bc"
+        },
+        {
+          "path": "test/agent-browser.wait-timeouts.test.ts",
+          "bytes": 5455,
+          "sha256": "1ac409beaeeea37bf9a69f1901f93dc0754319d1e2a2a9a866f1508ce4d01055"
+        },
+        {
+          "path": "test/agent-browser.web-search.test.ts",
+          "bytes": 30126,
+          "sha256": "bb8efd1b95caaead9f2af7585602ca746e3a89dd2886ab9ebb8b50352dce508d"
+        },
+        {
+          "path": "test/doctor.test.ts",
+          "bytes": 13051,
+          "sha256": "723bd2fbfb112cf9a0c7d198e0e4c3fe5d77080e70f6a4681b5e7221a9268b48"
+        },
+        {
+          "path": "test/fixtures/agent-browser-real-output-shapes.json",
+          "bytes": 5167,
+          "sha256": "cae0b5a88abafe2b8af95ffe86f7f6ec7dc8c7375c540879995a5170b5a86e6e"
+        },
+        {
+          "path": "test/helpers/agent-browser-harness.ts",
+          "bytes": 23294,
+          "sha256": "46c64212d9bf41df406cdb2cd42077b188576ef607789d60d8a30aa51a0c76e4"
+        },
+        {
+          "path": "test/helpers/extension-validation-fixtures.ts",
+          "bytes": 12610,
+          "sha256": "87c4d31d0760bc02e06e0bd335abce4069ed81543df360c08b85ff2753b674c9"
+        },
+        {
+          "path": "test/platform-smoke.test.ts",
+          "bytes": 13615,
+          "sha256": "cb2ae17cc2f5650c070899faff9e90e42901b45843cb44c0412e82dcbe2ae8ca"
+        },
+        {
+          "path": "test/project-verify.test.ts",
+          "bytes": 8757,
+          "sha256": "05c2de275e626195f7c99da46b6adea778274cf73fa5a0b7ae7e74bcea4559d6"
+        },
+        {
+          "path": "test/verify-agent-browser-dogfood.test.ts",
+          "bytes": 1437,
+          "sha256": "9882f6dac65825f36274cf5a774609de420349f5b23c9b2074a50b405e707d23"
+        },
+        {
+          "path": "test/verify-command-reference.test.ts",
+          "bytes": 5998,
+          "sha256": "a8fec8ca1def6f9454af7572354d3f970bc67964937e794c93538db0b0db2e99"
+        },
+        {
+          "path": "test/verify-lifecycle.test.ts",
+          "bytes": 9309,
+          "sha256": "a72581dd300ddadd9977fc9aee7de3d300e671145e82d095306415dbb27cb018"
+        },
+        {
+          "path": "test/verify-package.test.ts",
+          "bytes": 15604,
+          "sha256": "afcc234207d92b7df80b942dde1665f2bbe2496cd883b3e040827a4460d9b1af"
+        },
+        {
+          "path": "tsconfig.build.json",
+          "bytes": 348,
+          "sha256": "0206b4c0d324a6ee908df256cb02314890961410b6dadbe2ddce758c064dc454"
+        },
+        {
+          "path": "tsconfig.json",
+          "bytes": 517,
+          "sha256": "264c86c5f1d6c1e3f661563a06357ae1b978b60ead2e4c5c967b7b21eacbfee2"
+        }
+      ]
+    }
+  }
+}

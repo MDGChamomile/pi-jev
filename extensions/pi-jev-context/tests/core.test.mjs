@@ -167,6 +167,85 @@ test('candidate cap marks scan incomplete instead of silently truncating', async
   assert.equal(result.coverage.limited, true);
 });
 
+test('keeps scanning after twelve weak candidates and retains later stronger evidence independent of requested order', async t => {
+  const root = await project(t);
+  const paths = Array.from({ length: 14 }, (_, i) => `src/weak-${i}.ts`);
+  for (const p of paths) await put(root, p, 'signal');
+  await put(root, 'src/late.ts', 'signal threshold');
+  paths.push('src/late.ts');
+  const forward = await findCandidates({ root, paths, allowedPaths: ['src'], goal: 'Where is the signal threshold?' });
+  const reverse = await findCandidates({ root, paths: [...paths].reverse(), allowedPaths: ['src'], goal: 'Where is the signal threshold?' });
+  assert.equal(forward.coverage.filesRead, 15);
+  assert.equal(forward.candidates.length, LIMITS.candidates);
+  assert.equal(forward.coverage.limited, true);
+  assert.equal(forward.candidates[0].path, 'src/late.ts');
+  assert.deepEqual(forward.candidates.map(c => c.path), reverse.candidates.map(c => c.path));
+});
+
+test('retained IDs stay unique when many later candidates replace a full pool under a shared path prefix', async t => {
+  const root = await project(t);
+  const terms = Array.from({ length: 20 }, (_, i) => `term${i}`), paths = [];
+  for (let i = 0; i < 20; i++) {
+    const p = `src/long-shared-prefix/${i}.ts`;
+    await put(root, p, terms.slice(0, i + 1).join(' ')); paths.push(p);
+  }
+  const result = await findCandidates({ root, paths, allowedPaths: ['src'], goal: terms.join(' ') });
+  assert.equal(result.coverage.filesRead, 20);
+  assert.equal(result.candidates.length, LIMITS.candidates);
+  assert.equal(new Set(result.candidates.map(c => c.id)).size, LIMITS.candidates);
+  assert.doesNotThrow(() => prepareRanking({ goal: terms.join(' '), candidates: result.candidates, provider: 'typesafe' }));
+});
+
+test('exactly twelve candidates in a fully scanned scope are not falsely reported as pruned', async t => {
+  const root = await project(t);
+  for (let i = 0; i < LIMITS.candidates; i++) await put(root, `src/${i}.ts`, 'needle');
+  const result = await findCandidates({ root, paths: ['src'], allowedPaths: ['src'], goal: 'needle' });
+  assert.equal(result.candidates.length, LIMITS.candidates);
+  assert.equal(result.coverage.limited, false);
+});
+
+test('chooses a stronger late match as the clipping anchor without rewriting the original window', async t => {
+  const root = await project(t);
+  const lines = Array.from({ length: 100 }, () => `signal ${'x'.repeat(256)}`);
+  lines[75] = 'signal threshold';
+  await put(root, 'src/large.ts', lines.join('\n'));
+  const result = await findCandidates({ root, paths: ['src'], allowedPaths: ['src'], goal: 'signal threshold' });
+  const c = result.candidates[0];
+  assert.match(c.text, /signal threshold/);
+  assert.equal(c.text, lines.slice(c.startLine - 1, c.endLine).join('\n'));
+  assert.ok(Buffer.byteLength(c.text) <= LIMITS.excerptBytes);
+  assert.equal(result.coverage.limited, true);
+});
+
+test('function words do not become substring evidence and identifier parts outrank incidental substrings', async t => {
+  const root = await project(t);
+  await put(root, 'src/a.ts', 'const precancelledRequestSuffix = 1;');
+  await put(root, 'src/b.ts', 'function cancelRequest() {}');
+  const empty = await findCandidates({ root, paths: ['src'], allowedPaths: ['src'], goal: 'Where is it?' });
+  assert.equal(empty.candidates.length, 0);
+  const result = await findCandidates({ root, paths: ['src'], allowedPaths: ['src'], goal: 'cancel request' });
+  assert.equal(result.candidates[0].path, 'src/b.ts');
+});
+
+test('identifier scoring handles long uppercase runs without a variable-length backtracking pattern', { timeout: 3000 }, async t => {
+  const root = await project(t);
+  await put(root, 'src/uppercase.ts', `needle ${'A'.repeat(80 * 1024)}`);
+  const result = await findCandidates({ root, paths: ['src'], allowedPaths: ['src'], goal: 'needle' });
+  assert.equal(result.coverage.filesRead, 1);
+  assert.equal(result.status, 'limit_reached');
+  assert.equal(result.candidates.length, 0); // One oversized matching line still must not be returned.
+});
+
+test('full-scope candidate selection still stops at the existing file quota', async t => {
+  const root = await project(t);
+  for (let i = 0; i < LIMITS.files + 3; i++) await put(root, `src/${i}.ts`, 'needle');
+  const result = await findCandidates({ root, paths: ['src'], allowedPaths: ['src'], goal: 'needle' });
+  assert.equal(result.coverage.filesConsidered, LIMITS.files);
+  assert.equal(result.coverage.filesRead, LIMITS.files);
+  assert.equal(result.candidates.length, LIMITS.candidates);
+  assert.equal(result.coverage.limited, true);
+});
+
 test('bounded traversal distinguishes no match from incomplete limit and no-term goals terminate', async t => {
   const root = await project(t);
   await put(root, 'src/a.ts', 'unrelated ordinary content');

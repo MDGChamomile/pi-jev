@@ -21,7 +21,7 @@ function excludedPath(rel) {
 }
 const SECRET_TEXT = /(?:-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----|\b(?:AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{15,}|AIza[0-9A-Za-z_-]{30,})\b|\bBearer\s+[A-Za-z0-9._~+\/-]{20,}|["']?(?:api[_-]?key|access[_-]?token|password|secret)["']?\s*[:=]\s*["']?[^\s"']{8,})/i;
 function containsKnownCredential(value) { return SECRET_TEXT.test(value); }
-const COMMON = new Set('about after again all also any are because been before being between both but can could did does doing down each few for from further had has have having here how into its itself just more most other our out over own same she should some such than that the their them then there these they this those through too under until very was were what when where which while who why will with would your'.split(' '));
+const COMMON = new Set('about after again all also am an any are as at be because been before being between both but by can could did do does doing down each few for from further had has have having he here how if in into is it its itself just me more most my of on or other our out over own same she should so some such than that the their them then there these they this those through to too under until up us very was we were what when where which while who why will with would your'.split(' '));
 const ERROR_CODES = new Set(['invalid_root','invalid_input','invalid_path','path_not_allowed','cancelled','invalid_provider','input_too_large','sensitive_input','invalid_response','invalid_ranking','output_too_large','missing_key','authentication_failed','payment_required','request_forbidden','timeout','rate_limited','invalid_request','provider_error']);
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 const isPlain = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -36,6 +36,15 @@ function relPath(value) {
   return value;
 }
 const utf8Bytes = value => Buffer.byteLength(value, 'utf8');
+// Distinct query terms matter, not repetition. Exact words/identifier parts outrank substrings.
+function lexicalScore(value, query) {
+  const lower = value.toLocaleLowerCase();
+  const hits = query.filter(term => lower.includes(term));
+  if (!hits.length) return 0;
+  const words = new Set(value.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2').replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) || []);
+  return hits.reduce((score, term) => score + (words.has(term) ? 2 : 1), 0);
+}
 
 export async function findCandidates({ root, paths, allowedPaths, goal, signal }) {
   const coverage = { filesConsidered: 0, filesRead: 0, bytesRead: 0, limited: false, skipped: 0 };
@@ -52,11 +61,22 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
   if (requested.some(p => !allow.some(a => p === a || p.startsWith(`${a}/`)))) fail('path_not_allowed');
   if (!terms(goal).length) return { candidates, coverage, status: 'not_found' };
   const allowed = p => allow.some(a => p === a || p.startsWith(`${a}/`));
-  const seen = new Set(); let visited = 0, termsFound = terms(goal), stopScan = false;
+  const seen = new Set(), scores = new Map();
+  let visited = 0, candidateSerial = 0;
+  const termsFound = terms(goal);
   const limited = () => { coverage.limited = true; };
+  const exhausted = () => Date.now() - begin > LIMITS.timeMs || visited >= LIMITS.entries ||
+    coverage.filesConsidered >= LIMITS.files || coverage.bytesRead >= LIMITS.totalBytes;
+  function offer(candidate, value, size) {
+    candidates.push(candidate);
+    scores.set(candidate.id, { value, size });
+    candidates.sort((a, b) => scores.get(b.id).value - scores.get(a.id).value ||
+      scores.get(a.id).size - scores.get(b.id).size || (a.path < b.path ? -1 : a.path > b.path ? 1 : a.startLine - b.startLine));
+    if (candidates.length > LIMITS.candidates) { scores.delete(candidates.pop().id); limited(); }
+  }
   async function walk(rel) {
     if (signal?.aborted) fail('cancelled');
-    if (Date.now() - begin > LIMITS.timeMs || visited >= LIMITS.entries || coverage.filesConsidered >= LIMITS.files || coverage.bytesRead >= LIMITS.totalBytes) { limited(); return; }
+    if (exhausted()) { limited(); return; }
     visited++;
     if (excludedPath(rel) || !allowed(rel)) { coverage.skipped++; return; }
     const parts = rel.split('/');
@@ -80,9 +100,8 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
       try { dir = await opendir(full); } catch { coverage.skipped++; limited(); return; }
       try {
         for await (const entry of dir) {
-          if (stopScan) break;
           if (signal?.aborted) fail('cancelled');
-          if (visited >= LIMITS.entries || Date.now() - begin > LIMITS.timeMs) { limited(); break; }
+          if (exhausted()) { limited(); break; }
           await walk(`${rel}/${entry.name}`);
         }
       } catch (error) {
@@ -133,13 +152,17 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
     const lineBytePrefix = new Array(lines.length + 1);
     lineBytePrefix[0] = 0;
     for (let i = 0; i < lines.length; i++) lineBytePrefix[i + 1] = lineBytePrefix[i] + utf8Bytes(lines[i]);
-    const matches = [];
+    const matches = [], lineScores = new Map();
     for (let i = 0; i < lines.length; i++) {
-      const lower = lines[i].toLocaleLowerCase();
-      if (termsFound.some(term => lower.includes(term))) matches.push(i);
+      if (i % 512 === 0) {
+        if (signal?.aborted) fail('cancelled');
+        if (Date.now() - begin > LIMITS.timeMs) { limited(); break; }
+      }
+      const value = lexicalScore(lines[i], termsFound);
+      if (value) { matches.push(i); lineScores.set(i, value); }
     }
-    const filename = path.basename(rel).toLocaleLowerCase();
-    if (!matches.length && termsFound.some(term => filename.includes(term))) matches.push(0);
+    const filenameScore = lexicalScore(path.basename(rel), termsFound);
+    if (!matches.length && filenameScore) { matches.push(0); lineScores.set(0, 0); }
     if (!matches.length) return;
     const windows = [];
     for (const line of matches) {
@@ -150,8 +173,9 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
       } else windows.push({ start: a, end: b, anchors: [line] });
     }
     for (const win of windows) {
-      if (stopScan) break;
-      const anchor = win.anchors[0];
+      if (signal?.aborted) fail('cancelled');
+      if (Date.now() - begin > LIMITS.timeMs) { limited(); break; }
+      const anchor = win.anchors.reduce((best, line) => lineScores.get(line) > lineScores.get(best) ? line : best);
       let start = win.start, end = win.end;
       let excerptBytes = lineBytePrefix[end + 1] - lineBytePrefix[start] + end - start;
       while (excerptBytes > LIMITS.excerptBytes) {
@@ -169,15 +193,14 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
       if (excerptBytes > LIMITS.excerptBytes) continue;
       const excerpt = lines.slice(start, end + 1).join('\n');
       if (win.anchors.some(line => line < start || line > end)) limited();
-      const id = `c${candidates.length}_${Buffer.from(rel).toString('hex').slice(0, 32)}_${start + 1}`;
-      candidates.push({ id, path: rel, startLine: start + 1, endLine: end + 1, text: excerpt });
-      if (candidates.length === LIMITS.candidates) { stopScan = true; limited(); }
+      const id = `c${candidateSerial++}_${Buffer.from(rel).toString('hex').slice(0, 32)}_${start + 1}`;
+      offer({ id, path: rel, startLine: start + 1, endLine: end + 1, text: excerpt },
+        lexicalScore(excerpt, termsFound) + 2 * filenameScore, excerptBytes);
     }
   }
   for (const rel of requested) {
-    if (stopScan) break;
     if (signal?.aborted) fail('cancelled');
-    if (coverage.filesConsidered >= LIMITS.files || coverage.bytesRead >= LIMITS.totalBytes || Date.now() - begin > LIMITS.timeMs || visited >= LIMITS.entries) { limited(); break; }
+    if (exhausted()) { limited(); break; }
     await walk(rel);
   }
   return { candidates, coverage, status: candidates.length ? 'found' : coverage.limited ? 'limit_reached' : 'not_found' };

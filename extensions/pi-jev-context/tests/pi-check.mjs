@@ -134,7 +134,9 @@ if (diagnostics.length) {
       const ranked = await tool.execute('mocked-provider', { paths: ['private.ts', 'other.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
       assert.equal(ranked.details.status, 'found');
       assert.equal(ranked.details.mode, 'ranked');
-      assert.equal(ranked.details.snippets[0].path, 'other.ts');
+      const localOrder = JSON.parse(lastWireBody).state.candidates;
+      assert.equal(ranked.details.snippets[0].path, localOrder[1].path);
+      assert.notEqual(ranked.details.snippets[0].path, localOrder[0].path);
       assert.deepEqual(ranked.details.usage, { input_tokens: 50, output_tokens: 4 });
       assert.equal(ranked.details.actualCost, 'unknown');
       assert.doesNotMatch(ranked.content[0].text, /\"usage\"/);

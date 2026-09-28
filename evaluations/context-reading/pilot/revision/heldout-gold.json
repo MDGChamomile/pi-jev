@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "authoring": "Independent read-only lookup completed before the implementation change. Parent checked source ranges and corrected the narrow-layout explanation: the narrow path does not pass hideDescriptions=true. Questions and gold were not selected from retrieval output.",
+  "items": [
+    {"id":"h1","answer":"양수 timeout이면 그 밀리초 뒤 custom UI를 null로 종료합니다. 생략하거나 0이면 이 타이머를 설정하지 않고 dialog 옵션에도 timeout을 넣지 않습니다.","groups":[
+      {"fact":"Positive timeout schedules null completion","alternatives":[{"path":"index.ts","startLine":2253,"endLine":2255}]},
+      {"fact":"Omitted or zero timeout not forwarded","alternatives":[{"path":"index.ts","startLine":2158,"endLine":2160}]}
+    ]},
+    {"id":"h2","answer":"선택한 시간 순서가 아니라 원래 선택지 배열의 인덱스 오름차순으로 제목을 반환합니다.","groups":[
+      {"fact":"Sort checked indices before resolving titles","alternatives":[{"path":"index.ts","startLine":638,"endLine":641}]}
+    ]},
+    {"id":"h3","answer":"렌더링 폭이 84열 미만이면 분할 화면을 쓰지 않고 목록형으로 표시합니다. 충분히 넓은 auto 레이아웃은 목록과 상세 미리보기를 나란히 배치합니다. list를 명시하면 폭과 무관하게 분할하지 않습니다.","groups":[
+      {"fact":"Split threshold is 84","alternatives":[{"path":"index.ts","startLine":408,"endLine":408}]},
+      {"fact":"List preference or narrow width disables split","alternatives":[{"path":"index.ts","startLine":893,"endLine":895}]},
+      {"fact":"Render list or split list/preview","alternatives":[{"path":"index.ts","startLine":1091,"endLine":1095}]}
+    ]},
+    {"id":"h4","answer":"반환값은 구분하지 않습니다. 사용자 취소와 시간초과 모두 null로 합쳐져 response:null, cancelled:true 및 같은 취소 메시지를 반환합니다.","groups":[
+      {"fact":"User cancellation resolves null","alternatives":[{"path":"index.ts","startLine":1730,"endLine":1730},{"path":"index.ts","startLine":1748,"endLine":1748}]},
+      {"fact":"Timeout resolves null","alternatives":[{"path":"index.ts","startLine":2253,"endLine":2255}]},
+      {"fact":"Null is mapped to the same cancelled result","alternatives":[{"path":"index.ts","startLine":2338,"endLine":2342}]}
+    ]}
+  ]
+}
