@@ -4,13 +4,27 @@
 [![Latest release](https://img.shields.io/github/v/release/MDGChamomile/pi-jev?label=release)](https://github.com/MDGChamomile/pi-jev/releases/latest)
 [![License](https://img.shields.io/github/license/MDGChamomile/pi-jev)](LICENSE)
 
+## Development discontinued
+
+Further development has stopped because we could not verify practical benefits from the current Jev integration approach. **This is not a conclusion that Jev itself performs poorly.**
+
+The code, evaluation results, and history are preserved for reference:
+
+- [Initial public-source reading evaluation](evaluations/context-reading/pilot/REPORT.md)
+- [Local candidate-selection revision and heldout evaluation](evaluations/context-reading/pilot/revision/REPORT.md)
+- [Offline context-output comparison](evaluations/context-output/README.md)
+
+The documentation below describes the preserved experimental implementation, not an active development roadmap.
+
+---
+
 > Experimental purposeful reading for the [Pi coding agent](https://github.com/earendil-works/pi): give a path and a goal, receive relevant source excerpts—not another planning conversation.
 
 The opt-in [`find_context` extension](extensions/pi-jev-context/README.md) performs bounded local file discovery, optionally uses TypeSafe Jev to rank candidates, and returns contiguous source text with file/line references and coverage limits. The parent supplies paths and a goal, not copied file bodies. Ordinary `read`, `bash`, `edit`, and `write` keep their existing roles. This is not a summarizer, a sandbox, a command runner, or whole-conversation compaction.
 
 The original task router, public-web reranker, and shared workflow skill remain independently installable and retain their per-request full-payload review contracts. The root Git package still installs those legacy resources; **the new reader is an explicit experiment, not a silent upgrade of an active installation**.
 
-**Status:** experimental and not published to npm. Offline tests establish mechanics, not live provider compatibility, code-search recall, natural tool adoption, or improvements in task accuracy, latency, or cost. Compare ordinary Pi, local-only reading, and Jev-assisted reading before retaining or expanding the feature. The router and reranker likewise have no established whole-task net benefit.
+**Experimental limitations:** this implementation was not published to npm. Offline tests establish mechanics, not live provider compatibility, code-search recall, natural tool adoption, or improvements in task accuracy, latency, or cost. The router and reranker likewise have no established whole-task net benefit.
 
 ## Try purposeful reading separately
 
