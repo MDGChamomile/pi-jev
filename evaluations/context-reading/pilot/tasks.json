@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "stage": "offline-candidate-discovery",
+  "repositories": {
+    "subagent": {
+      "url": "https://github.com/MDGChamomile/pi-subagent",
+      "commit": "7aa98ac47bc6786613f5d2085bc0cff2dbe6f4bb",
+      "tree": "b304f8a09b390df7b196ae164b4d8e3a7731c05c",
+      "paths": ["extensions/pi-subagent"]
+    },
+    "browser": {
+      "url": "https://github.com/fitchmultz/pi-agent-browser-native",
+      "commit": "2a872baf6a8e920120fbb49c3cfcb80142b2a483",
+      "tree": "809b0f2820eef26b92854116dd48cd0dca263414",
+      "paths": ["extensions/agent-browser"]
+    }
+  },
+  "tasks": [
+    {"id":"s1","repo":"subagent","retrievalAppropriate":true,"question":"하위 조사 작업이 끝나지 않으면 얼마나 기다렸다가 어떻게 중단하나요?","englishGoal":"If a child investigation does not finish, how long do we wait and how do we stop it?"},
+    {"id":"s2","repo":"subagent","retrievalAppropriate":true,"question":"부모 프로세스가 죽었는데 자식 프로세스만 계속 남을 수 있나요? 정리하는 조건을 설명해 주세요.","englishGoal":"Can a child process remain running after its parent dies? Explain the conditions for cleanup."},
+    {"id":"s3","repo":"subagent","retrievalAppropriate":true,"question":"로컬 조사에서 승인한 폴더 밖 파일이나 심볼릭 링크를 읽으려 하면 어떻게 막나요?","englishGoal":"How are local investigations prevented from reading files outside approved folders or following symbolic links?"},
+    {"id":"s4","repo":"subagent","retrievalAppropriate":true,"question":"조사 결과가 너무 길 때 원래 결과가 보존되나요, 아니면 잘리나요?","englishGoal":"When an investigation result is too long, is the original result preserved or truncated?"},
+    {"id":"s5","repo":"subagent","retrievalAppropriate":true,"question":"하위 모델 호출이 실패하면 자동으로 다시 시도하나요? 재시도 조건과 횟수를 알려주세요.","englishGoal":"When a child model call fails, is it automatically retried? What are the retry conditions and number of attempts?"},
+    {"id":"s6","repo":"subagent","retrievalAppropriate":true,"question":"사용자가 취소하면 대기 중인 조사 호출과 자식 프로세스는 각각 어떻게 되나요?","englishGoal":"When the user cancels, what happens to the pending investigation call and the child process?"},
+    {"id":"b1","repo":"browser","retrievalAppropriate":true,"question":"세션 이름을 생략하면 매번 새 브라우저를 띄우나요, 기존 브라우저를 재사용하나요?","englishGoal":"If the session name is omitted, is a new browser launched every time or is the existing browser reused?"},
+    {"id":"b2","repo":"browser","retrievalAppropriate":true,"question":"실행 파일 경로를 지정하면 아무 프로그램이나 실행될 수 있나요? 허용 조건을 설명해 주세요.","englishGoal":"Can specifying an executable path run any program? Explain the conditions under which a path is allowed."},
+    {"id":"b3","repo":"browser","retrievalAppropriate":true,"question":"브라우저 명령이 실패했을 때 부수 효과가 있는 작업도 자동으로 재시도하나요?","englishGoal":"When a browser command fails, are operations with side effects also retried automatically?"},
+    {"id":"b4","repo":"browser","retrievalAppropriate":true,"question":"브라우저가 파일을 내려받았다고 말하는 것만으로 성공 처리하나요? 실제 파일 검증은 어디서 하나요?","englishGoal":"Is a browser report that a file was downloaded enough to count as success? Where is the actual file verified?"},
+    {"id":"b5","repo":"browser","retrievalAppropriate":true,"question":"페이지에서 경고창이나 확인창이 떠 있으면 클릭을 바로 진행하나요, 멈추나요?","englishGoal":"If an alert or confirmation dialog is open on the page, does a click proceed immediately or stop?"},
+    {"id":"b6","repo":"browser","retrievalAppropriate":true,"question":"데스크톱 앱 정리 명령이 원래 사용 중이던 앱 프로필도 지우나요?","englishGoal":"Does desktop application cleanup also delete the application's original profile that was already in use?"},
+    {"id":"s7","repo":"subagent","retrievalAppropriate":false,"question":"extensions/pi-subagent/parent-liveness.ts의 1~40행을 읽어주세요.","englishGoal":"Read lines 1 through 40 of extensions/pi-subagent/parent-liveness.ts."},
+    {"id":"b7","repo":"browser","retrievalAppropriate":false,"question":"extensions/agent-browser/lib/executable-path.ts 전체를 읽어주세요.","englishGoal":"Read the entire extensions/agent-browser/lib/executable-path.ts file."}
+  ]
+}

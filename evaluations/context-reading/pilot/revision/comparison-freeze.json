@@ -1,0 +1,9 @@
+{
+  "frozenAt": "2026-09-28T09:09:24.506293+00:00",
+  "revisedCoreSha256": "0d2e69d2d211a6d9b9a8bb2322f609a10503baebb8cfe29cb9603d4902d73d94",
+  "comparisonSha256": "7eb488408b6ec9c68b48a46a317d96e21b3910bc0b820f745804bd2dba014dce",
+  "heldoutFreezeSha256": "92167204b5d5c6ba7eaeb195e15b296376a6be9b89a0b88b3706be5fb96c187e",
+  "developmentFreezeSha256": "e94a6b19e6c6c851f9bac3b464bd84413b649df11181fa9e921dd3d2bb0855e4",
+  "repetitions": 3,
+  "providerCallsAuthorized": 0
+}

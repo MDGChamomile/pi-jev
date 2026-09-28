@@ -388,10 +388,10 @@ test('English review and approval UI retain disclosure and safety boundaries', a
     return preview;
   };
   context.ui.confirm = async (title, message) => {
-    assert.equal(title, 'Send to TypeSafe Jev through OpenRouter?');
+    assert.equal(title, 'Send to OpenRouter (TypeSafe upstream)?');
     for (const disclosure of [
       'reviewed question, criteria, and 2 candidates', ENDPOINT,
-      'OpenRouter / ~typesafe/jev-latest', 'one paid request',
+      'OpenRouter (TypeSafe upstream) / ~typesafe/jev-latest', 'one paid request',
       '$0.042/M input', '$0/M output', 'no hard total-cost cap', 'no automatic retries', '30-second timeout', 'Public web sources only',
       'sessions, internal data, authenticated pages, or secrets',
       'Cancelling cannot undo a request or charges already incurred',

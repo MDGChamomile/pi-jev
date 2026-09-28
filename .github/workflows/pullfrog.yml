@@ -1,7 +1,9 @@
 name: Pullfrog
 run-name: ${{ inputs.name || github.workflow }}
 
-# Dispatch-only plumbing. Keep all console automations OFF during setup.
+# Manual-dispatch plumbing only. Owner-approved automatic PR reviews and
+# post-push re-reviews are configured separately in the Pullfrog console;
+# keep non-review automations OFF. See .github/PULLFROG.md.
 on:
   workflow_dispatch:
     inputs:

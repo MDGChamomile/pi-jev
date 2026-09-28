@@ -2,10 +2,12 @@
 name: pi-jev
 description: Use available TypeSafe Jev tools at two decision points without requiring the user to name Jev. Use jev_task_router before choosing among two or more unresolved, feasible research, comparison, or review workflows, or for explicit routing evaluation. Use jev_rerank after collecting multiple usable public passages, before reading all sources in depth, when reading order remains open. Use the applicable tool once, subject to data and consent boundaries; skip trivial tasks, settled routes, and sufficient evidence.
 license: MIT
-compatibility: Requires at least one companion Jev extension, an interactive Pi or compatible RPC approval UI, and a configured Pi OpenRouter provider.
+compatibility: Requires at least one companion Jev extension, an interactive Pi or compatible RPC approval UI, and authentication for the selected OpenRouter or direct TypeSafe connection.
 ---
 
-# Pi Jev
+# Pi Jev — legacy advisory workflow
+
+This skill governs only `jev_task_router` and `jev_rerank`. It is not required for the opt-in `find_context` reader. If that reader is available, use it directly for bounded source discovery from paths and a goal; do not add a routing call or copy file bodies into either legacy tool. Use ordinary `read` for exact ranges, full review, and patch preparation. Reader activation is a user command for the current session, not something this skill or a model tool can grant. Do not treat a prior session's or stored project's approval as current permission. See the [purposeful-reader guide](../../extensions/pi-jev-context/README.md).
 
 Use this workflow to select among the available consent-gated TypeSafe Jev tools. The user does not need to mention Jev. When a decision point below applies, use the corresponding tool once; do not require a second, speculative estimate of a large benefit. These are advisory tools, not mandatory steps for every task.
 
@@ -18,10 +20,10 @@ Use this workflow to select among the available consent-gated TypeSafe Jev tools
 
 ## Shared boundaries
 
-- Jev advice never grants authorization or overrides safety, privacy, tool, browser, skill, or pi-subagent rules.
+- Jev advice never grants authorization or overrides safety, privacy, tool, browser, skill, or delegation rules.
 - Never use Jev to decide whether a restricted action is permitted or whether a policy may be bypassed.
 - Prepare semantic instructions in English while faithfully preserving names, numbers, dates, negation, uncertainty, scope, and plan-versus-execution distinctions. Do not use another translation service merely to prepare a payload.
-- Review the complete payload shown by the extension and obtain its separate approval before each paid OpenRouter request. A decline falls back to the normal workflow.
+- Review the complete payload shown by the extension and obtain its separate approval before each paid request to the selected provider. OpenRouter enforces per-token price ceilings but no total-cost cap; direct TypeSafe enforces neither. Never change providers or credentials to bypass a decline or failure. A decline falls back to the normal workflow.
 - Treat probabilities and confidence as advisory model outputs, not proof that a route or ranking is correct.
 
 ## Route tasks
@@ -32,7 +34,7 @@ When `jev_task_router` applies:
 2. Add `constraints` only when material constraints are already established. Never include secrets, credentials, session history, private file contents, internal documents, signed URLs, authenticated-page content, or data the user is not authorized to disclose.
 3. Call the tool at most once for the current task.
 4. On `not_routed`, continue normally without retrying.
-5. On `ok`, inspect the primary route's full probabilities and confidence. Use `subagentPreset` and `parallelInvestigationProbability` only if a subagent route remains applicable. Treat `primaryTool` and `specialistSkill` as candidates, then apply their own instructions and boundaries.
+5. On `ok`, inspect the primary route's full probabilities and confidence. Use `parallelInvestigationProbability` only if compatible investigation delegation remains applicable. For `delegate`, verify that `primaryTool` actually supports the requested work and read its current contract before choosing arguments or presets. No tool-specific presets are returned. Treat `primaryTool` and `specialistSkill` as candidates, then apply their own instructions and boundaries.
 6. Ignore speculative answers for routes that are not used; independent Jev questions can disagree.
 
 For the complete runtime contract and limitations, read the [`pi-jev-router` extension guide](../../extensions/pi-jev-router/README.md).

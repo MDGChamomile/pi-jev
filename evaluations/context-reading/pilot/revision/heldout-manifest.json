@@ -1,0 +1,74 @@
+{
+  "files": [
+    {
+      "path": ".github/workflows/publish.yml",
+      "bytes": 1592,
+      "sha256": "fbae61f880184454070032ade771d20461559dd003cd139123c9a92e51c852e4"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 45,
+      "sha256": "5e824a4b1d26f808f332ba589b328a6f455c706c7fd334a610b3b025d9d04a49"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 15183,
+      "sha256": "1277e8c97b8c2af0f511f8fd6b10c06b25b5e72b2b84222f99f1c0f42db7768a"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1070,
+      "sha256": "3c822b362f67a7ebd817e767107465966cb3ca98111b2b775cbe3f47b28e87f7"
+    },
+    {
+      "path": "README.md",
+      "bytes": 10616,
+      "sha256": "66708559a98860d2396e68fa75efac7941c667bdcd15504e6c61762dda66c2a3"
+    },
+    {
+      "path": "index.test.ts",
+      "bytes": 110230,
+      "sha256": "b2b18b7488d76362f2a272da9b04bcd8d3b2b46b63908c18968e6ce91399f511"
+    },
+    {
+      "path": "index.ts",
+      "bytes": 91308,
+      "sha256": "625c5a30cc19ede6f26e169ecb0f9532849a5a815cf972c57802950dd7efcf75"
+    },
+    {
+      "path": "media/ask-user-demo.gif",
+      "bytes": 1263155,
+      "sha256": "73ce95d19cce5bb0ddfbc21c2d4813337179e51bfc19f495bbb5c0b953c81416"
+    },
+    {
+      "path": "media/ask-user-demo.mp4",
+      "bytes": 650862,
+      "sha256": "46a627f46d828e0f10e95266f0d0da403efa076d8a6c054bf3c250c585d6d8e0"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1107,
+      "sha256": "a8573e8a7dab5e05ffd6c968844fa22e6868f349fa3fbd1a8ccbdfeb291b641c"
+    },
+    {
+      "path": "single-select-layout.test.ts",
+      "bytes": 3874,
+      "sha256": "d4507c6ac579e4658b1a6bd74553c50d996229c9870b021f5aff6adcf48b6bb7"
+    },
+    {
+      "path": "single-select-layout.ts",
+      "bytes": 5707,
+      "sha256": "f616587129b748ae0534fbe384b77131de5347be4513f04799e01fd15ad46307"
+    },
+    {
+      "path": "skills/ask-user/SKILL.md",
+      "bytes": 6288,
+      "sha256": "6ed9c3ef88a7dc1d66dd78d341ef8bcca23434c43edd8dbec50f79286357cb4d"
+    },
+    {
+      "path": "skills/ask-user/references/ask-user-skill-extension-spec.md",
+      "bytes": 3509,
+      "sha256": "9afe27d15b184d3d85a7d02b4f7b2d8db8e6057a8d803ca5a7eeac67626a6872"
+    }
+  ]
+}

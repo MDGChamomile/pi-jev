@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "repository": {
+    "url": "https://github.com/MDGChamomile/pi-ask-user",
+    "commit": "4edb7522011a085edbd88d1976d4fff2bc163813",
+    "tree": "7f824e1586dbc72707b5c82e16cb071a12665ba9",
+    "paths": ["CHANGELOG.md", "LICENSE", "README.md", "index.test.ts", "index.ts", "media", "package.json", "single-select-layout.test.ts", "single-select-layout.ts", "skills"]
+  },
+  "protocol": "Four new questions, with literal English translations, authored before the candidate-selection change. All visible root entries are supplied because this repository has no common src directory and root '.' is not an allowed reader scope. Neither the paths nor their order depend on the question or gold. Gold is authored before any baseline/revised heldout run. This is a small third-repository check, not a blind or representative external benchmark.",
+  "tasks": [
+    {"id":"h1","question":"응답을 기다리다 시간이 지나면 자동으로 닫히나요? 시간을 생략하거나 0으로 주면 어떻게 되나요?","englishGoal":"Does the question close automatically after waiting too long for a response? What happens if the timeout is omitted or set to zero?"},
+    {"id":"h2","question":"선택지에서 여러 항목을 고르면 어떤 순서로 결과를 돌려주나요?","englishGoal":"If multiple options are selected, in what order are they returned in the result?"},
+    {"id":"h3","question":"단일 선택 화면에서 터미널 폭이 좁아지면 목록과 상세 레이아웃은 어떻게 바뀌나요?","englishGoal":"In single selection, how do the list and detail layouts change when the terminal becomes narrow?"},
+    {"id":"h4","question":"사용자가 취소한 경우와 시간초과로 닫힌 경우의 반환값은 구분되나요?","englishGoal":"Does the returned result distinguish user cancellation from a timeout?"}
+  ]
+}

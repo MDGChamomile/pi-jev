@@ -1,20 +1,31 @@
 # Pi Jev Router — experimental advisory task routing
 
-An optional `jev_task_router` tool for the **parent Pi agent**. It asks TypeSafe Jev through OpenRouter for one advisory primary route, one active tool, one discovered specialist skill, a pi-subagent preset, and the probability that independent parallel investigations would help. It does not execute a route, activate tools, load skills, create subagents, grant authorization, or enforce policy.
+An optional `jev_task_router` tool for the **parent Pi agent**. It asks TypeSafe Jev through OpenRouter (default) or directly through TypeSafe for one advisory primary route, one active tool, one discovered specialist skill, and the probability that independent parallel investigations would help. It does not execute a route, activate tools, load skills, create subagents, grant authorization, or enforce policy.
 
 The shared [`pi-jev` skill](../../skills/pi-jev/README.md) describes when to select this tool or the separate [`jev_rerank`](../pi-jev-tools/README.md) public-passage reranker.
 
 **Status:** experimental source implementation with offline tests and no live routing evaluation yet. Keep it only if representative comparisons show a net benefit over ordinary parent-agent reasoning.
 
+## In action
+
+A scripted CLI walkthrough shows the parent seeking advice before choosing a direct or delegated investigation. The user reviews the full task, constraints, and tool/skill metadata, then separately approves one OpenRouter request. Jev returns an advisory route; the parent writes a plan without launching an investigation.
+
+![Task and tool/skill catalog review, separate OpenRouter approval, an advisory Jev routing result, and a parent-authored plan with no automatic execution](assets/pi-jev-router-demo.gif)
+
+This is a terminal reconstruction, not a live session recording. It predates the portable `delegate` route and removal of preset advice; the contract below describes current output. The public-sample scenario, tool catalog, response, probabilities, and timing are synthetic. No external request was made. The demo does not establish current provider compatibility or routing quality; advice never grants authorization.
+
 ## What it returns
 
-One approved Jev request evaluates five independent questions over the same state:
+One approved Jev request evaluates four independent questions over the same state:
 
-1. primary route: `direct`, `local_subagent`, `web_subagent`, `browser_interaction`, `specialist_skill`, `clarify_with_user`, or `no_match`;
-2. speculative pi-subagent preset: `lookup-standard`, `analysis-standard`, `review-standard`, or not applicable;
-3. one active Pi tool, or none;
-4. one discovered Pi skill, or none; and
-5. a Noul probability that two or more independent subagent investigations would materially help.
+1. primary route: `direct`, `delegate`, `browser_interaction`, `specialist_skill`, `clarify_with_user`, or `no_match`;
+2. one active Pi tool, or none;
+3. one discovered Pi skill, or none; and
+4. a Noul probability that two or more independent delegated investigations would materially help.
+
+No particular subagent extension is required. Delegation advice must be supported by an active tool's description, not its name or a skill alone. A tool may support investigation, implementation, or tests; the router does not impose an investigation-only contract on all tools. It never generates agent names, presets, or tool arguments. The parent must inspect the chosen tool's current contract before acting. Descriptions are advisory metadata, not machine-verified capabilities.
+
+With no active tools, `delegate` and `browser_interaction` are omitted from route choices. With no discovered skills, `specialist_skill` is omitted. A response selecting a tool-dependent route without a tool, or a specialist route without a skill, is rejected. With tools present, capability suitability still depends on Jev's judgment and the parent's verification; offline tests do not prove recommendation quality.
 
 Choice answers retain their probability distributions and confidence. The questions are independent, so the parent must ignore inapplicable speculative answers and reconcile disagreement. No automation threshold is supplied.
 
@@ -24,15 +35,17 @@ Choice answers retain their probability distributions and confidence. The questi
 2. It supplies an English task description and optional constraints while omitting unrelated history.
 3. The extension snapshots active tool and discovered skill names/descriptions. It does not read session history, files, skill bodies, or tool results.
 4. It validates and displays the complete immutable payload for review. In the interactive TUI, submit the editor unchanged to continue; cancellation or edits stop without sending. In RPC mode, the host receives the exact payload in an abortable confirmation dialog.
-5. A separate confirmation names OpenRouter, TypeSafe, the requested latest-model alias, request count, per-token price ceilings, absence of a hard total-cost cap, deadline, and data risks.
-6. Only after approval does the extension resolve Pi's existing OpenRouter authentication and send one Decisions API request.
+5. A separate confirmation names the selected provider, endpoint, model alias, request count, applicable price limitations, absence of a hard total-cost cap, deadline, and data risks.
+6. Only after approval does the extension resolve the selected credential and send one request, without retry or provider switching.
 7. It validates typed judgments and maps opaque candidate IDs back to runtime names.
-8. The parent applies existing authorization, safety, privacy, tool, skill, browser, and pi-subagent rules before acting.
+8. The parent applies existing authorization, safety, privacy, tool, skill, browser, and delegation rules before acting.
 
 ## Requirements and use
 
 - Node.js 22.22+ and Pi with `ctx.modelRegistry.getProviderAuth()` support.
-- A configured Pi `openrouter` provider. The extension reuses Pi's resolved provider authentication; it does not read `models.json`, `auth.json`, environment variables, `.env`, or credential files itself.
+- OpenRouter (default): configure Pi's `openrouter` authentication through `/login` or `OPENROUTER_API_KEY`. The extension reuses Pi's resolved authentication.
+- TypeSafe direct (optional): securely supply `TYPESAFE_API_KEY` and start Pi with `PI_JEV_PROVIDER=typesafe`. OpenRouter credentials are not accessed. Get a key from the [TypeSafe dashboard](https://console.typesafe.ai/keys).
+- `PI_JEV_PROVIDER` applies to both Jev extensions, not the chat model. Unset means `openrouter`; only `openrouter` and `typesafe` are accepted. Restart after changing the launch environment. No `.env` or credential file is read by this extension, and the selected key is resolved only after approval.
 - An interactive Pi UI, or an RPC host implementing confirmation dialogs. Print/JSON modes fail closed with `confirmation_unavailable`.
 - Copy the shared `pi-jev` skill separately for automatic workflow guidance.
 
@@ -42,11 +55,11 @@ Load only this source extension:
 pi -e ./extensions/pi-jev-router/index.ts
 ```
 
-No Python interpreter, TypeSafe SDK, Jev-specific flag, or separate TypeSafe key is needed. Loading registers the `jev_task_router` tool and `/jev-router-status` command, installs nothing, makes no startup request, and does not change active tools.
+No Python interpreter, TypeSafe SDK, or Jev-specific CLI flag is needed. A separate TypeSafe key is needed only for direct access. Loading registers the `jev_task_router` tool and `/jev-router-status` command, installs nothing, makes no startup request, and does not change active tools.
 
 ## Session status
 
-Run `/jev-router-status` to see whether the tool is currently active, calls received by its runner, approved request attempts, whether a call is pending, and the last completed result (`ok` or a fixed failure code). It also reports whether a validated provider response has been observed in this session runtime, not whether the provider is currently reachable.
+Run `/jev-router-status` to see the configured connection, whether the tool is currently active, calls received by its runner, approved request attempts, whether a call is pending, and the last completed result (`ok` or a fixed failure code). It also reports whether a validated provider response has been observed in this session runtime, not whether the provider is currently reachable.
 
 This command never resolves authentication or sends a request. Request attempts are counted just before transport is invoked after approval and authentication; they do not prove delivery or billing. A decline or missing key adds a call but no request attempt. A rejected concurrent call counts as `busy`; the last result follows completion order while the pending call remains visible.
 
@@ -64,15 +77,16 @@ Only counters, a fixed result code, and flags are kept in memory. No payload, re
 - `task`: English routing description, 1–8,000 Unicode characters, representing only the current request.
 - `constraints`: optional English text, 1–4,000 characters, containing only established material constraints.
 - The extension adds up to 32 active tools and 32 discovered skills with names/descriptions. Larger catalogs and semantic payloads over 65,536 UTF-8 bytes are rejected, not truncated.
-- The request uses OpenRouter's `~typesafe/jev-latest` alias, which redirects to the latest Jev-family model. It disables provider fallbacks, restricts routing to TypeSafe, and sets price caps of $0.042/M input tokens and $0/M output tokens.
+- The default connection uses OpenRouter's `~typesafe/jev-latest` alias, which redirects to the latest Jev-family model. It disables provider fallbacks, restricts routing to TypeSafe, and sets price caps of $0.042/M input tokens and $0/M output tokens.
 - One approval still permits only one paid request, but OpenRouter does not provide a hard total-cost cap for a moving model alias. The confirmation therefore discloses this explicitly. If a future Jev version exceeds either per-token price ceiling, the request fails instead of using it. Taxes, currency conversion, and account-level billing behavior are outside this extension.
-- One approval permits one request to `https://openrouter.ai/api/alpha/decisions`, with no retry and a 30-second HTTP deadline.
+- Direct TypeSafe requests use `jev-latest` at `https://api.typesafe.ai/v1/systemone`, with only model, state, and questions in the body. The direct API documents no price-limit field: **no enforced per-token ceiling or total-cost cap** applies. Check [TypeSafe model pricing](https://docs.typesafe.ai/models) before approval. OpenRouter price controls do not carry over.
+- One approval permits one request to the selected fixed endpoint, with no retry, no automatic provider switching, and a 30-second HTTP deadline. Selection is snapshotted before review and cannot change mid-invocation.
 
-Success returns `status: "ok"`, the route and full probabilities, mapped tool/skill candidates, optional subagent preset, parallel-investigation probability, token usage, and an advisory limitation note. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals.
+Success returns `status: "ok"`, the selected `provider`, requested and returned model IDs, the route and full probabilities, mapped tool/skill candidates, parallel-investigation probability, token usage, and an advisory limitation note. It also returns non-persistent call diagnostics: provider-call `elapsedMs`, serialized `inputBytes`, and `questionCount`. These fields are observations for comparison, not proof of quality or billing totals.
 
-Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
+Failure or decline, including preflight validation failure, returns `status: "not_routed"` with a fixed code such as `invalid_provider` (unknown or empty connection selection), `invalid_request` (HTTP 400/422), `invalid_input`, `invalid_candidate_catalog`, `candidate_catalog_too_large`, `input_too_large`, `declined`, `preview_changed`, `confirmation_unavailable`, `missing_key`, `authentication_failed` (HTTP 401 or authentication lookup failure), `payment_required` (HTTP 402), `request_forbidden` (HTTP 403; access or policy refusal, not necessarily invalid credentials), `busy`, `rate_limited`, `timeout`, `cancelled`, `output_too_large`, `provider_error`, or `invalid_response`. Continue normally; do not retry automatically.
 
-When supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
+For OpenRouter, when supplied as a finite, non-negative number, optional `usage.cost` preserves the provider-reported call cost in USD, including zero. Direct TypeSafe's documented contract has no cost field; direct responses return token counts but omit cost rather than assigning meaning to an undocumented field. Missing or invalid cost values are omitted without rejecting an otherwise valid result. This is not a final bill, a preflight spending cap, or a complete accounting of failed calls; taxes, currency conversion, and account-level billing are not represented. No additional request or persistent log is created.
 
 ## Boundaries and limitations
 
@@ -82,8 +96,8 @@ When supplied as a finite, non-negative number, optional `usage.cost` preserves 
 - **No authority or execution.** Jev advice never authorizes restricted action. Availability can change after the snapshot; the parent must still follow each selected resource's contract.
 - **Independent questions can disagree.** Consume only fields relevant to the chosen, policy-permitted route.
 - **Candidate coverage matters.** Jev can select only included active tools and discovered skills.
-- Authentication is resolved from Pi only after approval and sent only in the OpenRouter `Authorization` header. It is never accepted in tool input or returned.
-- The endpoint is fixed and HTTP redirects are rejected. The extension makes no model-list request, shell call, child process, cache, or separate raw request/response log. Pi may retain ordinary tool arguments and results.
+- Only the selected credential is resolved after approval: Pi authentication for OpenRouter, or `TYPESAFE_API_KEY` for direct TypeSafe. It is sent only in that endpoint's `Authorization` header, never accepted in tool input or returned. Missing credentials never cause a switch to another provider.
+- Each connection's endpoint is fixed and HTTP redirects are rejected. The extension makes no model-list request, shell call, child process, cache, or separate raw request/response log. Pi may retain ordinary tool arguments and results.
 - Invisible Unicode format controls are visibly escaped in the review JSON without changing the text sent after approval. HTTP output is limited to 32KiB. Provider bodies and exception text are sanitized to fixed codes.
 - Only one invocation can be pending per extension instance. Parent cancellation or session shutdown dismisses an active payload review, stops waiting for Pi authentication, releases the invocation lock, and aborts an active HTTP request. A late authentication result is ignored. Cancellation cannot retract accepted data or charges.
 - Routing quality and calibration remain task-specific. The latest alias can move to a new Jev version; record the returned Jev-family model ID and reevaluate behavior after changes.
@@ -106,14 +120,16 @@ npm run check:pi
 
 This checks each extension separately and all three source-copy installation combinations with exactly one shared skill. It uses no subagent checkout or active Pi configuration. The standalone `tests/pi-check.mjs` also accepts explicit Pi and TypeScript package directories.
 
-Tests use mocked HTTP responses and synthetic keys. They cover request construction, candidate mapping, size limits, preflight fallback, future Jev-family model names, current-context authentication and cancellation, non-persistent call diagnostics, malformed replies, immutable review and approval, Pi-auth resolution failures, unchanged fallback, concurrency, single-call/no-retry behavior, HTTP status mapping, deadline, bounded output, sanitized errors, and noninteractive refusal.
+Tests use mocked HTTP responses and synthetic keys. The root suite also checks both provider wire contracts and isolated Pi credential selection; no live compatibility is established. They cover request construction, candidate mapping, size limits, preflight fallback, future Jev-family model names, current-context authentication and cancellation, non-persistent call diagnostics, malformed replies, immutable review and approval, Pi-auth resolution failures, unchanged fallback, concurrency, single-call/no-retry behavior, HTTP status mapping, deadline, bounded output, sanitized errors, and noninteractive refusal.
 
 ## Evaluation before automation
 
-Start in advisory or shadow use and compare with the ordinary workflow on representative tasks. Measure route agreement with reviewed outcomes, important-route misses, unnecessary tool/skill/subagent calls, success, latency, and actual OpenRouter cost. Do not add silent calls, input hooks, private-data routing, or automatic execution merely because offline checks pass.
+Start in advisory or shadow use and compare with the ordinary workflow on representative tasks. Measure route agreement with reviewed outcomes, important-route misses, unnecessary tool/skill/subagent calls, success, latency, and actual selected-provider cost. Do not add silent calls, input hooks, private-data routing, or automatic execution merely because offline checks pass.
 
 ## References
 
+- [TypeSafe HTTP API](https://docs.typesafe.ai/api)
+- [TypeSafe API quick start](https://docs.typesafe.ai/introduction/quickstart)
 - [OpenRouter Decisions API](https://openrouter.ai/docs/api/api-reference/decisions/create-decisions)
 - [OpenRouter provider routing](https://openrouter.ai/docs/features/provider-routing)
 - [TypeSafe Choice](https://docs.typesafe.ai/primitives/choice)

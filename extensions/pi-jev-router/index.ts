@@ -15,8 +15,13 @@ function runtimeCatalog(pi: ExtensionAPI) {
 }
 
 export default function (pi: ExtensionAPI) {
+  const getProvider = () => process.env.PI_JEV_PROVIDER ?? 'openrouter';
   const newRunner = () => createRunner({
-    resolveApiKey: async (ctx: ExtensionContext) => (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
+    getProvider,
+    // Called only after approval; never read the unselected provider's credential.
+    resolveApiKey: async (ctx: ExtensionContext, provider: string) => provider === 'typesafe'
+      ? process.env.TYPESAFE_API_KEY
+      : (await ctx.modelRegistry.getProviderAuth('openrouter'))?.auth.apiKey,
     review: reviewPayload,
   });
   let runner = newRunner();
@@ -27,7 +32,9 @@ export default function (pi: ExtensionAPI) {
     handler: async (_args, ctx) => {
       if (!ctx.hasUI) return;
       const status = runner.getStatus();
+      const provider = getProvider();
       ctx.ui.notify([
+        `Connection: ${['openrouter', 'typesafe'].includes(provider) ? provider : 'invalid configuration'}`,
         `Jev router: loaded / tool ${pi.getActiveTools().includes(TOOL_NAME) ? 'active' : 'inactive'}`,
         `Calls since session start/reload: ${status.calls}`,
         `Approved request attempts: ${status.requestAttempts} (delivery and billing unknown)`,
@@ -40,7 +47,7 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: TOOL_NAME,
     label: 'Jev Route Task',
-    description: 'TypeSafe Jev advises on task, active-tool, specialist-skill, pi-subagent-preset, and parallel-investigation routing. Use once before choosing among 2+ unresolved, feasible research/comparison/review workflows (e.g. parent-led vs delegated); available tools alone do not qualify. Also use for explicit routing evaluation. Otherwise skip trivial tasks, user-specified workflows, and settled routes. External paid request: review the full payload and confirm before sending. Preserve operative details, names, numbers, negation, and scope. Never include secrets, credentials, session/local/private data, authenticated content, or unauthorized data. Jev neither executes nor authorizes actions. No retries; on not_routed continue normally.',
+    description: 'TypeSafe Jev advises on task, active-tool, specialist-skill, and parallel-investigation routing. Delegation advice follows listed tool descriptions; no tool-specific presets or arguments are generated. Use once before choosing among 2+ unresolved, feasible research/comparison/review workflows (e.g. parent-led vs delegated); available tools alone do not qualify. Also use for explicit routing evaluation. Otherwise skip trivial tasks, user-specified workflows, and settled routes. External paid request: review the full payload and confirm before sending. Preserve operative details, names, numbers, negation, and scope. Never include secrets, credentials, session/local/private data, authenticated content, or unauthorized data. Jev neither executes nor authorizes actions. No retries; on not_routed continue normally.',
     parameters: Type.Object({
       task: Type.String({
         minLength: 1,

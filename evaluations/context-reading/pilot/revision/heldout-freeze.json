@@ -1,0 +1,10 @@
+{
+  "frozenAt": "2026-09-28T08:57:47.888450+00:00",
+  "baselineCoreSha256": "746301657da92b125129e6543aac6b61f4d5d70c905bc30dcfc31c2c80ba4eff",
+  "sha256": {
+    "heldout-tasks.json": "d4a1d53883e38dbdcba2596700c2fc1a0cac2e12625b7a26dddc85f48165de88",
+    "heldout-gold.json": "f993a938be5a403597944b5822f0caccbcf44b4ec6e36d26951ce889922b0316",
+    "heldout-manifest.json": "67507cf120d6193e0cc05dbfec69eb91760830b68eda97da394ebac4e251a274"
+  },
+  "plannedChange": "Scan through existing bounded scope rather than stop at twelve candidates; keep a bounded best-twelve lexical pool, reduce function-word noise, and choose informative anchors. No translation/model calls or secret-filter relaxation. Do not tune parameters against heldout results."
+}
