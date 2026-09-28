@@ -1,6 +1,6 @@
 # Contributing
 
-Follow [PRINCIPLE.md](PRINCIPLE.md): keep procedures thin and boundaries firm. Explain the observed problem and expected benefit. Repository separation is not evidence for routing/ranking quality, and similar implementations alone do not justify a shared runtime library.
+Follow the upstream harness principles linked from [PRINCIPLE.md](PRINCIPLE.md), which is a local pointer rather than a copy. Keep procedures thin and boundaries firm even when the upstream document is unavailable. Explain the observed problem and expected benefit. Repository separation is not evidence for routing/ranking quality, and similar implementations alone do not justify a shared runtime library.
 
 ## Pull requests
 

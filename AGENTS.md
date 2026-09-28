@@ -1,6 +1,6 @@
 # Agent Guide
 
-Read [PRINCIPLE.md](PRINCIPLE.md) and [CONTRIBUTING.md](CONTRIBUTING.md) before making changes. Keep procedures thin and safety boundaries firm; use those documents for development and PR conventions.
+Before making changes, consult the upstream harness principles linked from [PRINCIPLE.md](PRINCIPLE.md) and read [CONTRIBUTING.md](CONTRIBUTING.md). The local PRINCIPLE.md is a pointer, not a second copy. If the upstream document is unavailable, keep procedures thin and follow the local safety boundaries below; do not infer that the missing document relaxes them.
 
 ## Scope
 

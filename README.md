@@ -138,7 +138,7 @@ First distinguish no tool selection from a selected call returning `not_routed` 
 - [Shared skill guide](skills/pi-jev/README.md) and [workflow](skills/pi-jev/SKILL.md)
 - [Migration](MIGRATION.md)
 - [Contributing](CONTRIBUTING.md)
-- [Design principles](PRINCIPLE.md)
+- [Harness principles (local pointer to the upstream source of truth)](PRINCIPLE.md)
 
 ## Offline verification
 
