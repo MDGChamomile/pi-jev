@@ -68,15 +68,16 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
         st = await lstat(full);
         if (st.isSymbolicLink()) { coverage.skipped++; return; }
       }
-    } catch { coverage.skipped++; return; }
+    } catch { coverage.skipped++; limited(); return; }
     const real = await realpath(full).catch(() => undefined);
-    if (!real || !inside(canonicalRoot, real)) { coverage.skipped++; return; }
+    if (!real) { coverage.skipped++; limited(); return; }
+    if (!inside(canonicalRoot, real)) { coverage.skipped++; limited(); return; }
     const objectKey = st.isDirectory() ? `dir:${real}` : `file:${st.dev}:${st.ino}`;
     if (seen.has(objectKey)) { coverage.skipped++; return; }
     seen.add(objectKey);
     if (st.isDirectory()) {
       let dir;
-      try { dir = await opendir(full); } catch { coverage.skipped++; return; }
+      try { dir = await opendir(full); } catch { coverage.skipped++; limited(); return; }
       try {
         for await (const entry of dir) {
           if (stopScan) break;
@@ -84,6 +85,9 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
           if (visited >= LIMITS.entries || Date.now() - begin > LIMITS.timeMs) { limited(); break; }
           await walk(`${rel}/${entry.name}`);
         }
+      } catch (error) {
+        if (error?.code === 'cancelled') throw error;
+        coverage.skipped++; limited();
       } finally { await dir.close().catch(() => {}); }
       return;
     }
@@ -96,12 +100,12 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
     try {
       const parent = path.dirname(full);
       const beforeParent = await realpath(parent);
-      if (beforeParent !== parent || !inside(canonicalRoot, beforeParent)) { coverage.skipped++; return; }
+      if (beforeParent !== parent || !inside(canonicalRoot, beforeParent)) { coverage.skipped++; limited(); return; }
       handle = await open(full, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW || 0) | (fsConstants.O_NONBLOCK || 0));
       const opened = await handle.stat();
       if (!opened.isFile() || opened.dev !== st.dev || opened.ino !== st.ino || opened.size > fileBudget) { coverage.skipped++; limited(); return; }
       const afterParent = await realpath(parent);
-      if (afterParent !== beforeParent || !inside(canonicalRoot, afterParent)) { coverage.skipped++; return; }
+      if (afterParent !== beforeParent || !inside(canonicalRoot, afterParent)) { coverage.skipped++; limited(); return; }
       const chunks = []; let total = 0;
       const chunk = Buffer.allocUnsafe(Math.min(16 * 1024, fileBudget + 1));
       while (total <= fileBudget) {
@@ -116,7 +120,7 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
       if (afterRead.dev !== opened.dev || afterRead.ino !== opened.ino || afterRead.size !== opened.size || afterRead.mtimeMs !== opened.mtimeMs) { coverage.skipped++; limited(); return; }
       if (total > fileBudget) { coverage.skipped++; limited(); return; }
       buffer = Buffer.concat(chunks, total);
-    } catch (error) { if (error?.code === 'cancelled') throw error; coverage.skipped++; return; }
+    } catch (error) { if (error?.code === 'cancelled') throw error; coverage.skipped++; limited(); return; }
     finally { await handle?.close().catch(() => {}); }
     if (buffer.includes(0)) { coverage.skipped++; limited(); return; }
     let text;
@@ -126,6 +130,9 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
     coverage.filesRead++;
     if (!termsFound.length) return;
     const lines = text.split(/\r?\n/u);
+    const lineBytePrefix = new Array(lines.length + 1);
+    lineBytePrefix[0] = 0;
+    for (let i = 0; i < lines.length; i++) lineBytePrefix[i + 1] = lineBytePrefix[i] + utf8Bytes(lines[i]);
     const matches = [];
     for (let i = 0; i < lines.length; i++) {
       const lower = lines[i].toLocaleLowerCase();
@@ -134,25 +141,37 @@ export async function findCandidates({ root, paths, allowedPaths, goal, signal }
     const filename = path.basename(rel).toLocaleLowerCase();
     if (!matches.length && termsFound.some(term => filename.includes(term))) matches.push(0);
     if (!matches.length) return;
-    let start = -1, end = -1;
     const windows = [];
     for (const line of matches) {
       const a = Math.max(0, line - LIMITS.windowLines), b = Math.min(lines.length - 1, line + LIMITS.windowLines);
-      if (windows.length && a <= windows.at(-1).end + 1) windows.at(-1).end = b;
-      else windows.push({ start: a, end: b });
+      if (windows.length && a <= windows.at(-1).end + 1) {
+        windows.at(-1).end = b;
+        windows.at(-1).anchors.push(line);
+      } else windows.push({ start: a, end: b, anchors: [line] });
     }
     for (const win of windows) {
       if (stopScan) break;
+      const anchor = win.anchors[0];
       let start = win.start, end = win.end;
-      while (start <= end && candidates.length < LIMITS.candidates) {
-        let excerpt = lines.slice(start, end + 1).join('\n');
-        while (utf8Bytes(excerpt) > LIMITS.excerptBytes && end > start) { end--; excerpt = lines.slice(start, end + 1).join('\n'); limited(); }
-        if (utf8Bytes(excerpt) > LIMITS.excerptBytes) { limited(); break; }
-        const id = `c${candidates.length}_${Buffer.from(rel).toString('hex').slice(0, 32)}_${start + 1}`;
-        candidates.push({ id, path: rel, startLine: start + 1, endLine: end + 1, text: excerpt });
-        if (candidates.length === LIMITS.candidates) { stopScan = true; limited(); }
-        break;
+      let excerptBytes = lineBytePrefix[end + 1] - lineBytePrefix[start] + end - start;
+      while (excerptBytes > LIMITS.excerptBytes) {
+        const trimStart = start < anchor, trimEnd = end > anchor;
+        if (!trimStart && !trimEnd) { limited(); break; }
+        if (trimStart && (!trimEnd || anchor - start >= end - anchor)) {
+          excerptBytes -= lineBytePrefix[start + 1] - lineBytePrefix[start] + 1;
+          start++;
+        } else {
+          excerptBytes -= lineBytePrefix[end + 1] - lineBytePrefix[end] + 1;
+          end--;
+        }
+        limited();
       }
+      if (excerptBytes > LIMITS.excerptBytes) continue;
+      const excerpt = lines.slice(start, end + 1).join('\n');
+      if (win.anchors.some(line => line < start || line > end)) limited();
+      const id = `c${candidates.length}_${Buffer.from(rel).toString('hex').slice(0, 32)}_${start + 1}`;
+      candidates.push({ id, path: rel, startLine: start + 1, endLine: end + 1, text: excerpt });
+      if (candidates.length === LIMITS.candidates) { stopScan = true; limited(); }
     }
   }
   for (const rel of requested) {

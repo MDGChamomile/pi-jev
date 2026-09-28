@@ -72,6 +72,69 @@ test('skips protected/generated files and known secret-bearing source without re
   assert.ok(result.coverage.skipped >= 9);
 });
 
+test('keeps a matching line when shrinking an oversized window around its anchor', async t => {
+  const root = await project(t);
+  await put(root, 'src/leading.ts', `${'x'.repeat(9 * 1024)}\n\n${'y'.repeat(9 * 1024)}\nneedle found`);
+  const result = await findCandidates({ root, paths:['src/leading.ts'], allowedPaths:['src'], goal:'needle' });
+  assert.equal(result.status, 'found');
+  assert.match(result.candidates[0].text, /needle found/);
+  assert.equal(result.candidates[0].startLine, 4);
+  assert.ok(Buffer.byteLength(result.candidates[0].text) <= LIMITS.excerptBytes);
+});
+
+test('clips a dense merged match window with bounded output and incomplete coverage', async t => {
+  const root = await project(t);
+  await put(root, 'src/dense.ts', `${'needle\n'.repeat(13_500)}`);
+  const result = await findCandidates({ root, paths:['src/dense.ts'], allowedPaths:['src'], goal:'needle' });
+  assert.equal(result.status, 'found');
+  assert.equal(result.coverage.limited, true);
+  assert.match(result.candidates[0].text, /needle/);
+  assert.ok(Buffer.byteLength(result.candidates[0].text) <= LIMITS.excerptBytes);
+});
+
+test('omits oversized matching lines and marks merged-window match loss incomplete', async t => {
+  const root = await project(t);
+  await put(root, 'src/huge-line.ts', `needle ${'x'.repeat(LIMITS.excerptBytes + 1)}`);
+  const oversized = await findCandidates({ root, paths:['src/huge-line.ts'], allowedPaths:['src'], goal:'needle' });
+  assert.equal(oversized.candidates.length, 0);
+  assert.equal(oversized.status, 'limit_reached');
+  assert.equal(oversized.coverage.limited, true);
+
+  await put(root, 'src/merged.ts', `firstneedle\n${'z'.repeat(9 * 1024)}\nsecondneedle`);
+  const merged = await findCandidates({ root, paths:['src/merged.ts'], allowedPaths:['src'], goal:'needle' });
+  assert.equal(merged.status, 'found');
+  assert.ok(merged.coverage.limited);
+  assert.match(merged.candidates[0].text, /firstneedle/);
+  assert.doesNotMatch(merged.candidates[0].text, /secondneedle/);
+});
+
+test('filename-only matches remain available', async t => {
+  const root = await project(t);
+  await put(root, 'src/needle.ts', 'ordinary text');
+  const result = await findCandidates({ root, paths:['src/needle.ts'], allowedPaths:['src'], goal:'needle' });
+  assert.equal(result.status, 'found');
+  assert.equal(result.candidates[0].text, 'ordinary text');
+});
+
+test('missing and inaccessible in-scope paths report incomplete coverage', async t => {
+  const root = await project(t);
+  await mkdir(path.join(root, 'src'), { recursive:true });
+  for (const requested of ['src/missing.ts', 'src/not-a-directory/child.ts']) {
+    const result = await findCandidates({ root, paths:[requested], allowedPaths:['src'], goal:'needle' });
+    assert.equal(result.status, 'limit_reached');
+    assert.equal(result.coverage.limited, true);
+  }
+});
+
+test('intentional hidden and unsupported-file exclusions do not mark coverage incomplete', async t => {
+  const root = await project(t);
+  await put(root, 'src/.hidden.ts', 'needle');
+  await put(root, 'src/archive.lock', 'needle');
+  const result = await findCandidates({ root, paths:['src'], allowedPaths:['src'], goal:'needle' });
+  assert.equal(result.status, 'not_found');
+  assert.equal(result.coverage.limited, false);
+});
+
 test('excludes hidden and lock files, rejects invalid UTF-8, and deduplicates overlapping paths', async t => {
   const root = await project(t);
   await put(root, 'src/.hidden/a.ts', '소각 완료');

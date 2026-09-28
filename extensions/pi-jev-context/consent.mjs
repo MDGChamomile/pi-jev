@@ -145,7 +145,19 @@ export function createConsentStore({ root, agentDir, now = Date.now, randomId = 
     const latest = await status();
     return Boolean(latest && latest.id === id);
   }
-  return Object.freeze({ projectId, directory, stateFile, status, set, revoke, reserve, isCurrent });
+  async function dispatch({ id }, start) {
+    if (typeof start !== 'function') fail('invalid_dispatch');
+    const { pending } = await locked(async () => {
+      const latest = await read();
+      if (!latest || latest.revoked || latest.id !== id || latest.mode !== 'external' || latest.deadline <= now()) fail('grant_changed');
+      // Invoke fetch while serialized against revoke/renew; return its promise without awaiting the response under lock.
+      const pending = Promise.resolve(start());
+      pending.catch(() => {});
+      return { pending };
+    });
+    return pending;
+  }
+  return Object.freeze({ projectId, directory, stateFile, status, set, revoke, reserve, isCurrent, dispatch });
 }
 
 export { DEFAULT_TTL_MS, MAX_INPUT_BYTES, MAX_REQUESTS };

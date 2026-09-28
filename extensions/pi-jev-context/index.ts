@@ -169,8 +169,15 @@ export default function (pi: ExtensionAPI) {
         const apiKey = await waitAbortable(authPromise, combined);
         if (combined.aborted) return stopOrFallback(scan, codeOf(combined.reason));
         if (currentProvider() !== invocationProvider) return renderOutput(scan, [], 'original', undefined, 'Configured provider changed during the operation; no external request was sent. Re-enable the grant after reviewing the provider.');
-        if (!apiKey || !await store.isCurrent(reserved.id)) return renderOutput(scan, [], 'original', undefined, 'Local-only fallback (authentication_failed or grant changed).');
-        const ranked = await waitAbortable(rankCandidates({ goal, candidates: scan.candidates, provider: reserved.provider, apiKey, signal: combined }), combined);
+        if (!apiKey) return renderOutput(scan, [], 'original', undefined, 'Local-only fallback (authentication_failed).');
+        const guardedFetch: typeof fetch = (input, init) => store.dispatch({ id: reserved.id }, () => {
+          if (combined.aborted) throw combined.reason ?? Object.assign(new Error('cancelled'), { code: 'cancelled' });
+          return fetch(input, init);
+        }).catch(error => {
+          if (error && typeof error === 'object' && 'code' in error && error.code === 'grant_changed') controller.abort(error);
+          throw error;
+        });
+        const ranked = await waitAbortable(rankCandidates({ goal, candidates: scan.candidates, provider: reserved.provider, apiKey, signal: combined, fetchImpl: guardedFetch }), combined);
         if (combined.aborted) return stopOrFallback(scan, codeOf(combined.reason));
         return renderOutput(scan, ranked.rankedIds, 'ranked', ranked.usage);
       } catch (error) {
