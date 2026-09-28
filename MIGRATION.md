@@ -8,7 +8,7 @@ Historical removed Python adapters remain in Git history, not in the current ins
 
 `extensions/pi-jev-context/` is independently loadable and is not added to the root package's default resources in this experiment. Existing router/reranker installations, per-call approvals, and credentials are unchanged. Do not delete them merely to try the reader.
 
-Use the isolated launch in the [reader guide](extensions/pi-jev-context/README.md). Authorize local source paths and any external transmission explicitly through its user command; a legacy tool approval or an API key is not a reader grant. No migration requires a live provider request. A later default-resource switch or removal of legacy tools requires its own reviewed decision, not an automatic installation side effect.
+Use the isolated launch in the [reader guide](extensions/pi-jev-context/README.md). Authorize local source paths and any external transmission explicitly through its user command; a legacy tool approval or an API key is not a reader grant. The reader now keeps permission only in the active session's memory. Earlier experimental project-wide seven-day grants are not read, migrated, or deleted; restarting/resuming Pi or reloading the extension does not restore approval. Run the user activation command again in the new session when needed. No migration requires a live provider request. A later default-resource switch or removal of legacy tools requires its own reviewed decision, not an automatic installation side effect.
 
 ## Existing source-copy or symlink installations
 

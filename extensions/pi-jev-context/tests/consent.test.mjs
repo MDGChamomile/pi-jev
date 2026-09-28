@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { lstat, mkdtemp, rm, rename, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createConsentStore, parsePaths } from '../consent.mjs';
@@ -8,127 +8,108 @@ import { createConsentStore, parsePaths } from '../consent.mjs';
 async function fixture(t) {
   const home = await mkdtemp(join(tmpdir(), 'jev-context-consent-'));
   t.after(() => rm(home, { recursive: true, force: true }));
-  const options = { root: join(home, 'project'), agentDir: join(home, 'agent') };
-  return { ...options, store: createConsentStore(options) };
-}
-async function waitFor(predicate, label, timeoutMs = 1000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await predicate()) return;
-    await new Promise(resolve => setTimeout(resolve, 5));
-  }
-  assert.fail(`Timed out waiting for ${label}`);
+  const root = join(home, 'project');
+  const sessionToken = {};
+  const store = createConsentStore({ sessionToken });
+  store.activate('session-a');
+  return { home, root, sessionToken, store };
 }
 
-test('bounded external grants persist, reserve budget cumulatively, and renew explicitly', async t => {
+test('session grant and cumulative quota are shared by store facades; explicit renewal alone resets quota', async t => {
   const f = await fixture(t);
-  const grant = await f.store.set({ paths: ['src'], provider: 'openrouter', maxRequests: 2, maxInputBytes: 100 });
-  const restarted = createConsentStore({ root: f.root, agentDir: f.agentDir });
-  assert.equal((await restarted.status()).id, grant.id);
-  await restarted.reserve({ id: grant.id, bytes: 40 });
-  const after = await f.store.status();
-  assert.equal(after.requestsUsed, 1);
-  assert.equal(after.bytesUsed, 40);
-  await assert.rejects(() => f.store.reserve({ id: grant.id, bytes: 61 }), { code: 'budget_exhausted' });
-  const renewed = await f.store.set({ paths: ['docs'], provider: 'typesafe', maxRequests: 1, maxInputBytes: 50 });
+  const grant = f.store.set({ root: f.root, paths: ['src'], provider: 'openrouter', maxRequests: 2, maxInputBytes: 100 });
+  const sameSession = createConsentStore({ sessionToken: f.sessionToken });
+  assert.equal(sameSession.status({ root: f.root }).id, grant.id);
+  sameSession.reserve({ root: f.root, id: grant.id, bytes: 40 });
+  assert.equal(f.store.status({ root: f.root }).requestsUsed, 1);
+  assert.equal(f.store.status({ root: f.root }).bytesUsed, 40);
+  assert.throws(() => f.store.reserve({ root: f.root, id: grant.id, bytes: 61 }), { code: 'budget_exhausted' });
+  const renewed = sameSession.set({ root: f.root, paths: ['docs'], provider: 'typesafe', maxRequests: 1, maxInputBytes: 50 });
   assert.notEqual(renewed.id, grant.id);
-  assert.equal((await restarted.status()).provider, 'typesafe');
-  await assert.rejects(() => restarted.reserve({ id: grant.id, bytes: 1 }), { code: 'grant_changed' });
+  assert.equal(f.store.status({ root: f.root }).provider, 'typesafe');
+  assert.equal(f.store.status({ root: f.root }).requestsUsed, 0);
 });
 
-test('revocation invalidates identity and does not retain credentials', async t => {
+test('separate runtime, session transition, revoke, and shutdown cannot reuse a grant', async t => {
   const f = await fixture(t);
-  const grant = await f.store.set({ paths: ['src'], provider: 'typesafe' });
-  assert.equal(JSON.stringify(await f.store.status()).includes('credential'), false);
-  assert.equal(await f.store.revoke(), true);
-  assert.equal(await f.store.status(), null);
-  await assert.rejects(() => f.store.reserve({ id: grant.id, bytes: 1 }), { code: 'grant_changed' });
+  const grant = f.store.set({ root: f.root, paths: ['src'], provider: 'typesafe' });
+  const newRuntime = createConsentStore({ sessionToken: {} });
+  newRuntime.activate('session-a');
+  assert.equal(newRuntime.status({ root: f.root }), null);
+
+  f.store.clear(); // before-switch/fork invalidation; the same session can explicitly grant again.
+  assert.equal(f.store.status({ root: f.root }), null);
+  const afterTransition = f.store.set({ root: f.root, paths: ['src'], provider: 'local', mode: 'local' });
+  assert.notEqual(afterTransition.id, grant.id);
+  assert.equal(f.store.revoke({ root: f.root }), true);
+  assert.equal(newRuntime.status({ root: f.root }), null);
+
+  const endingRuntime = createConsentStore({ sessionToken: {} });
+  endingRuntime.activate('session-b');
+  endingRuntime.set({ root: f.root, paths: ['src'], provider: 'openrouter' });
+  endingRuntime.invalidate();
+  assert.equal(endingRuntime.status({ root: f.root }), null);
+  assert.throws(() => endingRuntime.set({ root: f.root, paths: ['src'], provider: 'openrouter' }), { code: 'session_unavailable' });
 });
 
-test('project storage is keyed by canonical project identity', async t => {
+test('session grants are isolated by canonical project root and never touch legacy files', async t => {
   const f = await fixture(t);
-  await f.store.set({ paths: ['src'], provider: 'openrouter' });
-  const other = createConsentStore({ root: join(f.root, '..', 'other-project'), agentDir: f.agentDir });
-  assert.equal(await other.status(), null);
-  assert.notEqual(f.store.projectId, other.projectId);
+  const legacyDir = join(f.home, '.pi', 'agent', 'jev-context', 'old-project');
+  const legacyPath = join(legacyDir, 'grant.json');
+  await (await import('node:fs/promises')).mkdir(legacyDir, { recursive: true });
+  const legacyContent = JSON.stringify({ version: 1, id: 'OLD_PERSISTED_GRANT', deadline: Date.now() + 7 * 86400000 });
+  await writeFile(legacyPath, legacyContent);
+
+  f.store.set({ root: f.root, paths: ['src'], provider: 'openrouter' });
+  assert.equal(f.store.status({ root: join(f.root, '..', 'other-project') }), null);
+  const anotherRuntime = createConsentStore({ sessionToken: {} });
+  anotherRuntime.activate('new-session');
+  assert.equal(anotherRuntime.status({ root: f.root }), null);
+  assert.equal(await readFile(legacyPath, 'utf8'), legacyContent);
 });
 
-test('simultaneous reservation cannot exceed a single-request budget', async t => {
+test('synchronous reserve cannot exceed budget across same-session facades', async t => {
   const f = await fixture(t);
-  const grant = await f.store.set({ paths: ['src'], provider: 'openrouter', maxRequests: 1, maxInputBytes: 100 });
-  const results = await Promise.allSettled([
-    f.store.reserve({ id: grant.id, bytes: 30 }),
-    f.store.reserve({ id: grant.id, bytes: 30 }),
-  ]);
-  assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
-  assert.equal((await f.store.status()).requestsUsed, 1);
+  const grant = f.store.set({ root: f.root, paths: ['src'], provider: 'openrouter', maxRequests: 1, maxInputBytes: 100 });
+  const otherFacade = createConsentStore({ sessionToken: f.sessionToken });
+  const results = [
+    () => f.store.reserve({ root: f.root, id: grant.id, bytes: 30 }),
+    () => otherFacade.reserve({ root: f.root, id: grant.id, bytes: 30 }),
+  ].map(reserve => {
+    try { reserve(); return 'reserved'; } catch (error) { return error.code; }
+  });
+  assert.deepEqual(results, ['reserved', 'budget_exhausted']);
+  assert.equal(f.store.status({ root: f.root }).requestsUsed, 1);
 });
 
-test('dispatch serializes final grant validation and fetch start with cross-store revoke', async t => {
+test('dispatch rejects a revoked identity without invoking fetch and releases synchronously after start', async t => {
   const f = await fixture(t);
-  const first = f.store;
-  const second = createConsentStore({ root: f.root, agentDir: f.agentDir });
-  const revoked = await first.set({ paths: ['src'], provider: 'openrouter' });
-  await second.revoke();
+  const grant = f.store.set({ root: f.root, paths: ['src'], provider: 'openrouter' });
+  const peer = createConsentStore({ sessionToken: f.sessionToken });
+  peer.revoke({ root: f.root });
   let postCalls = 0;
-  await assert.rejects(() => first.dispatch({ id: revoked.id }, () => { postCalls++; return Promise.resolve(); }), { code: 'grant_changed' });
+  assert.throws(() => f.store.dispatch({ root: f.root, id: grant.id }, () => { postCalls++; return Promise.resolve(); }), { code: 'grant_changed' });
   assert.equal(postCalls, 0);
 
-  const current = await second.set({ paths: ['src'], provider: 'openrouter' });
+  const live = f.store.set({ root: f.root, paths: ['src'], provider: 'openrouter' });
   let resolveResponse;
-  let started = false;
   const responsePending = new Promise(resolve => { resolveResponse = resolve; });
-  const dispatchPending = first.dispatch({ id: current.id }, () => { started = true; return responsePending; });
-  await waitFor(() => started, 'dispatch fetch start');
-  // started is set inside the lock callback; wait for actual lock removal before racing revoke.
-  await waitFor(async () => {
-    try { await lstat(join(first.directory, '.lock')); return false; }
-    catch (error) { if (error?.code === 'ENOENT') return true; throw error; }
-  }, 'dispatch lock release');
-  // Revoke from another store completes while the response is still pending: dispatch released the lock.
-  await second.revoke();
-  assert.equal(await Promise.race([dispatchPending.then(() => 'settled'), new Promise(resolve => setTimeout(() => resolve('pending'), 20))]), 'pending');
+  const dispatched = f.store.dispatch({ root: f.root, id: live.id }, () => { postCalls++; return responsePending; });
+  assert.equal(postCalls, 1);
+  // In-memory check/start has no await gap; revoke succeeds while the mocked HTTP response is pending.
+  assert.equal(peer.revoke({ root: f.root }), true);
+  assert.equal(await Promise.race([dispatched.then(() => 'settled'), new Promise(resolve => setTimeout(() => resolve('pending'), 20))]), 'pending');
   resolveResponse('mock-response');
-  assert.equal(await dispatchPending, 'mock-response');
+  assert.equal(await dispatched, 'mock-response');
 });
 
-test('dispatch checks expiry at the POST boundary and busy lock prevents start', async t => {
+test('local grants never reserve or dispatch external requests', async t => {
   const f = await fixture(t);
-  let clock = 1_000_000;
-  const store = createConsentStore({ root: f.root, agentDir: f.agentDir, now: () => clock });
-  const grant = await store.set({ paths: ['src'], provider: 'openrouter', ttlMs: 60_000 });
-  clock = grant.deadline;
+  const grant = f.store.set({ root: f.root, paths: ['src'], provider: 'local', mode: 'local' });
+  assert.throws(() => f.store.reserve({ root: f.root, id: grant.id, bytes: 1 }), { code: 'budget_exhausted' });
   let postCalls = 0;
-  await assert.rejects(() => store.dispatch({ id: grant.id }, () => { postCalls++; return Promise.resolve(); }), { code: 'grant_changed' });
+  assert.throws(() => f.store.dispatch({ root: f.root, id: grant.id }, () => { postCalls++; }), { code: 'grant_changed' });
   assert.equal(postCalls, 0);
-
-  clock = grant.createdAt;
-  const live = await store.set({ paths: ['src'], provider: 'openrouter' });
-  const { mkdir, rm } = await import('node:fs/promises');
-  await mkdir(join(store.directory, '.lock'));
-  await assert.rejects(() => store.dispatch({ id: live.id }, () => { postCalls++; return Promise.resolve(); }), { code: 'lock_busy' });
-  assert.equal(postCalls, 0);
-  await rm(join(store.directory, '.lock'), { recursive: true });
-});
-
-test('state file symlinks fail closed and set validates lexical path scope', async t => {
-  const f = await fixture(t);
-  await f.store.set({ paths: ['src/file.ts'], provider: 'openrouter' });
-  const moved = `${f.store.stateFile}.saved`;
-  await rename(f.store.stateFile, moved);
-  await symlink(moved, f.store.stateFile);
-  assert.equal(await f.store.status(), null);
-  for (const paths of [[], ['.'], ['src/../secret'], ['/absolute'], ['src\\file'], ['src//file']]) {
-    await assert.rejects(() => f.store.set({ paths, provider: 'openrouter' }), { code: 'invalid_paths' });
-  }
-  await assert.rejects(() => f.store.set({ paths: ['src/file.ts'], provider: 'local', mode: 'external' }), { code: 'invalid_grant' });
-});
-
-test('oversized grant metadata fails closed before parsing', async t => {
-  const f = await fixture(t);
-  await f.store.set({ paths: ['src/file.ts'], provider: 'openrouter' });
-  await writeFile(f.store.stateFile, 'x'.repeat(40 * 1024));
-  assert.equal(await f.store.status(), null);
 });
 
 test('whitespace-separated path parser rejects unsupported values', () => {

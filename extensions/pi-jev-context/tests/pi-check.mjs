@@ -6,7 +6,6 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { createConsentStore } from '../consent.mjs';
 
 const [piArg, tsArg] = process.argv.slice(2);
 if (!piArg || !tsArg) throw new Error('Provide existing pi-coding-agent and typescript package directories.');
@@ -15,6 +14,14 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const piRequire = createRequire(resolve(piRoot, 'package.json'));
 const ts = (await import(pathToFileURL(resolve(tsRoot, 'lib/typescript.js')).href)).default;
 const dependencyRoot = name => piRequire.resolve.paths(name).map(base => resolve(base, name)).find(base => existsSync(resolve(base, 'dist/index.d.ts')));
+async function waitFor(predicate, label, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await predicate()) return;
+    await new Promise(resolve => setTimeout(resolve, 5));
+  }
+  assert.fail(`Timed out waiting for ${label}`);
+}
 const aiRoot = dependencyRoot('@earendil-works/pi-ai');
 assert.ok(aiRoot);
 const nodeRoot = dirname(piRequire.resolve('@types/node/package.json'));
@@ -47,7 +54,10 @@ if (diagnostics.length) {
     await mkdir(project);
     await writeFile(resolve(project, 'private.ts'), 'const marker = "MUST_NOT_READ_WITHOUT_GRANT";\n');
     await writeFile(resolve(project, 'other.ts'), 'const marker = "second marker evidence";\n');
-    await writeFile(resolve(project, 'outside.ts'), 'const marker = "outside evidence";\n');
+    await writeFile(resolve(project, 'outside.ts'), 'const marker = "OUTSIDE_SYMLINK_SENTINEL";\n');
+    await mkdir(resolve(project, 'src'));
+    await writeFile(resolve(project, 'src', 'existing.ts'), 'const marker = "find marker in existing source";\n');
+    await symlink(resolve(project, 'outside.ts'), resolve(project, 'src', 'escape.ts'));
     await symlink(resolve(project, 'private.ts'), resolve(project, 'private-alias.ts'));
     const agentDir = resolve(temporary, 'agent');
     process.env.PI_CODING_AGENT_DIR = agentDir;
@@ -67,13 +77,17 @@ if (diagnostics.length) {
     const tool = extension.tools.get('find_context').definition;
     assert.deepEqual([...tool.parameters.required].sort(), ['goal', 'paths']);
     assert.equal(tool.parameters.additionalProperties, false);
+    let sessionId = 'session-a';
+    const context = {
+      cwd: project, hasUI: false,
+      sessionManager: { getSessionId: () => sessionId },
+      modelRegistry: { getProviderAuth: async () => { authCalls++; return authFactory(); } },
+    };
     let authCalls = 0, fetchCalls = 0, lastWireBody;
     let resolveAuth;
     let authFactory = async () => ({ auth: { apiKey: 'SYNTHETIC_TEST_KEY' } });
-    const context = {
-      cwd: project, hasUI: false,
-      modelRegistry: { getProviderAuth: async () => { authCalls++; return authFactory(); } },
-    };
+    context.modelRegistry.getProviderAuth = async () => { authCalls++; return authFactory(); };
+    await extension.handlers.get('session_start')[0]({ type: 'session_start', reason: 'startup' }, context);
     const result = await tool.execute('offline', { paths: ['private.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
     assert.equal(result.details.status, 'not_enabled');
     assert.equal(authCalls, 0);
@@ -94,7 +108,9 @@ if (diagnostics.length) {
     assert.match(consentMessage, /5-second request timeout/);
     assert.match(consentMessage, /\$0\.042 per million tokens/);
     assert.match(consentMessage, /No hard total-cost cap/);
-    assert.match(consentMessage, /not reset on reload/);
+    assert.match(consentMessage, /only for this Pi session/);
+    assert.match(consentMessage, /reloads.*discard this grant/);
+    assert.match(consentMessage, /\/tree navigation within this session preserves them/);
     const beforeOracleChecks = authCalls;
     const outsideExisting = await tool.execute('outside-existing', { paths: ['outside.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
     const outsideMissing = await tool.execute('outside-missing', { paths: ['missing.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
@@ -110,7 +126,7 @@ if (diagnostics.length) {
       lastWireBody = init.body;
       const request = JSON.parse(init.body);
       const answers = Object.fromEntries(request.state.candidates.map((_, index) => [`candidate_${index}`, {
-        type: 'score', score: 2, confidence: 0.9, probabilities: { 0: 0, 1: 0, 2: 1, 3: 0 },
+        type: 'score', score: index === 0 ? 1.99 : 2, confidence: 0.9, probabilities: { 0: 0, 1: 0, 2: 1, 3: 0 },
       }]));
       return new Response(JSON.stringify({ model: 'typesafe/jev-1.2', answers, usage: { input_tokens: 50, output_tokens: 4, cost: null } }));
     };
@@ -118,6 +134,7 @@ if (diagnostics.length) {
       const ranked = await tool.execute('mocked-provider', { paths: ['private.ts', 'other.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
       assert.equal(ranked.details.status, 'found');
       assert.equal(ranked.details.mode, 'ranked');
+      assert.equal(ranked.details.snippets[0].path, 'other.ts');
       assert.deepEqual(ranked.details.usage, { input_tokens: 50, output_tokens: 4 });
       assert.equal(ranked.details.actualCost, 'unknown');
       assert.doesNotMatch(ranked.content[0].text, /\"usage\"/);
@@ -129,7 +146,7 @@ if (diagnostics.length) {
       resolveAuth = undefined;
       const mutableInput = { paths: ['private.ts', 'other.ts'], goal: 'find marker' };
       const mutationPending = tool.execute('mutated-input', mutableInput, new AbortController().signal, undefined, context);
-      while (!resolveAuth) await new Promise(resolve => setTimeout(resolve, 5));
+      await waitFor(() => resolveAuth, 'mutation auth resolver');
       mutableInput.goal = 'MUTATED_GOAL_MUST_NOT_BE_SENT';
       mutableInput.paths.splice(0, mutableInput.paths.length, 'other.ts');
       resolveAuth({ auth: { apiKey: 'SYNTHETIC_TEST_KEY' } });
@@ -138,20 +155,36 @@ if (diagnostics.length) {
       assert.equal(wireRequest.state.goal, 'find marker');
       assert.deepEqual([...new Set(wireRequest.state.candidates.map(candidate => candidate.path))].sort(), ['other.ts', 'private.ts']);
       assert.doesNotMatch(lastWireBody, /MUTATED_GOAL_MUST_NOT_BE_SENT/);
-      const savedGrant = await createConsentStore({ root: project, agentDir }).status();
-      assert.equal(savedGrant.bytesUsed, Buffer.byteLength(lastWireBody, 'utf8'));
+      let quotaStatus = '';
+      await command('status', { ...commandContext, ui: { notify: message => { quotaStatus = message; } } });
+      const reportedBytes = Number(quotaStatus.match(/requests and (\d+)\/\d+ input bytes/u)?.[1]);
+      assert.equal(reportedBytes, Buffer.byteLength(lastWireBody, 'utf8'));
+      assert.equal(Number(quotaStatus.match(/(\d+)\/\d+ requests/u)?.[1]), 1);
 
       authFactory = async () => { throw Object.assign(new Error('PRIVATE_EXCEPTION_TEXT'), { code: 'SYNTHETIC_SECRET_CODE' }); };
       const failedAuth = await tool.execute('unknown-error', { paths: ['private.ts', 'other.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
       assert.match(failedAuth.details.notice, /internal_error/);
       assert.doesNotMatch(JSON.stringify(failedAuth), /SYNTHETIC_SECRET_CODE|PRIVATE_EXCEPTION_TEXT/);
 
+      // Missing siblings do not discard present evidence; an authorized lexical symlink escape is never followed.
+      await command('enable src', externalCommand);
+      const beforeMissingPathAuth = authCalls;
+      const partialScan = await tool.execute('partial-missing', { paths: ['src/existing.ts', 'src/missing.ts', 'src/escape.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
+      assert.equal(partialScan.details.status, 'found');
+      assert.equal(partialScan.details.mode, 'original');
+      assert.equal(partialScan.details.coverage.filesRead, 1);
+      assert.equal(partialScan.details.coverage.limited, true);
+      assert.deepEqual(partialScan.details.snippets.map(snippet => snippet.path), ['src/existing.ts']);
+      assert.doesNotMatch(JSON.stringify(partialScan), /OUTSIDE_SYMLINK_SENTINEL/);
+      assert.equal(authCalls, beforeMissingPathAuth);
+
       // Revocation while authentication is pending aborts the invocation and ignores late credentials.
+      await command('enable private.ts other.ts', externalCommand);
       authFactory = () => new Promise(resolve => { resolveAuth = resolve; });
       resolveAuth = undefined;
       const beforeRevokeFetch = fetchCalls;
       const revokedPending = tool.execute('revoke-pending', { paths: ['private.ts', 'other.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
-      while (!resolveAuth) await new Promise(resolve => setTimeout(resolve, 5));
+      await waitFor(() => resolveAuth, 'revoke auth resolver');
       await command('disable', commandContext);
       const revokedResult = await revokedPending;
       assert.equal(revokedResult.details.status, 'cancelled');
@@ -159,17 +192,8 @@ if (diagnostics.length) {
       resolveAuth({ auth: { apiKey: 'LATE_KEY_MUST_NOT_BE_USED' } });
       assert.equal(fetchCalls, beforeRevokeFetch);
 
-      // Session shutdown aborts a waiting auth lookup; a never-settling lookup is bounded by the 5s deadline.
       await command('enable private.ts other.ts', externalCommand);
-      resolveAuth = undefined;
-      const shutdownPending = tool.execute('shutdown-pending', { paths: ['private.ts', 'other.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
-      while (!resolveAuth) await new Promise(resolve => setTimeout(resolve, 5));
-      await extension.handlers.get('session_shutdown')[0]({}, context);
-      const shutdownResult = await shutdownPending;
-      assert.equal(shutdownResult.details.status, 'cancelled');
-      assert.deepEqual(shutdownResult.details.snippets, []);
-
-      await command('enable private.ts other.ts', externalCommand);
+      authFactory = () => new Promise(resolve => { resolveAuth = resolve; });
       resolveAuth = undefined;
       const startedAt = Date.now();
       const timeoutPending = tool.execute('auth-timeout', { paths: ['private.ts', 'other.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
@@ -180,15 +204,69 @@ if (diagnostics.length) {
       assert.ok(Date.now() - startedAt < 6500);
       assert.ok(timeoutResult.details.snippets.length > 0);
     } finally { globalThis.fetch = oldFetch; }
+    const authCallsBeforeSessionLifecycle = authCalls;
     const projectAlias = resolve(temporary, 'project-alias');
     await symlink(project, projectAlias);
     const notifications = [];
     const aliasCommandContext = { ...commandContext, cwd: projectAlias, ui: { ...commandContext.ui, notify: message => notifications.push(message) } };
-    await extension.commands.get('jev-context').handler('status', aliasCommandContext);
-    assert.match(notifications.at(-1), /enabled/);
-    await extension.commands.get('jev-context').handler('disable', aliasCommandContext);
-    const revoked = await tool.execute('revoked', { paths: ['private.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
-    assert.equal(revoked.details.status, 'not_enabled');
+    await command('status', aliasCommandContext);
+    assert.match(notifications.at(-1), /enabled for this session/);
+
+    // A late positive confirmation from the old session cannot install a grant in its replacement.
+    let resolveLateConfirm;
+    const pendingEnable = command('enable private.ts', { ...commandContext, ui: { confirm: () => new Promise(resolve => { resolveLateConfirm = resolve; }), notify() {} } });
+    await waitFor(() => resolveLateConfirm, 'consent confirmation');
+    await extension.handlers.get('session_before_switch')[0]({ type: 'session_before_switch', reason: 'resume' }, context);
+    sessionId = 'session-b';
+    await extension.handlers.get('session_start')[0]({ type: 'session_start', reason: 'resume' }, context);
+    resolveLateConfirm(true);
+    await pendingEnable;
+    const afterSwitch = await tool.execute('new-session', { paths: ['private.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
+    assert.equal(afterSwitch.details.status, 'not_enabled');
+    assert.equal(authCalls, authCallsBeforeSessionLifecycle);
+
+    // Fork invalidates approvals; successful startup of another session begins empty.
+    await command('local private.ts', commandContext);
+    const localAfterSwitch = await tool.execute('local-new-session', { paths: ['private.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
+    assert.equal(localAfterSwitch.details.status, 'found');
+    await extension.handlers.get('session_before_fork')[0]({ type: 'session_before_fork', entryId: 'entry-id', position: 'at' }, context);
+    const afterForkGate = await tool.execute('after-fork-gate', { paths: ['private.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
+    assert.equal(afterForkGate.details.status, 'not_enabled');
+    sessionId = 'session-c';
+    await extension.handlers.get('session_start')[0]({ type: 'session_start', reason: 'fork', previousSessionFile: '/synthetic/old-session.jsonl' }, context);
+    const forked = await tool.execute('forked-session', { paths: ['private.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
+    assert.equal(forked.details.status, 'not_enabled');
+
+    await command('enable private.ts other.ts', externalCommand);
+    authFactory = () => new Promise(resolve => { resolveAuth = resolve; });
+    resolveAuth = undefined;
+    const beforeShutdownFetch = fetchCalls;
+    const beforeShutdownAuth = authCalls;
+    const shutdownPending = tool.execute('shutdown-pending', { paths: ['private.ts', 'other.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
+    await waitFor(() => resolveAuth, 'shutdown auth resolver');
+    await extension.handlers.get('session_shutdown')[0]({ type: 'session_shutdown', reason: 'quit' }, context);
+    const shutdown = await shutdownPending;
+    assert.equal(shutdown.details.status, 'cancelled');
+    assert.deepEqual(shutdown.details.snippets, []);
+    resolveAuth({ auth: { apiKey: 'LATE_SHUTDOWN_KEY' } });
+    assert.equal(fetchCalls, beforeShutdownFetch);
+    const staleAfterShutdown = await tool.execute('shutdown-session', { paths: ['private.ts'], goal: 'find marker' }, new AbortController().signal, undefined, context);
+    assert.equal(staleAfterShutdown.details.status, 'not_enabled');
+    assert.equal(authCalls, beforeShutdownAuth + 1);
+
+    // A freshly loaded extension instance has an empty runtime store, even for the same project/session id.
+    const secondLoader = new DefaultResourceLoader({
+      cwd: project, agentDir, settingsManager: SettingsManager.inMemory(),
+      additionalExtensionPaths: [resolve(root, 'index.ts')], noExtensions: true,
+      noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
+    });
+    await secondLoader.reload();
+    const replacement = secondLoader.getExtensions().extensions[0];
+    const replacementContext = { ...context, sessionManager: { getSessionId: () => 'session-c' } };
+    await replacement.handlers.get('session_start')[0]({ type: 'session_start', reason: 'startup' }, replacementContext);
+    const replacementTool = replacement.tools.get('find_context').definition;
+    const restarted = await replacementTool.execute('restart', { paths: ['private.ts'], goal: 'find marker' }, new AbortController().signal, undefined, replacementContext);
+    assert.equal(restarted.details.status, 'not_enabled');
     const version = JSON.parse(await (await import('node:fs/promises')).readFile(resolve(piRoot, 'package.json'), 'utf8')).version;
     console.log(`Typecheck and offline Pi ${version} context extension-load smoke passed.`);
   } finally {

@@ -219,6 +219,32 @@ export function prepareRanking({ goal, candidates, provider }) {
   if (utf8Bytes(serialized) > LIMITS.requestBytes) fail('input_too_large');
   return { request, serialized };
 }
+// Client compatibility policy: allow independently rounded values at 0.01 resolution.
+// The provider schema says "approximately 1" but does not guarantee decimal precision.
+const ROUNDING_HALF_UNIT = 0.005;
+function consistentRoundedScore(probabilities, score) {
+  const slack = 16 * Number.EPSILON * probabilities.length;
+  const lower = probabilities.map(p => Math.max(0, p - ROUNDING_HALF_UNIT));
+  const upper = probabilities.map(p => Math.min(1, p + ROUNDING_HALF_UNIT));
+  const remainingMass = 1 - lower.reduce((sum, p) => sum + p, 0);
+  if (remainingMass < -slack || upper.reduce((sum, p) => sum + p, 0) < 1 - slack) return false;
+  // Extremal means among normalized distributions inside the rounding intervals.
+  // Allocate the remaining probability mass to low/high levels respectively.
+  const bound = descending => {
+    let remaining = Math.max(0, remainingMass);
+    let mean = lower.reduce((sum, p, i) => sum + p * i, 0);
+    for (let k = 0; k < probabilities.length; k++) {
+      const i = descending ? probabilities.length - 1 - k : k;
+      const added = Math.min(remaining, upper[i] - lower[i]);
+      mean += added * i;
+      remaining -= added;
+    }
+    return mean;
+  };
+  return score + ROUNDING_HALF_UNIT + slack >= bound(false) &&
+    score - ROUNDING_HALF_UNIT - slack <= bound(true);
+}
+
 function parseRanking(raw, ids, provider) {
   const c = connection(provider); let response;
   try { response = JSON.parse(raw); } catch { fail('invalid_response'); }
@@ -229,7 +255,7 @@ function parseRanking(raw, ids, provider) {
     const a = response.answers[`candidate_${i}`];
     if (!isPlain(a) || a.type !== 'score' || !Number.isFinite(a.score) || a.score < 0 || a.score > 3 || !Number.isFinite(a.confidence) || a.confidence < 0 || a.confidence > 1 || !isPlain(a.probabilities) || Object.keys(a.probabilities).sort().join('|') !== '0|1|2|3') fail('invalid_response');
     const p = [0,1,2,3].map(k => a.probabilities[k]);
-    if (!p.every(x => Number.isFinite(x) && x >= 0 && x <= 1) || Math.abs(p.reduce((x,y)=>x+y,0)-1) > .001 || Math.abs(p.reduce((x,y,i)=>x+y*i,0)-a.score) > .01) fail('invalid_response');
+    if (!p.every(x => Number.isFinite(x) && x >= 0 && x <= 1) || !consistentRoundedScore(p, a.score)) fail('invalid_response');
     return { id, score: a.score };
   });
   const usage = {};

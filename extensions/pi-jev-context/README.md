@@ -16,7 +16,7 @@ This deliberately isolates the reader from the legacy router/reranker/skill and 
 
 The root Git package continues to select the legacy tools and skill. They remain independently usable and keep full-payload review and separate per-request approval. The reader does not import their installed files, require the shared Jev skill, or insert a router before reading.
 
-## Explicit activation, no per-call popup
+## Once-per-session activation, no per-call popup
 
 A newly loaded reader has no permission to scan project files. Use its **user command**, not a model tool, to grant a bounded scope:
 
@@ -28,13 +28,15 @@ A newly loaded reader has no permission to scan project files. Use its **user co
 ```
 
 - `local`: authorize local discovery only. No credential lookup or provider call occurs.
-- `enable`: confirm local discovery plus automatic external ranking for the displayed canonical project, relative paths, selected provider/model, lifetime and request/input quotas. The request includes the goal and source candidates; it does not include conversation history or the whole project. Only activate it for material you are authorized to disclose.
+- `enable`: confirm local discovery plus automatic external ranking for the current session, displayed canonical project, relative paths, selected provider/model, and request/input quotas. The request includes the goal and source candidates; it does not include conversation history or the whole project. Only activate it for material you are authorized to disclose.
 - `status`: inspect the grant and consumed quota without contacting a provider.
-- `disable`: revoke the project grant. Final grant validation and request initiation share the revocation lock; it is released before waiting for the response. A completed revocation prevents subsequent request initiation, but requests already dispatched cannot reliably be recalled.
+- `disable`: revoke the current session's grant for this project. The final grant check and request initiation run synchronously, without an asynchronous gap in which revocation can interleave. A completed revocation prevents subsequent request initiation, but requests already dispatched cannot reliably be recalled.
 
-Command paths are whitespace-delimited; paths containing whitespace are not supported by this initial command parser. Project-wide `.` grants, traversal outside the project, and unsupported paths are rejected. Paths in a tool call must be within the stored scope. A file-access grant is not a general grant to send other project material, sessions, authenticated content, or credentials.
+Command paths are whitespace-delimited; paths containing whitespace are not supported by this initial command parser. Project-wide `.` grants, traversal outside the project, and unsupported paths are rejected. Paths in a tool call must be within the session's approved scope. A file-access grant is not a general grant to send other project material, sessions, authenticated content, or credentials.
 
-Activation requires an interactive confirmation-capable Pi host. Execution never opens approval dialogs. A persisted grant survives ordinary reload/restart until revoked, expired, replaced, or exhausted; re-enabling is an explicit renewal, not an automatic reset. Current activation permits **at most 100 reserved attempts and 1 MiB of serialized request input over 7 days**. Reservations are persisted under a project-keyed `jev-context` directory in Pi's agent directory (no keys are stored) and protected against concurrent reservations. Failed/cancelled reservations are not refunded. A busy lock fails closed rather than guessing that a lock is stale.
+Activation requires an interactive confirmation-capable Pi host and an identifiable current session. Execution never opens approval dialogs. Permission and usage live only in this extension instance's memory for the current session and canonical project. **At most 100 reserved attempts and 1 MiB of serialized request input** are allowed per explicit activation; concurrent calls share the same counters. Failed/cancelled reservations are not refunded, and exhaustion falls back locally without another popup or automatic renewal.
+
+A new conversation, switching/resuming a session, forking, shutdown, extension reload, or process restart requires fresh activation—even if the same project or saved conversation is reopened. Navigating within the same conversation via `/tree` does not renew or reset its grant. Starting a session switch or fork invalidates pending confirmations, clears grants, and stops active calls, even if another extension later cancels the transition; explicit activation is then required again. Re-enabling, changing scope/provider, or renewing quota requires an explicit user command and confirmation; ordinary calls do not ask again. Earlier experimental project-wide seven-day grant files are neither read nor migrated nor deleted. No session authorization is saved to disk.
 
 These are request/input limits, **not a hard dollar spending cap**. Inspect the confirmation and the selected provider's pricing before enabling. Credentials alone never authorize transmission. Changing the provider or authorized paths requires a new explicit activation; a changed provider does not silently redirect an existing grant.
 
@@ -47,7 +49,7 @@ Select `PI_JEV_PROVIDER=openrouter` (default) or `PI_JEV_PROVIDER=typesafe` befo
 | OpenRouter | `https://openrouter.ai/api/alpha/decisions`, `~typesafe/jev-latest` | Pi `getProviderAuth('openrouter')` | TypeSafe-only routing, fallbacks disabled; $0.042/M input and $0/M output ceilings; no enforced total-dollar cap |
 | Direct TypeSafe | `https://api.typesafe.ai/v1/systemone`, `jev-latest` | `TYPESAFE_API_KEY` | No enforced per-token or total-dollar cap |
 
-Both aliases move over time. One ranking attempt makes at most one request, rejects redirects, has a 5-second HTTP deadline, and bounds response bytes to 32 KiB. Failures use local discovery order instead of retries. Unknown or missing billed cost is not zero. A user-controlled project activation is distinct from authorization to run a developer's live evaluation; this repository's tests never exercise paid provider calls.
+Both aliases move over time. One ranking attempt makes at most one request, rejects redirects, has a 5-second HTTP deadline, and bounds response bytes to 32 KiB. Failures use local discovery order instead of retries. Unknown or missing billed cost is not zero. A user-controlled session activation is distinct from authorization to run a developer's live evaluation; this repository's tests never exercise paid provider calls.
 
 ## Use in Pi
 
@@ -65,11 +67,17 @@ Use ordinary `read` for known exact ranges, complete review, and patch preparati
 
 Initial discovery limits are 80 considered source files, 1,200 visited entries, 96 KiB per file, 1 MiB read bytes, and 1.5 seconds of scan work. Candidate windows include up to four surrounding lines on each side of a match and merge when adjacent. There are at most 12 candidates, each at most 8 KiB; a serialized ranking request must fit 64 KiB. Returned JSON is bounded to 24 KiB and three source blocks. Reaching a discovery/candidate budget must be visible in coverage, not represented as an exhaustive search.
 
+Requested paths are checked against the approved scope before filesystem access. If an in-scope path is missing or unreadable, other requested paths are still scanned; no batch-wide canonicalization failure discards their evidence. Symlinks are still excluded rather than followed.
+
 The result distinguishes `found`, `not_found` within the checked scope, and `limit_reached`, and includes file/byte counts, skipped material, selected original text, and an omission count. Inaccessible or vanished in-scope entries also mark coverage incomplete; they are not complete misses. For content matches, byte-bounded excerpts retain a selecting match line, or omit an oversized match with incomplete coverage rather than returning unrelated preceding text. A failure to find a passage is never evidence that the implementation does not exist. Lexical discovery can miss aliases, indirect calls, morphology, or code whose terminology differs from the goal; Jev cannot recover a file that was never a candidate.
 
 The scanner excludes symlinks, hidden/generated/credential-oriented paths, unsupported or binary text, oversized material, and recognizable secret patterns. These exclusions and a bounded local root are defense in depth, **not a sandbox or complete DLP**. They cannot establish that arbitrary business data is safe to disclose. Secret/session/authenticated content remains prohibited; approve only appropriate source paths and keep sensitive material outside them.
 
 No valid grant means no project content read. Local mode, a single candidate, exhausted quota, provider mismatch, or a provider failure does not cause a fresh approval dialog or alternate-provider request. The reader returns the bounded local result when available, or a fixed failure/cancellation status. No raw provider body, credential, or exception message is included in errors.
+
+### Rounded ranking responses
+
+The [TypeSafe response schema](https://github.com/typesafe-ai/typesafe-sdk-python/blob/main/src/typesafe_sdk/_schemas/models.py) describes probability sums as approximately one and scores as probability-weighted means, but does not specify decimal precision. As an explicit **client compatibility policy**, this reader accepts independent rounding at 0.01 resolution (intervals of ±0.005, with small floating-point slack). It checks whether a normalized probability distribution within those intervals can produce a mean consistent with the score interval. This handles `score: 1.99` with displayed mean `2.00`, and sums such as `0.99`, without broadly accepting inconsistent scores/distributions. Exact keys, finite numeric types, ranges, response model, and usage validation remain enforced. Returned scores are not rewritten or normalized before sorting. This policy and mocked regressions are not a claim about measured provider precision or live compatibility; legacy parsers are unchanged.
 
 ## Verification and evaluation
 

@@ -16,7 +16,7 @@ Preserve the legacy resources:
 
 ## Boundaries
 
-- Preserve legacy tools' per-request consent and full-payload review. The purposeful reader uses an explicitly authorized bounded activation grant instead: approved local paths and external-transmission scope, selected provider, persistent request/input quotas, and revocation. Credentials alone do not authorize transmission; never silently expand or replenish a grant.
+- Preserve legacy tools' per-request consent and full-payload review. The purposeful reader uses an explicitly authorized bounded activation grant instead: approved local paths and external-transmission scope, selected provider, session-local request/input quotas, and revocation. Grants must not survive session changes, extension reload, or process restart; never read or reuse the former project-persistent grants. Credentials alone do not authorize transmission; never silently expand or replenish a grant.
 - Preserve authentication, cancellation, single-call/no-retry, bounded-output, and sanitized-fallback behavior for every extension. Local access authorization and external disclosure permission are separate. New file access must not assume other tools' permission hooks are inherited.
 - Jev provides selection advice, not authorization, execution, or source verification.
 - Never send or commit credentials, private session data, authenticated content, signed URLs, or unauthorized data. The reader may transmit only explicitly authorized project source excerpts and the authorized goal; legacy tools still exclude local/private source content. Filename and content filtering is defense in depth, not complete DLP.

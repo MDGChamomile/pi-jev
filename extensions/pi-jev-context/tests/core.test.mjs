@@ -238,6 +238,46 @@ test('mocked ranking makes exactly one wire request to each explicit provider wi
   }
 });
 
+test('rounded score responses preserve ranking for both connections without accepting invalid distributions', async () => {
+  const cs = [candidate('a'), candidate('b')];
+  for (const provider of ['openrouter', 'typesafe']) {
+    async function run(score, probabilities, change = () => {}) {
+      const response = validResponse(['a', 'b'], provider);
+      const answer = response.answers.candidate_0;
+      answer.score = score;
+      answer.probabilities = Object.fromEntries(probabilities.map((value, i) => [i, value]));
+      change(answer);
+      // Candidate b is lower, so accepting the rounded answer must produce a real ranking.
+      Object.assign(response.answers.candidate_1, { score: 0, probabilities: { 0: 1, 1: 0, 2: 0, 3: 0 } });
+      let calls = 0;
+      try {
+        return await rankCandidates({ goal: 'find evidence', candidates: cs, provider, apiKey: 'FAKE_TEST_KEY', fetchImpl: async () => {
+          calls++;
+          return new Response(JSON.stringify(response));
+        } });
+      } finally { assert.equal(calls, 1); }
+    }
+    for (const [score, probabilities] of [
+      [2, [0, 0, 1, 0]],
+      [1.99, [0, 0, 1, 0]],
+      [1, [.33, .33, .33, 0]],
+      [1.5, [.245, .245, .245, .245]], // Probability-sum rounding boundary: 0.98.
+      [1.525, [.25, .25, .25, .25]], // Normalized expected-score boundary plus score rounding.
+    ]) assert.deepEqual((await run(score, probabilities)).rankedIds, ['a', 'b']);
+    for (const [score, probabilities] of [
+      [2, [0, 0, .5, 0]], [2, [.5, .5, .5, 0]], [2, [1, 0, 0, 0]],
+      [1.5, [.244999, .245, .245, .245]], [1.525001, [.25, .25, .25, .25]],
+      [1.97, [0, 0, 1, 0]], // Fits a loose independent error bound, but not a normalized distribution.
+      [2, [0, -.001, 1, 0]], [2, [0, 0, 1.001, 0]], [2, [0, 0, '1', 0]],
+      ['2', [0, 0, 1, 0]], [3.001, [0, 0, 0, 1]], [2, [0, 0, null, 0]],
+    ]) await assert.rejects(run(score, probabilities), { code: 'invalid_response' });
+    for (const change of [
+      a => { delete a.probabilities[3]; }, a => { a.probabilities[4] = 0; },
+      a => { a.confidence = 1.01; }, a => { a.confidence = '0.9'; }, a => { a.type = 'choice'; },
+    ]) await assert.rejects(run(2, [0, 0, 1, 0], change), { code: 'invalid_response' });
+  }
+});
+
 test('malformed responses, HTTP errors, response overflow and timeout fail with fixed codes', async () => {
   const args = { goal:'x', candidates:[candidate()], provider:'typesafe', apiKey:'FAKE_TEST_KEY' };
   await assert.rejects(rankCandidates({ ...args, fetchImpl:async()=>new Response('not json') }), { code:'invalid_response' });
