@@ -25,13 +25,17 @@ npm run check
 
 The private root package and lockfile own pinned Pi 0.85.0/TypeScript development dependencies. No other checkout is required. Dependency installation accesses npm; runtime use of copied extensions does not need this development tree.
 
-- `npm test`: both extensions' mocked-HTTP regression tests and shared provider-contract tests with synthetic keys.
+- `npm test`: legacy and purposeful-reader regression tests, mocked HTTP and isolated activation stores, shared provider contracts, and offline reading evaluation. All credentials and source corpora used by tests are synthetic.
 - `npm run check:pi`: isolated offline type/load checks for each extension, then router-only, reranker-only, and both source-copy installations with exactly one shared skill; root-package discovery also checks both tools, selective extension loading, skill-only loading, and disabling the skill. A separate isolated Pi check exercises default OpenRouter and explicit TypeSafe credential selection with fake HTTP.
 - `npm run check:skills`: validator unit tests and skill frontmatter/relative-link validation.
 
 The checker subprocesses use a temporary HOME, no inherited credentials or active Pi configuration, and `PI_OFFLINE=1`. Package discovery uses the local root manifest; it does not test a remote Git clone/install or network dependency resolution. No model session or provider request is created. README links still need review; skill validation is not a full YAML or semantic checker.
 
-Keep source in `extensions/pi-jev-router/`, `extensions/pi-jev-tools/`, and `skills/pi-jev/`. Preserve the independent registration and existing consent, privacy, cancellation, no-retry, and sanitized-fallback contracts. Add focused regression tests for behavior changes. Review shared skill guidance when changing tool contracts.
+Keep purposeful-reader source in `extensions/pi-jev-context/` and its offline comparisons in `evaluations/context-reading/`. Preserve legacy resources in `extensions/pi-jev-router/`, `extensions/pi-jev-tools/`, and `skills/pi-jev/`. Each extension remains independently loadable; the root package still selects legacy resources until the reader is evaluated separately. Do not add a legacy router step before reading.
+
+Preserve legacy full-payload review/per-request approval. The reader's separately disclosed activation grant authorizes only bounded local access and, when selected, external transmission; quotas accumulate safely across concurrent calls in the same session. Session changes, extension reload, and process restart discard permission rather than silently renewing it. Never reuse the earlier project-persistent grant files; preserve existing files without reading or deleting them. Preserve authentication, privacy, cancellation, no-retry, and sanitized fallback. Never assume direct filesystem reads inherit another tool's guardrails. Add focused regression tests for behavior changes and review shared skill guidance when changing tool contracts.
+
+The reader evaluation distinguishes local candidate recall, selected evidence, and whole-task outcomes. Verify natural selection with ordinary task prompts as well as forced-tool efficacy; keep unmeasured latency, cost, success, and adoption unknown. An offline pass does not justify changing default resources or expanding scope.
 
 Live OpenRouter or direct TypeSafe tests and evaluations need separate authorization for provider/model, request count, cost, and disclosed data. Do not infer live compatibility or quality from mocked tests. Do not install into an active Pi environment as a verification shortcut.
 

@@ -4,11 +4,31 @@
 [![Latest release](https://img.shields.io/github/v/release/MDGChamomile/pi-jev?label=release)](https://github.com/MDGChamomile/pi-jev/releases/latest)
 [![License](https://img.shields.io/github/license/MDGChamomile/pi-jev)](LICENSE)
 
-> Consent-gated TypeSafe Jev advice for the [Pi coding agent](https://github.com/earendil-works/pi): choose a task route or rank public web passages without handing over control.
+> Experimental purposeful reading for the [Pi coding agent](https://github.com/earendil-works/pi): give a path and a goal, receive relevant source excerpts—not another planning conversation.
 
-Pi Jev provides two optional, independently installable tools for the **parent Pi agent** and one shared skill that helps decide when to use them. Each tool makes at most one approved request through OpenRouter (default) or directly to TypeSafe. Jev returns advice, not an executed route, verified evidence, or authorization.
+The opt-in [`find_context` extension](extensions/pi-jev-context/README.md) performs bounded local file discovery, optionally uses TypeSafe Jev to rank candidates, and returns contiguous source text with file/line references and coverage limits. The parent supplies paths and a goal, not copied file bodies. Ordinary `read`, `bash`, `edit`, and `write` keep their existing roles. This is not a summarizer, a sandbox, a command runner, or whole-conversation compaction.
 
-**Status:** an experimental Git-installable Pi package with offline tests, not published to npm. The router has no live routing evaluation yet, and the reranker has not established Korean-language quality or improvements in accuracy, latency, or cost. Keep them only if representative comparisons show a net benefit over ordinary parent-agent reasoning.
+The original task router, public-web reranker, and shared workflow skill remain independently installable and retain their per-request full-payload review contracts. The root Git package still installs those legacy resources; **the new reader is an explicit experiment, not a silent upgrade of an active installation**.
+
+**Status:** experimental and not published to npm. Offline tests establish mechanics, not live provider compatibility, code-search recall, natural tool adoption, or improvements in task accuracy, latency, or cost. Compare ordinary Pi, local-only reading, and Jev-assisted reading before retaining or expanding the feature. The router and reranker likewise have no established whole-task net benefit.
+
+## Try purposeful reading separately
+
+From a checked-out repository, load only the new extension and no discovered legacy skill:
+
+```bash
+pi --no-extensions --no-skills -e ./extensions/pi-jev-context/index.ts
+```
+
+This deliberately isolated launch also excludes other extensions; it is a test configuration, not a claim that their protections are inherited. The reader requires explicit local path authorization and separately distinguishes permission to send excerpts externally. Consult the [reader guide](extensions/pi-jev-context/README.md) before activation. Do not install into an active environment as a testing shortcut.
+
+For a request such as “find where token-refresh retries stop,” Pi can call `find_context` with a relative path and that goal. The extension discovers bounded candidates locally, merges adjacent source windows, optionally ranks them, and returns original text and coverage. A limited or unsuccessful search is not proof that code does not exist. Use normal `read` for exact full-file review or patch preparation; references describe what was read, not an immutable snapshot.
+
+The reader uses explicit, bounded **session-only activation** rather than asking for approval on every invocation. Repeated calls within the approved scope share that session's quota. New/switch/fork sessions, extension reload, and Pi restart require fresh activation; earlier project-wide seven-day grants are not reused. Activation discloses the provider, project paths, request/input limits and cost limitations. Credentials alone never authorize sending files. Failures, exhausted budgets, or provider changes do not trigger retries or provider switching. The full contract and local-only mode are in the [reader guide](extensions/pi-jev-context/README.md).
+
+Run the [offline reading evaluation](evaluations/context-reading/README.md) and separately assess whether normal user requests cause appropriate tool selection. No live Jev or end-to-end speed result is bundled. Web-search integration, automatic bash-output filtering, and conversation compaction are outside this experiment.
+
+## Legacy advisory tools
 
 ### See the review flow
 
@@ -33,7 +53,7 @@ The shared [`pi-jev` skill](skills/pi-jev/README.md) teaches the parent agent wh
 
 **Flow:** parent identifies an applicable decision point → you review the full payload and separately approve one request → Jev returns bounded advice → parent verifies sources and decides what to do. No automatic routing or answer-writing follows.
 
-## Requirements and installation
+## Legacy package requirements and installation
 
 - Node.js 22.22+ and Pi with `ctx.modelRegistry.getProviderAuth()` support. Offline loading and typechecking are pinned to Pi 0.85.0.
 - Authentication for your selected connection: a configured Pi `openrouter` provider (default), or `TYPESAFE_API_KEY` for direct TypeSafe access. Neither extension reads credential files itself.
@@ -56,7 +76,7 @@ The shared [`pi-jev` skill](skills/pi-jev/README.md) teaches the parent agent wh
 
 For example, once `TYPESAFE_API_KEY` is already available in your shell, run `PI_JEV_PROVIDER=typesafe pi`. The selection applies to both installed Jev extensions, not to Pi's main chat model. Restart Pi after changing its launch environment. No SDK, custom Pi model provider, or persistent settings change is needed. Unknown or empty selections return `invalid_provider`; missing credentials never trigger automatic provider switching. `/jev-router-status` and `/jev-rerank-status` show the configured connection without reading credentials.
 
-**Cost:** OpenRouter enforces per-token price ceilings, **not a total bill limit**. TypeSafe direct has **neither an enforced per-token ceiling nor a total-cost cap** in this integration. Read [consent and cost](#external-transmission-consent-and-cost) and check your selected provider's pricing before approval.
+**Cost:** OpenRouter enforces per-token price ceilings, **not a total bill limit**. TypeSafe direct has **neither an enforced per-token ceiling nor a total-cost cap** in this integration. Read [consent and cost](#legacy-external-transmission-consent-and-cost) and check your selected provider's pricing before approval.
 
 Review the source, then install the single Pi package (both extensions and the shared skill):
 
@@ -95,7 +115,7 @@ pi -e ./extensions/pi-jev-tools/index.ts
 
 Git-package and independent source-copy installations are supported; this repository is not published to npm. No Python interpreter, TypeSafe SDK, or Jev-specific CLI flag is required at runtime. A TypeSafe key is needed only for the optional direct connection.
 
-## External transmission, consent, and cost
+## Legacy external transmission, consent, and cost
 
 For every invocation, the selected extension:
 
@@ -113,7 +133,7 @@ Both connections have a 30-second HTTP deadline, reject redirects, and never ret
 
 Declining, editing the preview, losing UI availability, or cancelling before transmission returns a sanitized fallback without a provider request. Parent cancellation or session shutdown also stops an authentication wait, releases the invocation lock, and aborts an active HTTP request. Cancellation cannot retract data or charges after a request has been accepted.
 
-## Shared boundaries
+## Legacy shared boundaries
 
 - **Review is not DLP.** Never send secrets, credentials, session history, private files, internal documents, signed URLs, authenticated-page content, or data you are not authorized to disclose.
 - **Reranking is public-web only.** URL checks reject obvious local or credential-bearing sources but do not prove that content is public. The extension does not fetch URLs or verify provenance.
@@ -133,6 +153,8 @@ First distinguish no tool selection from a selected call returning `not_routed` 
 
 ## Detailed guides
 
+- [Purposeful reader activation, scope, limits, and fallback](extensions/pi-jev-context/README.md)
+- [Purposeful reading evaluation and natural-use protocol](evaluations/context-reading/README.md)
 - [Router input/output contract, failure codes, and limits](extensions/pi-jev-router/README.md)
 - [Reranker input/output contract, failure codes, and limits](extensions/pi-jev-tools/README.md)
 - [Shared skill guide](skills/pi-jev/README.md) and [workflow](skills/pi-jev/SKILL.md)
