@@ -4,6 +4,12 @@ Pi Jev originates in [Pi Agent Kit](https://github.com/MDGChamomile/pi-agent-kit
 
 Historical removed Python adapters remain in Git history, not in the current installation. Original kit releases and evidence links still describe their original code and transport. In particular, the bundled demonstration is not evidence of current OpenRouter compatibility or measured ranking quality.
 
+## Opt-in purposeful-reader experiment
+
+`extensions/pi-jev-context/` is independently loadable and is not added to the root package's default resources in this experiment. Existing router/reranker installations, per-call approvals, and credentials are unchanged. Do not delete them merely to try the reader.
+
+Use the isolated launch in the [reader guide](extensions/pi-jev-context/README.md). Authorize local source paths and any external transmission explicitly through its user command; a legacy tool approval or an API key is not a reader grant. No migration requires a live provider request. A later default-resource switch or removal of legacy tools requires its own reviewed decision, not an automatic installation side effect.
+
 ## Existing source-copy or symlink installations
 
 1. Inspect the installed `pi-jev` skill and whichever extension directories are enabled. Check for local edits, old symlinks, and the former `pi-jev-router` skill.
@@ -26,7 +32,7 @@ The router now uses `delegate` instead of `local_subagent` / `web_subagent` and 
 
 Keep the development clone separate from the live `~/.pi/agent` environment. Do not install the mutable development path into the live environment.
 
-1. Review the published package and its [requirements](README.md#requirements-and-installation). You do not need a development checkout, publishing access, or a release of your own to switch an existing installation.
+1. Review the published package and its [requirements](README.md#legacy-package-requirements-and-installation). You do not need a development checkout, publishing access, or a release of your own to switch an existing installation.
 2. Inspect existing Jev extension and skill copies, symlinks, and configured paths for local changes. Back up the reviewed resources and relevant configuration outside Pi's resource-discovery directories.
 3. With explicit approval for live changes, retire only the old Jev resource copies/links and configured paths so they cannot load alongside the package. Preserve unrelated resources and credentials.
 4. Run `pi install git:github.com/MDGChamomile/pi-jev`. This installs both extensions and the shared skill as one package. Use `pi config` to preserve any previous selective loading.

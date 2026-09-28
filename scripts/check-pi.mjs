@@ -26,7 +26,7 @@ try {
     process.stdout.write(result.stdout);
     process.stderr.write(result.stderr);
   };
-  for (const extension of ['pi-jev-router', 'pi-jev-tools']) {
+  for (const extension of ['pi-jev-router', 'pi-jev-tools', 'pi-jev-context']) {
     run(join(root, 'extensions', extension, 'tests/pi-check.mjs'),
       join(root, 'node_modules/@earendil-works/pi-coding-agent'),
       join(root, 'node_modules/typescript'));

@@ -5,7 +5,9 @@ license: MIT
 compatibility: Requires at least one companion Jev extension, an interactive Pi or compatible RPC approval UI, and authentication for the selected OpenRouter or direct TypeSafe connection.
 ---
 
-# Pi Jev
+# Pi Jev — legacy advisory workflow
+
+This skill governs only `jev_task_router` and `jev_rerank`. It is not required for the opt-in `find_context` reader. If that reader is available, use it directly for bounded source discovery from paths and a goal; do not add a routing call or copy file bodies into either legacy tool. Use ordinary `read` for exact ranges, full review, and patch preparation. Reader activation is a user command, not something this skill or a model tool can grant. See the [purposeful-reader guide](../../extensions/pi-jev-context/README.md).
 
 Use this workflow to select among the available consent-gated TypeSafe Jev tools. The user does not need to mention Jev. When a decision point below applies, use the corresponding tool once; do not require a second, speculative estimate of a large benefit. These are advisory tools, not mandatory steps for every task.
 

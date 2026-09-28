@@ -1,0 +1,8 @@
+[
+  {"id":"cache-key","goal":"Where is the cache key constructed?","files":{"src/cache.ts":"export function cacheKey(userId: string) {\n  return `user:${userId}:v2`;\n}\n"},"gold":[{"path":"src/cache.ts","text":"return `user:${userId}:v2`;"}]},
+  {"id":"retry-limit","goal":"What is the maximum retry count?","files":{"src/retry.ts":"const BASE_DELAY = 250;\nexport const MAX_RETRIES = 4;\n"},"gold":[{"path":"src/retry.ts","text":"export const MAX_RETRIES = 4;"}]},
+  {"id":"authorization","goal":"Does the handler require an authenticated user?","files":{"src/handler.ts":"export function handle(request) {\n  if (!request.user) throw new Error('unauthorized');\n  return load(request.user.id);\n}\n"},"gold":[{"path":"src/handler.ts","text":"if (!request.user) throw new Error('unauthorized');"}]},
+  {"id":"rollback","goal":"When does deployment roll back?","files":{"src/deploy.ts":"if (health.status !== 'ok') {\n  await rollback(release);\n}\n"},"gold":[{"path":"src/deploy.ts","text":"if (health.status !== 'ok') {"},{"path":"src/deploy.ts","text":"await rollback(release);"}]},
+  {"id":"lexical-mismatch","goal":"Where does the service throttle callers?","files":{"src/gateway.ts":"export function admit(client) {\n  if (client.requestsInWindow >= WINDOW_LIMIT) return false;\n  return true;\n}\n"},"gold":[{"path":"src/gateway.ts","text":"client.requestsInWindow >= WINDOW_LIMIT"}]},
+  {"id":"top-three-effect","goal":"Find signal threshold","files":{"a.ts":"const signalAlpha = 1;\n","b.ts":"const signalBeta = 2;\n","c.ts":"const signalGamma = 3;\n","z.ts":"const signalThreshold = 7;\n"},"gold":[{"path":"z.ts","text":"const signalThreshold = 7;"}]}
+]
